@@ -1,0 +1,115 @@
+services:
+  supabase-db:
+    image: supabase/postgres:15.1.0.117
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  supabase-rest:
+    image: postgrest/postgrest:latest
+    environment:
+      PGRST_DB_URI: postgres://postgres:postgres@supabase-db:5432/postgres
+      PGRST_DB_SCHEMA: public,storage,auth
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+
+  supabase-auth:
+    image: supabase/gotrue:v2.186.0
+    environment:
+      API_EXTERNAL_URL: http://localhost:8000
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://postgres:postgres@supabase-db:5432/postgres
+      GOTRUE_SITE_URL: http://localhost:8000
+      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_SMS_AUTOCONFIRM: "true"
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+
+  supabase-storage:
+    image: supabase/storage-api:v1.22.17
+    environment:
+      PGRST_JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
+      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsLWRldiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzcwMzIxMzM5LCJleHAiOjIwODU2ODEzMzl9.wSJj3yVYt9N7NkN5GRV-ImVZiTwG2frnPobGsDkMdD0
+      SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsLWRldiIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE3NzAzMjEzMzksImV4cCI6MjA4NTY4MTMzOX0.2jg47dacNmUr7Md1NPDJjd-liOL41qMQEtUbSZpQZeM
+      JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
+      DATABASE_URL: postgres://postgres:postgres@supabase-db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+
+  supabase-realtime:
+    image: supabase/realtime:latest
+    environment:
+      APP_NAME: supabase-realtime
+      DB_HOST: supabase-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
+      SECRET_KEY_BASE: super-secret-key-base-with-at-least-64-characters
+      PORT: 4000
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+
+  supabase-meta:
+    image: supabase/postgres-meta:v0.95.2
+    environment:
+      PG_META_DB_HOST: supabase-db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: postgres
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+
+  supabase-kong:
+    image: kong:3.7
+    environment:
+      KONG_DATABASE: 'off'
+      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      KONG_LOG_LEVEL: info
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+    volumes:
+      - ./.ddev/supabase/kong.yml:/home/kong/kong.yml:ro
+    ports:
+      - "18000:8000"
+      - "18001:8001"
+    depends_on:
+      - supabase-auth
+      - supabase-rest
+      - supabase-storage
+      - supabase-realtime
+      - supabase-meta
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 5s
+      timeout: 3s
+      retries: 40

@@ -5,17 +5,20 @@ on:
   pull_request:
 
 jobs:
-  php:
+  tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          coverage: none
-      - run: composer install --no-interaction --prefer-dist
-      - run: php bin/console cache:warmup --env=dev
-      - run: composer cs:check
-      - run: composer phpstan
-      - run: composer rector -- --dry-run
-      - run: composer test
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests with Supabase stack
+        run: ./bin/ci-test

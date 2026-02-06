@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE_FILE="${ROOT_DIR}/docker-compose.ci.yaml"
+PROJECT_NAME="mautic-marketplace-ci"
+
+export COMPOSE_PROJECT_NAME="${PROJECT_NAME}"
+
+docker compose -f "${COMPOSE_FILE}" up -d
+
+trap 'docker compose -f "${COMPOSE_FILE}" down -v' EXIT
+
+SUPABASE_DB_CONTAINER="${PROJECT_NAME}-supabase-db-1"
+retries=30
+until docker exec "${SUPABASE_DB_CONTAINER}" pg_isready -U postgres -d postgres >/dev/null 2>&1; do
+  ((retries--)) || { echo "Supabase DB not ready" >&2; exit 1; }
+  sleep 2
+done
+
+apply_migration() {
+  local migration="$1"
+  local attempts=5
+  local n=1
+  while true; do
+    if docker exec -e PGOPTIONS='-c client_min_messages=warning' -i "${SUPABASE_DB_CONTAINER}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "${migration}"; then
+      return 0
+    fi
+    if [ "${n}" -ge "${attempts}" ]; then
+      echo "Migration failed after ${attempts} attempts: ${migration}" >&2
+      return 1
+    fi
+    echo "Retrying migration (${n}/${attempts}) after failure: ${migration}" >&2
+    n=$((n + 1))
+    sleep 2
+  done
+}
+
+for migration in "${ROOT_DIR}"/supabase/migrations/*.sql; do
+  apply_migration "${migration}"
+done
+
+if [ -f "${ROOT_DIR}/supabase/seed/dev_refresh.sql" ]; then
+  apply_migration "${ROOT_DIR}/supabase/seed/dev_refresh.sql"
+fi
+
+if [ -f "${ROOT_DIR}/supabase/seed/dev_seed.sql" ]; then
+  apply_migration "${ROOT_DIR}/supabase/seed/dev_seed.sql"
+fi
+
+retries=60
+until [ "$(docker inspect -f '{{.State.Health.Status}}' "${PROJECT_NAME}-supabase-kong-1" 2>/dev/null || echo starting)" = "healthy" ]; do
+  if [ "${retries}" -le 0 ]; then
+    echo "Supabase Kong not healthy" >&2
+    docker inspect "${PROJECT_NAME}-supabase-kong-1" --format '{{json .State.Health}}' || true
+    docker logs "${PROJECT_NAME}-supabase-kong-1" || true
+    exit 1
+  fi
+  retries=$((retries - 1))
+  sleep 2
+done
+
+export SUPABASE_API_BASE="http://127.0.0.1:18000"
+export SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsLWRldiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzcwMzIxMzM5LCJleHAiOjIwODU2ODEzMzl9.wSJj3yVYt9N7NkN5GRV-ImVZiTwG2frnPobGsDkMdD0"
+
+vendor/bin/phpunit
