@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/carbon-components@10.58.8/css/carbon-components.min.css">
     <link rel="stylesheet" href="{{ asset('assets/marketplace.css') }}">
+    {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
 <body>
     <header>
@@ -22,6 +23,5 @@
         </div>
     </main>
     <script src="{{ asset('assets/marketplace.js') }}" defer></script>
-    <script src="{{ asset('assets/rating.js') }}" defer></script>
 </body>
 </html>

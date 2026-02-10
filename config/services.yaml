@@ -32,10 +32,6 @@ services:
             $auth0Domain: '%env(AUTH0_DOMAIN)%'
             $auth0ClientId: '%env(AUTH0_CLIENT_ID)%'
 
-    App\Auth0\Validator\Auth0TokenValidator:
-        arguments:
-            $auth0Domain: '%env(AUTH0_DOMAIN)%'
-
     marketplace.http_client:
         class: Symfony\Contracts\HttpClient\HttpClientInterface
         factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
@@ -51,4 +47,3 @@ when@test:
             autowire: true
             arguments:
                 $httpClient: '@App\Tests\Mock\Auth0MockHttpClient'
-                $auth0Domain: 'test.auth0.com'

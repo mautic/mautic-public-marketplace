@@ -6,6 +6,7 @@ namespace App\Auth0\Validator;
 
 use App\Auth0\Exception\Auth0AuthenticationException;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -14,6 +15,7 @@ final class Auth0TokenValidator
 {
     public function __construct(
         private readonly HttpClientInterface $httpClient,
+        #[Autowire(env: 'AUTH0_DOMAIN')]
         private readonly string $auth0Domain,
         private readonly LoggerInterface $logger,
     ) {

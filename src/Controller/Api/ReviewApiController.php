@@ -36,13 +36,8 @@ final class ReviewApiController extends AbstractController
             return $this->json(['error' => $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }
 
-        $body = json_decode($request->getContent(), true);
-        if (!\is_array($body)) {
-            return $this->json(['error' => 'Invalid request body.'], Response::HTTP_BAD_REQUEST);
-        }
-
         try {
-            $reviewRequest = ReviewRequest::fromArray($body);
+            $reviewRequest = ReviewRequest::fromPayload($request->getPayload());
         } catch (ReviewValidationException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -53,8 +48,7 @@ final class ReviewApiController extends AbstractController
                 $userInfo['sub'],
                 $userInfo['name'] ?? $userInfo['email'] ?? 'Anonymous',
                 $userInfo['picture'] ?? null,
-                $reviewRequest->rating,
-                $reviewRequest->review,
+                $reviewRequest,
             );
         } catch (MarketplaceApiException $e) {
             return $this->json(['error' => 'Failed to submit review.'], Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -104,6 +104,6 @@ final class ReviewApiControllerTest extends WebTestCase
         ], content: 'not-json');
 
         self::assertResponseStatusCodeSame(400);
-        self::assertStringContainsString('Invalid request body', (string) $client->getResponse()->getContent());
+        self::assertStringContainsString('Could not decode request body', (string) $client->getResponse()->getContent());
     }
 }

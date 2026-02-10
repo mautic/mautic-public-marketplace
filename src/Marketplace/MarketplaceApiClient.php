@@ -7,6 +7,7 @@ namespace App\Marketplace;
 use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\Dto\PackageListResult;
 use App\Marketplace\Dto\PackageSummary;
+use App\Marketplace\Dto\ReviewRequest;
 use App\Marketplace\Exception\MarketplaceApiException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -123,15 +124,15 @@ final class MarketplaceApiClient
         );
     }
 
-    public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, int $rating, string $review): void
+    public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void
     {
         $this->requestJsonWithServiceRole('POST', '/rest/v1/reviews', [
             'objectId' => $packageName,
             'user_id' => $this->auth0SubToUuid($userId),
             'user' => $userName,
             'picture' => $picture,
-            'rating' => $rating,
-            'review' => $review,
+            'rating' => $reviewRequest->rating,
+            'review' => $reviewRequest->review,
         ]);
     }
 
