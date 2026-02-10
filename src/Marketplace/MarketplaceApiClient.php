@@ -9,14 +9,18 @@ use App\Marketplace\Dto\PackageListResult;
 use App\Marketplace\Dto\PackageSummary;
 use App\Marketplace\Dto\ReviewRequest;
 use App\Marketplace\Exception\MarketplaceApiException;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class MarketplaceApiClient
 {
     public function __construct(
+        #[Autowire(service: 'marketplace.http_client')]
         private readonly HttpClientInterface $httpClient,
+        #[Autowire(env: 'SUPABASE_ANON_KEY')]
         private readonly string $anonKey,
+        #[Autowire(env: 'SUPABASE_SERVICE_ROLE_KEY')]
         private readonly string $serviceRoleKey,
     ) {
     }

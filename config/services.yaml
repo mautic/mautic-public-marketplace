@@ -21,17 +21,6 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
-    App\Marketplace\MarketplaceApiClient:
-        arguments:
-            $httpClient: '@marketplace.http_client'
-            $anonKey: '%env(SUPABASE_ANON_KEY)%'
-            $serviceRoleKey: '%env(SUPABASE_SERVICE_ROLE_KEY)%'
-
-    App\Controller\MarketplaceController:
-        arguments:
-            $auth0Domain: '%env(AUTH0_DOMAIN)%'
-            $auth0ClientId: '%env(AUTH0_CLIENT_ID)%'
-
     marketplace.http_client:
         class: Symfony\Contracts\HttpClient\HttpClientInterface
         factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
@@ -43,7 +32,15 @@ when@test:
         App\Tests\Mock\Auth0MockHttpClient:
             class: App\Tests\Mock\Auth0MockHttpClient
 
+        App\Tests\Mock\SupabaseMockHttpClient:
+            class: App\Tests\Mock\SupabaseMockHttpClient
+
         App\Auth0\Validator\Auth0TokenValidator:
             autowire: true
             arguments:
                 $httpClient: '@App\Tests\Mock\Auth0MockHttpClient'
+
+        App\Marketplace\MarketplaceApiClient:
+            autowire: true
+            arguments:
+                $httpClient: '@App\Tests\Mock\SupabaseMockHttpClient'

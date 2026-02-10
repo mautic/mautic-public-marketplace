@@ -96,6 +96,19 @@ final class ReviewApiControllerTest extends WebTestCase
         self::assertStringContainsString('Review text is required', (string) $client->getResponse()->getContent());
     }
 
+    public function testSuccessfulSubmit(): void
+    {
+        $client = self::createClient();
+        $client->request('POST', '/api/review/vendor/package', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer valid-token',
+        ], content: json_encode([
+            'rating' => 5,
+            'review' => 'Great plugin!',
+        ]));
+
+        self::assertResponseStatusCodeSame(201);
+    }
+
     public function testSubmitWithInvalidJson(): void
     {
         $client = self::createClient();

@@ -12,14 +12,14 @@ ALTER TABLE reviews ALTER COLUMN auth0_user_id TYPE text USING auth0_user_id::te
 CREATE POLICY "Users can only insert their own data"
 ON reviews
 FOR INSERT
-WITH CHECK (auth0_user_id IS NOT NULL);
+WITH CHECK (auth0_user_id = (auth.jwt() ->> 'sub'));
 
 CREATE POLICY "Users can only update their own data"
 ON reviews
 FOR UPDATE
-USING (auth0_user_id IS NOT NULL);
+USING (auth0_user_id = (auth.jwt() ->> 'sub'));
 
 CREATE POLICY "Allow select rating"
 ON reviews
 FOR SELECT
-USING (auth.role() = 'anon');
+USING (true);
