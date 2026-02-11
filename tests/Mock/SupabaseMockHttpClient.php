@@ -13,7 +13,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
     {
         parent::__construct(static function (string $method, string $url): MockResponse {
             if ('POST' === $method) {
-                return new MockResponse('', ['http_code' => 201]);
+                return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
             }
 
             if (str_contains($url, 'get_pack')) {
