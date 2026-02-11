@@ -51,17 +51,11 @@ final class SupabaseClient
                 'Content-Type' => 'application/json',
                 'apikey' => $this->serviceRoleKey,
                 'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
-                'Prefer' => 'return=minimal',
+                'Prefer' => 'return=representation',
             ],
         ]);
 
-        $status = $response->getStatusCode();
-
-        if ($status >= 400) {
-            $payload = $response->toArray(false);
-            $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
-            throw new SupabaseApiException(\sprintf('Supabase API error (%s).', $message));
-        }
+        $this->decodeResponse($response);
     }
 
     private function decodeResponse(ResponseInterface $response): mixed
