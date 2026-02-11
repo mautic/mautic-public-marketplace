@@ -4,25 +4,32 @@ declare(strict_types=1);
 
 namespace App\Marketplace;
 
+use App\Auth0\Auth0Client;
+use App\Auth0\Exception\Auth0AuthenticationException;
 use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\Dto\PackageListResult;
 use App\Marketplace\Dto\PackageSummary;
 use App\Marketplace\Dto\ReviewRequest;
 use App\Marketplace\Exception\MarketplaceApiException;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Contracts\HttpClient\ResponseInterface;
+use App\Supabase\Exception\SupabaseApiException;
+use App\Supabase\SupabaseClient;
 
 final class MarketplaceApiClient
 {
     public function __construct(
-        #[Autowire(service: 'marketplace.http_client')]
-        private readonly HttpClientInterface $httpClient,
-        #[Autowire(env: 'SUPABASE_ANON_KEY')]
-        private readonly string $anonKey,
-        #[Autowire(env: 'SUPABASE_SERVICE_ROLE_KEY')]
-        private readonly string $serviceRoleKey,
+        private readonly SupabaseClient $supabaseClient,
+        private readonly Auth0Client $auth0Client,
     ) {
+    }
+
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws Auth0AuthenticationException
+     */
+    public function validateToken(string $token): array
+    {
+        return $this->auth0Client->validateToken($token);
     }
 
     public function listPackages(
@@ -53,7 +60,11 @@ final class MarketplaceApiClient
             $params['_smv'] = $mauticVersion;
         }
 
-        $data = $this->requestJson('GET', '/rest/v1/rpc/get_view', $params);
+        try {
+            $data = $this->supabaseClient->query('GET', '/rest/v1/rpc/get_view', $params);
+        } catch (SupabaseApiException $e) {
+            throw new MarketplaceApiException($e->getMessage(), 0, $e);
+        }
 
         $payload = $this->normalizeListPayload($data);
         $rows = $payload['rows'];
@@ -92,7 +103,11 @@ final class MarketplaceApiClient
             'packag_name' => $packageName,
         ];
 
-        $data = $this->requestJson('GET', '/rest/v1/rpc/get_pack', $params);
+        try {
+            $data = $this->supabaseClient->query('GET', '/rest/v1/rpc/get_pack', $params);
+        } catch (SupabaseApiException $e) {
+            throw new MarketplaceApiException($e->getMessage(), 0, $e);
+        }
 
         if (null === $data || [] === $data) {
             return null;
@@ -130,95 +145,18 @@ final class MarketplaceApiClient
 
     public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void
     {
-        $this->requestJsonWithServiceRole('POST', '/rest/v1/reviews', [
-            'objectId' => $packageName,
-            'auth0_user_id' => $userId,
-            'user' => $userName,
-            'picture' => $picture,
-            'rating' => $reviewRequest->rating,
-            'review' => $reviewRequest->review,
-        ]);
-    }
-
-    /**
-     * @param array<string, mixed> $body
-     */
-    private function requestJsonWithServiceRole(string $method, string $path, array $body): void
-    {
-        $response = $this->httpClient->request($method, $path, [
-            'json' => $body,
-            'headers' => [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-                'apikey' => $this->serviceRoleKey,
-                'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
-                'Prefer' => 'return=minimal',
-            ],
-        ]);
-
-        $status = $response->getStatusCode();
-
-        if ($status >= 400) {
-            $payload = $response->toArray(false);
-            $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
-            throw new MarketplaceApiException(\sprintf('Supabase API error (%s).', $message));
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $query
-     */
-    private function requestJson(string $method, string $path, array $query): mixed
-    {
-        $response = $this->httpClient->request($method, $path, [
-            'query' => $query,
-            'headers' => [
-                'Accept' => 'application/json',
-                'apikey' => $this->anonKey,
-                'Authorization' => \sprintf('Bearer %s', $this->anonKey),
-            ],
-        ]);
-
-        return $this->decodeResponse($response);
-    }
-
-    private function decodeResponse(ResponseInterface $response): mixed
-    {
         try {
-            $status = $response->getStatusCode();
-            $payload = $response->toArray(false);
-
-            if ($status >= 400) {
-                $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
-                throw new MarketplaceApiException(\sprintf('Supabase API error (%s).', $message));
-            }
-
-            return $payload;
-        } catch (\Throwable $exception) {
-            if ($exception instanceof MarketplaceApiException) {
-                throw $exception;
-            }
-
-            $status = $response->getStatusCode();
-            throw new MarketplaceApiException(\sprintf('Supabase API error (HTTP %d).', $status), 0, $exception);
+            $this->supabaseClient->mutate('POST', '/rest/v1/reviews', [
+                'objectId' => $packageName,
+                'auth0_user_id' => $userId,
+                'user' => $userName,
+                'picture' => $picture,
+                'rating' => $reviewRequest->rating,
+                'review' => $reviewRequest->review,
+            ]);
+        } catch (SupabaseApiException $e) {
+            throw new MarketplaceApiException($e->getMessage(), 0, $e);
         }
-    }
-
-    private function extractErrorMessage(mixed $payload): ?string
-    {
-        if (!\is_array($payload)) {
-            return null;
-        }
-
-        if (isset($payload['message']) && \is_string($payload['message'])) {
-            return $payload['message'];
-        }
-
-        if (isset($payload['error']) && \is_string($payload['error'])) {
-            return $payload['error'];
-        }
-
-        return null;
     }
 
     private function toInt(mixed $value): ?int
@@ -281,9 +219,6 @@ final class MarketplaceApiClient
         }
     }
 
-    /**
-     * @return array{rows: array, total: ?int}
-     */
     /**
      * @param array<int|string, mixed> $data
      *

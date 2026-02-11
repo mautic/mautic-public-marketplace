@@ -35,12 +35,12 @@ when@test:
         App\Tests\Mock\SupabaseMockHttpClient:
             class: App\Tests\Mock\SupabaseMockHttpClient
 
-        App\Auth0\Validator\Auth0TokenValidator:
+        App\Auth0\Auth0Client:
             autowire: true
             arguments:
                 $httpClient: '@App\Tests\Mock\Auth0MockHttpClient'
 
-        App\Marketplace\MarketplaceApiClient:
+        App\Supabase\SupabaseClient:
             autowire: true
             arguments:
                 $httpClient: '@App\Tests\Mock\SupabaseMockHttpClient'

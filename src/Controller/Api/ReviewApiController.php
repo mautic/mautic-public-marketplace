@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Auth0\Exception\Auth0AuthenticationException;
-use App\Auth0\Validator\Auth0TokenValidator;
 use App\Marketplace\Dto\ReviewRequest;
 use App\Marketplace\Exception\MarketplaceApiException;
 use App\Marketplace\Exception\ReviewValidationException;
@@ -19,7 +18,6 @@ final class ReviewApiController extends AbstractController
 {
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
-        private readonly Auth0TokenValidator $tokenValidator,
     ) {
     }
 
@@ -31,7 +29,7 @@ final class ReviewApiController extends AbstractController
         }
 
         try {
-            $userInfo = $this->tokenValidator->validate(substr($authHeader, 7));
+            $userInfo = $this->apiClient->validateToken(substr($authHeader, 7));
         } catch (Auth0AuthenticationException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_UNAUTHORIZED);
         }

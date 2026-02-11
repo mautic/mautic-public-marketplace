@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Auth0\Validator;
+namespace App\Auth0;
 
 use App\Auth0\Exception\Auth0AuthenticationException;
 use Psr\Log\LoggerInterface;
@@ -11,7 +11,7 @@ use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-final class Auth0TokenValidator
+final class Auth0Client
 {
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -26,7 +26,7 @@ final class Auth0TokenValidator
      *
      * @throws Auth0AuthenticationException
      */
-    public function validate(string $token): array
+    public function validateToken(string $token): array
     {
         try {
             $response = $this->httpClient->request('GET', \sprintf('https://%s/userinfo', $this->auth0Domain), [
