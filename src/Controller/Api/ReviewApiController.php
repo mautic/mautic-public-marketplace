@@ -6,8 +6,8 @@ namespace App\Controller\Api;
 
 use App\Auth0\Exception\Auth0AuthenticationException;
 use App\Marketplace\Dto\ReviewRequest;
-use App\Marketplace\Exception\MarketplaceApiException;
 use App\Marketplace\Exception\ReviewValidationException;
+use App\Supabase\Exception\SupabaseApiException;
 use App\Marketplace\MarketplaceApiClient;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -48,7 +48,7 @@ final class ReviewApiController extends AbstractController
                 $userInfo['picture'] ?? null,
                 $reviewRequest,
             );
-        } catch (MarketplaceApiException $e) {
+        } catch (SupabaseApiException $e) {
             return $this->json(['error' => 'Failed to submit review.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 

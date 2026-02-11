@@ -10,7 +10,6 @@ use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\Dto\PackageListResult;
 use App\Marketplace\Dto\PackageSummary;
 use App\Marketplace\Dto\ReviewRequest;
-use App\Marketplace\Exception\MarketplaceApiException;
 use App\Supabase\Exception\SupabaseApiException;
 use App\Supabase\SupabaseClient;
 
@@ -60,11 +59,7 @@ final class MarketplaceApiClient
             $params['_smv'] = $mauticVersion;
         }
 
-        try {
-            $data = $this->supabaseClient->query('GET', '/rest/v1/rpc/get_view', $params);
-        } catch (SupabaseApiException $e) {
-            throw new MarketplaceApiException($e->getMessage(), 0, $e);
-        }
+        $data = $this->supabaseClient->query('GET', '/rest/v1/rpc/get_view', $params);
 
         $payload = $this->normalizeListPayload($data);
         $rows = $payload['rows'];
@@ -103,11 +98,7 @@ final class MarketplaceApiClient
             'packag_name' => $packageName,
         ];
 
-        try {
-            $data = $this->supabaseClient->query('GET', '/rest/v1/rpc/get_pack', $params);
-        } catch (SupabaseApiException $e) {
-            throw new MarketplaceApiException($e->getMessage(), 0, $e);
-        }
+        $data = $this->supabaseClient->query('GET', '/rest/v1/rpc/get_pack', $params);
 
         if (null === $data || [] === $data) {
             return null;
@@ -115,7 +106,7 @@ final class MarketplaceApiClient
 
         $row = $data['package'] ?? null;
         if (!\is_array($row) || !isset($row['name'])) {
-            throw new MarketplaceApiException('Unexpected response from Supabase get_pack.');
+            throw new SupabaseApiException('Unexpected response from Supabase get_pack.');
         }
 
         return new PackageDetail(
@@ -145,18 +136,14 @@ final class MarketplaceApiClient
 
     public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void
     {
-        try {
-            $this->supabaseClient->mutate('POST', '/rest/v1/reviews', [
-                'objectId' => $packageName,
-                'auth0_user_id' => $userId,
-                'user' => $userName,
-                'picture' => $picture,
-                'rating' => $reviewRequest->rating,
-                'review' => $reviewRequest->review,
-            ]);
-        } catch (SupabaseApiException $e) {
-            throw new MarketplaceApiException($e->getMessage(), 0, $e);
-        }
+        $this->supabaseClient->mutate('POST', '/rest/v1/reviews', [
+            'objectId' => $packageName,
+            'auth0_user_id' => $userId,
+            'user' => $userName,
+            'picture' => $picture,
+            'rating' => $reviewRequest->rating,
+            'review' => $reviewRequest->review,
+        ]);
     }
 
     private function toInt(mixed $value): ?int

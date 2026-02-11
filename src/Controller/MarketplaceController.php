@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Marketplace\Exception\MarketplaceApiException;
 use App\Marketplace\MarketplaceApiClient;
+use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,7 +42,7 @@ final class MarketplaceController extends AbstractController
                 \is_string($query) ? $query : null,
                 \is_string($mautic) ? $mautic : null,
             );
-        } catch (MarketplaceApiException $exception) {
+        } catch (SupabaseApiException $exception) {
             return $this->render('marketplace/index.html.twig', [
                 'error' => $exception->getMessage(),
                 'result' => null,
@@ -77,7 +77,7 @@ final class MarketplaceController extends AbstractController
     {
         try {
             $detail = $this->apiClient->getPackage($package);
-        } catch (MarketplaceApiException $exception) {
+        } catch (SupabaseApiException $exception) {
             return $this->render('marketplace/detail.html.twig', [
                 'error' => $exception->getMessage(),
                 'package' => null,

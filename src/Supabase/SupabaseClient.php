@@ -12,8 +12,9 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 final class SupabaseClient
 {
     public function __construct(
-        #[Autowire(service: 'marketplace.http_client')]
         private readonly HttpClientInterface $httpClient,
+        #[Autowire(env: 'SUPABASE_API_BASE')]
+        private readonly string $baseUri,
         #[Autowire(env: 'SUPABASE_ANON_KEY')]
         private readonly string $anonKey,
         #[Autowire(env: 'SUPABASE_SERVICE_ROLE_KEY')]
@@ -26,7 +27,7 @@ final class SupabaseClient
      */
     public function query(string $method, string $path, array $query): mixed
     {
-        $response = $this->httpClient->request($method, $path, [
+        $response = $this->httpClient->request($method, $this->baseUri.$path, [
             'query' => $query,
             'headers' => [
                 'Accept' => 'application/json',
@@ -43,7 +44,7 @@ final class SupabaseClient
      */
     public function mutate(string $method, string $path, array $body): void
     {
-        $response = $this->httpClient->request($method, $path, [
+        $response = $this->httpClient->request($method, $this->baseUri.$path, [
             'json' => $body,
             'headers' => [
                 'Accept' => 'application/json',
@@ -65,24 +66,15 @@ final class SupabaseClient
 
     private function decodeResponse(ResponseInterface $response): mixed
     {
-        try {
-            $status = $response->getStatusCode();
-            $payload = $response->toArray(false);
+        $status = $response->getStatusCode();
+        $payload = $response->toArray(false);
 
-            if ($status >= 400) {
-                $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
-                throw new SupabaseApiException(\sprintf('Supabase API error (%s).', $message));
-            }
-
-            return $payload;
-        } catch (\Throwable $exception) {
-            if ($exception instanceof SupabaseApiException) {
-                throw $exception;
-            }
-
-            $status = $response->getStatusCode();
-            throw new SupabaseApiException(\sprintf('Supabase API error (HTTP %d).', $status), 0, $exception);
+        if ($status >= 400) {
+            $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
+            throw new SupabaseApiException(\sprintf('Supabase API error (%s).', $message));
         }
+
+        return $payload;
     }
 
     private function extractErrorMessage(mixed $payload): ?string
