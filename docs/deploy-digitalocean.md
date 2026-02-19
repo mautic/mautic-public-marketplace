@@ -52,7 +52,7 @@ Droplet host config:
 - Staging uses a **separate Supabase account/project**. Put its keys in `/etc/marketplace/staging.env`.
 
 ## Supabase migrations & functions (tagged releases only)
-When a tag is created (e.g., `1.2.release`), the workflow runs:
+When a tag is created (e.g., `1.2.release`), the workflow runs from the repo root:
 - `supabase link --project-ref <PROJECT_ID>`
 - `supabase functions deploy fetch_package`
 - `supabase db push`
@@ -159,7 +159,7 @@ exit
 Add passwordless sudo for the commands the deploy script uses:
 ```bash
 cat > /etc/sudoers.d/marketplace-deploy <<'EOF'
-deploy ALL=(root) NOPASSWD: /usr/bin/docker, /usr/bin/systemctl, /usr/bin/apt-get, /usr/sbin/nginx, /usr/bin/certbot
+deploy ALL=(root) NOPASSWD: /usr/bin/docker, /usr/bin/systemctl, /usr/bin/apt-get, /usr/sbin/nginx, /usr/bin/certbot, /usr/bin/tee, /bin/ln, /bin/rm
 EOF
 chmod 440 /etc/sudoers.d/marketplace-deploy
 ```

@@ -98,7 +98,6 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
         run: |
-          cd supabase
           supabase link --project-ref "${SUPABASE_PROJECT_ID}"
           supabase functions deploy fetch_package
           supabase db push
