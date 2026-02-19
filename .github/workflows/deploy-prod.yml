@@ -30,6 +30,7 @@ jobs:
         run: |
           docker build -t marketplace:prod-${{ github.sha }} .
           docker save marketplace:prod-${{ github.sha }} -o marketplace-prod.tar
+          chmod 644 marketplace-prod.tar
 
       - name: Copy image to droplet
         uses: appleboy/scp-action@v0.1.7

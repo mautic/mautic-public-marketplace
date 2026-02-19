@@ -85,6 +85,7 @@ jobs:
           echo "TAR_NAME=${TAR_NAME}" >> "$GITHUB_ENV"
           docker build -t "${IMAGE_TAG}" .
           docker save "${IMAGE_TAG}" -o "${TAR_NAME}"
+          chmod 644 "${TAR_NAME}"
 
       - name: Copy image to droplet
         uses: appleboy/scp-action@v0.1.7
