@@ -11,7 +11,8 @@ COPY composer.json composer.lock symfony.lock ./
 RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-progress
 
 COPY . ./
-RUN composer dump-autoload --classmap-authoritative --no-dev
+RUN composer dump-autoload --classmap-authoritative --no-dev \
+    && php bin/console importmap:install --no-interaction
 
 FROM php:8.4-apache
 

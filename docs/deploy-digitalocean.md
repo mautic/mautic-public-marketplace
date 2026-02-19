@@ -100,6 +100,7 @@ cat > /etc/marketplace/prod.env <<'EOF'
 APP_ENV=prod
 APP_SECRET=change-me
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
+SUPABASE_API_BASE=https://marketplace-api.mautic.org
 SUPABASE_URL=https://your-prod-project.supabase.co
 SUPABASE_ANON_KEY=change-me
 SUPABASE_SERVICE_ROLE_KEY=change-me
@@ -115,6 +116,7 @@ cat > /etc/marketplace/staging.env <<'EOF'
 APP_ENV=prod
 APP_SECRET=change-me
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
+SUPABASE_API_BASE=https://marketplace-api.mautic.org
 SUPABASE_URL=https://your-staging-project.supabase.co
 SUPABASE_ANON_KEY=change-me
 SUPABASE_SERVICE_ROLE_KEY=change-me
@@ -125,6 +127,14 @@ EOF
 ```
 
 Ensure DNS A records exist for both `marketplace.mautic.org` and `marketplace-staging.mautic.org`.
+
+Ensure the deploy user can read the env files:
+```bash
+chown deploy:deploy /etc/marketplace/prod.env /etc/marketplace/staging.env
+chmod 600 /etc/marketplace/prod.env /etc/marketplace/staging.env
+```
+
+Note: if you change env files, you must re-deploy (recreate) the container for changes to take effect. `docker restart` is not enough because `--env-file` is only read at container creation time.
 
 ### Reverse proxy notes
 - The deploy script manages Nginx + Certbot when domains are set.
