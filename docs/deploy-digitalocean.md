@@ -161,7 +161,9 @@ If you use this deploy user, set `DO_SSH_USER=deploy`.
 
 ## Staging and PR deploys
 - Staging deploys are manual only.
-- Use GitHub Actions → **Deploy Staging** → enter `pr_number`.
+- Use GitHub Actions → **Deploy Staging** → set `source`:
+  - Branch name (e.g., `main`) to deploy that branch, or
+  - PR number to deploy a PR.
 - The workflow checks for at least one approved review and refuses PRs from forks.
 - Staging responses include `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet` to discourage indexing.
 - The staging workflow also runs Supabase functions/migrations against the staging Supabase project.
