@@ -1,4 +1,10 @@
-FROM composer:2.7.2-php8.4 AS build
+FROM php:8.4-cli AS build
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git unzip curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 WORKDIR /app
 COPY composer.json composer.lock symfony.lock ./
