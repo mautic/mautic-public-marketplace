@@ -1,4 +1,4 @@
-FROM composer:2.7 AS build
+FROM composer:2.7.2-php8.4 AS build
 
 WORKDIR /app
 COPY composer.json composer.lock symfony.lock ./
