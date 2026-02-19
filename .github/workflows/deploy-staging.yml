@@ -76,15 +76,15 @@ jobs:
         run: |
           if [[ "${{ steps.resolve.outputs.mode }}" == "pr" ]]; then
             IMAGE_TAG="marketplace:pr-${{ steps.resolve.outputs.pr_number }}-${{ github.sha }}"
-            TAR_PATH="/tmp/marketplace-pr-${{ steps.resolve.outputs.pr_number }}.tar"
+            TAR_NAME="marketplace-pr-${{ steps.resolve.outputs.pr_number }}.tar"
           else
             IMAGE_TAG="marketplace:staging-${{ github.sha }}"
-            TAR_PATH="/tmp/marketplace-staging.tar"
+            TAR_NAME="marketplace-staging.tar"
           fi
           echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
-          echo "TAR_PATH=${TAR_PATH}" >> "$GITHUB_ENV"
+          echo "TAR_NAME=${TAR_NAME}" >> "$GITHUB_ENV"
           docker build -t "${IMAGE_TAG}" .
-          docker save "${IMAGE_TAG}" -o "${TAR_PATH}"
+          docker save "${IMAGE_TAG}" -o "${TAR_NAME}"
 
       - name: Copy image to droplet
         uses: appleboy/scp-action@v0.1.7
@@ -93,7 +93,7 @@ jobs:
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
-          source: ${{ env.TAR_PATH }}
+          source: ${{ env.TAR_NAME }}
           target: /tmp
 
       - name: Copy deploy script to droplet
@@ -121,7 +121,7 @@ jobs:
             fi
             chmod +x "${DEPLOY_SCRIPT}"
             IMAGE_TAG="${{ env.IMAGE_TAG }}" \
-            IMAGE_TAR="${{ env.TAR_PATH }}" \
+            IMAGE_TAR="/tmp/${{ env.TAR_NAME }}" \
             APP_NAME=marketplace-staging \
             CONTAINER_NAME=marketplace-staging \
             APP_PORT=8081 \

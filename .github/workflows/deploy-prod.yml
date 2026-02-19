@@ -29,7 +29,7 @@ jobs:
       - name: Build image
         run: |
           docker build -t marketplace:prod-${{ github.sha }} .
-          docker save marketplace:prod-${{ github.sha }} -o /tmp/marketplace-prod.tar
+          docker save marketplace:prod-${{ github.sha }} -o marketplace-prod.tar
 
       - name: Copy image to droplet
         uses: appleboy/scp-action@v0.1.7
@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
-          source: /tmp/marketplace-prod.tar
+          source: marketplace-prod.tar
           target: /tmp
 
       - name: Copy deploy script to droplet
