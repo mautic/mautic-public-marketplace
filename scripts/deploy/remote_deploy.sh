@@ -15,6 +15,11 @@ if [[ -f "${DEPLOY_ENV_FILE}" ]]; then
   source "${DEPLOY_ENV_FILE}"
 fi
 
+SUDO=""
+if [[ "$(id -u)" != "0" ]]; then
+  SUDO="sudo"
+fi
+
 if [[ -z "${IMAGE_TAG}" ]]; then
   echo "IMAGE_TAG is required"
   exit 1
@@ -54,13 +59,13 @@ STAGING_PORT="${STAGING_DOMAIN_PORT:-8081}"
 
 if [[ -n "${PROD_DOMAIN}" || -n "${STAGING_DOMAIN}" ]]; then
   if ! command -v nginx >/dev/null 2>&1; then
-    apt-get update
-    apt-get install -y --no-install-recommends nginx
+    ${SUDO} apt-get update
+    ${SUDO} apt-get install -y --no-install-recommends nginx
   fi
 
   if ! command -v certbot >/dev/null 2>&1; then
-    apt-get update
-    apt-get install -y --no-install-recommends certbot python3-certbot-nginx
+    ${SUDO} apt-get update
+    ${SUDO} apt-get install -y --no-install-recommends certbot python3-certbot-nginx
   fi
 
   {
@@ -98,18 +103,18 @@ server {
 }
 NGINX_CONF
     fi
-  } > /etc/nginx/sites-available/${NGINX_SITE_NAME}.conf
+  } | ${SUDO} tee /etc/nginx/sites-available/${NGINX_SITE_NAME}.conf >/dev/null
 
-  ln -sf "/etc/nginx/sites-available/${NGINX_SITE_NAME}.conf" "/etc/nginx/sites-enabled/${NGINX_SITE_NAME}.conf"
-  rm -f /etc/nginx/sites-enabled/default
+  ${SUDO} ln -sf "/etc/nginx/sites-available/${NGINX_SITE_NAME}.conf" "/etc/nginx/sites-enabled/${NGINX_SITE_NAME}.conf"
+  ${SUDO} rm -f /etc/nginx/sites-enabled/default
 
-  nginx -t
-  systemctl reload nginx
+  ${SUDO} nginx -t
+  ${SUDO} systemctl reload nginx
 
   if [[ -n "${LETSENCRYPT_EMAIL:-}" ]]; then
     if [[ -n "${PROD_DOMAIN}" ]]; then
       if [[ ! -f "/etc/letsencrypt/live/${PROD_DOMAIN}/fullchain.pem" ]]; then
-        certbot --nginx \
+        ${SUDO} certbot --nginx \
           --non-interactive \
           --agree-tos \
           --email "${LETSENCRYPT_EMAIL}" \
@@ -119,7 +124,7 @@ NGINX_CONF
 
     if [[ -n "${STAGING_DOMAIN}" ]]; then
       if [[ ! -f "/etc/letsencrypt/live/${STAGING_DOMAIN}/fullchain.pem" ]]; then
-        certbot --nginx \
+        ${SUDO} certbot --nginx \
           --non-interactive \
           --agree-tos \
           --email "${LETSENCRYPT_EMAIL}" \

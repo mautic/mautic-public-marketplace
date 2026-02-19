@@ -145,6 +145,17 @@ chmod 600 /home/deploy/.ssh/authorized_keys
 chown -R deploy:deploy /home/deploy/.ssh
 ```
 
+Grant access to Docker:
+```bash
+usermod -aG docker deploy
+```
+
+Log out and back in to apply group membership changes:
+```bash
+exit
+# reconnect with ssh
+```
+
 Add passwordless sudo for the commands the deploy script uses:
 ```bash
 cat > /etc/sudoers.d/marketplace-deploy <<'EOF'
