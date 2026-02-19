@@ -1,0 +1,116 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to deploy to staging'
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy_staging_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch PR details and verify approval
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = Number(core.getInput('pr_number'));
+            const { owner, repo } = context.repo;
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+            if (pr.state !== 'open') {
+              core.setFailed(`PR #${prNumber} is not open`);
+              return;
+            }
+            if (pr.head.repo.full_name !== `${owner}/${repo}`) {
+              core.setFailed(`PR #${prNumber} is from a fork; refusing to deploy`);
+              return;
+            }
+            const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber });
+            const hasApproval = reviews.some((review) => review.state === 'APPROVED');
+            if (!hasApproval) {
+              core.setFailed(`PR #${prNumber} has no approved review`);
+              return;
+            }
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ inputs.pr_number }}/head
+
+      - name: Build image
+        run: |
+          docker build -t marketplace:pr-${{ inputs.pr_number }}-${{ github.sha }} .
+          docker save marketplace:pr-${{ inputs.pr_number }}-${{ github.sha }} -o /tmp/marketplace-pr-${{ inputs.pr_number }}.tar
+
+      - name: Copy image to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_SSH_HOST }}
+          username: ${{ secrets.DO_SSH_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_SSH_PORT || 22 }}
+          source: /tmp/marketplace-pr-${{ inputs.pr_number }}.tar
+          target: /tmp
+
+      - name: Copy deploy script to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_SSH_HOST }}
+          username: ${{ secrets.DO_SSH_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_SSH_PORT || 22 }}
+          source: scripts/deploy/remote_deploy.sh
+          target: /tmp
+
+      - name: Deploy staging (PR) on droplet
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_SSH_HOST }}
+          username: ${{ secrets.DO_SSH_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_SSH_PORT || 22 }}
+          script: |
+            if [[ -f /tmp/remote_deploy.sh ]]; then
+              DEPLOY_SCRIPT=/tmp/remote_deploy.sh
+            else
+              DEPLOY_SCRIPT=/tmp/scripts/deploy/remote_deploy.sh
+            fi
+            chmod +x "${DEPLOY_SCRIPT}"
+            IMAGE_TAG=marketplace:pr-${{ inputs.pr_number }}-${{ github.sha }} \
+            IMAGE_TAR=/tmp/marketplace-pr-${{ inputs.pr_number }}.tar \
+            APP_NAME=marketplace-staging \
+            CONTAINER_NAME=marketplace-staging \
+            APP_PORT=8081 \
+            APP_ENV_FILE=/etc/marketplace/staging.env \
+            "${DEPLOY_SCRIPT}"
+
+  deploy_staging_supabase:
+    needs: deploy_staging_pr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ inputs.pr_number }}/head
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Supabase functions and migrations (staging)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_STAGING_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_STAGING_PROJECT_ID }}
+        run: |
+          cd supabase
+          supabase link --project-ref "${SUPABASE_PROJECT_ID}"
+          supabase functions deploy fetch_package
+          supabase db push

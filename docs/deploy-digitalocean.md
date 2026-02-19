@@ -9,7 +9,9 @@ Deploy the Mautic Marketplace (Supabase + Auth0) to a DigitalOcean droplet via G
 4. Supabase functions/migrations run **only** on tag builds.
 
 ## Implementation files
-- GitHub Actions workflow: `.github/workflows/deploy.yml`
+- GitHub Actions workflows:
+  - `.github/workflows/deploy-prod.yml`
+  - `.github/workflows/deploy-staging.yml`
 - Droplet deploy script: `scripts/deploy/remote_deploy.sh`
 
 ## Environment and secrets
@@ -57,10 +59,9 @@ When a tag is created (e.g., `1.2.release`), the workflow runs:
 
 These steps run only on `refs/tags/*`.
 
-## Staging Supabase sync (main branch)
-On every push to `main`, the workflow deploys Supabase functions/migrations to the **staging** Supabase project using:
-- `SUPABASE_STAGING_ACCESS_TOKEN`
-- `SUPABASE_STAGING_PROJECT_ID`
+## Prod deploy (manual or tag)
+- **Tag push:** runs prod deploy and Supabase migrations/functions.
+- **Manual:** GitHub Actions → **Deploy Prod** → Run workflow.
 
 ## Droplet setup (one-time)
 ### Create the droplet
@@ -154,19 +155,16 @@ chmod 440 /etc/sudoers.d/marketplace-deploy
 
 If you use this deploy user, set `DO_SSH_USER=deploy`.
 
-## Release process (current)
-1. Merge to `main`.
-2. Create a tag `MAJOR.MINOR.<anything>` (e.g., `1.2.3` or `1.2.release`) when you want Supabase migrations/functions applied.
-3. GitHub Actions builds and saves the image, then copies it to the droplet.
-4. GitHub Actions deploys using `scripts/deploy/remote_deploy.sh`.
-5. GitHub Actions runs Supabase migrations + functions.
+## Production deploys
+- **Tag push:** Create a tag `MAJOR.MINOR.<anything>` (e.g., `1.2.3` or `1.2.release`) to deploy prod and run Supabase migrations/functions.
+- **Manual:** GitHub Actions → **Deploy Prod** → Run workflow.
 
 ## Staging and PR deploys
-- Main branch deploys to **prod** and **staging** on the shared droplet.
-- A manual workflow can deploy a specific PR to staging by PR number (`workflow_dispatch` input).
+- Staging deploys are manual only.
+- Use GitHub Actions → **Deploy Staging** → enter `pr_number`.
 - The workflow checks for at least one approved review and refuses PRs from forks.
-  Use GitHub Actions → **Deploy** → enter `pr_number`.
 - Staging responses include `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet` to discourage indexing.
+- The staging workflow also runs Supabase functions/migrations against the staging Supabase project.
 
 ## Rollback
 - Re-deploy the previous image tag on the droplet.
