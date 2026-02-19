@@ -27,7 +27,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const source = core.getInput('source').trim();
+            const rawInput = core.getInput('source') || (context.payload.inputs && context.payload.inputs.source) || 'main';
+            const source = String(rawInput).trim();
             const { owner, repo } = context.repo;
 
             if (/^\d+$/.test(source)) {
