@@ -47,12 +47,24 @@ final class SupabaseMockHttpClient extends MockHttpClient
             'latest_mautic_support' => true,
         ];
 
-        if (str_contains($url, '_type=mautic-theme')) {
+        $betaResource = [
+            'name' => 'mautic/beta-resource',
+            'displayname' => 'Beta Resource',
+            'description' => 'A beta resource.',
+            'type' => 'mautic-resource',
+            'repository' => 'https://github.com/mautic/beta-resource',
+            'downloads' => 200,
+            'favers' => 5,
+        ];
+
+        if (str_contains($url, '_type=mautic-resource')) {
+            $rows = [$betaResource];
+        } elseif (str_contains($url, '_type=mautic-theme')) {
             $rows = [$zebraTheme];
         } elseif (str_contains($url, '_orderby=downloads')) {
-            $rows = [$zebraTheme, $alphaPlugin];
+            $rows = [$zebraTheme, $betaResource, $alphaPlugin];
         } else {
-            $rows = [$alphaPlugin, $zebraTheme];
+            $rows = [$alphaPlugin, $betaResource, $zebraTheme];
         }
 
         $data = [['results' => $rows, 'total' => \count($rows)]];
