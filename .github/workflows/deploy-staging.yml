@@ -108,7 +108,15 @@ jobs:
 
       - name: Use selected Dockerfile
         run: |
-          git checkout "${{ steps.resolve.outputs.dockerfile_ref }}" -- Dockerfile
+          REF="${{ steps.resolve.outputs.dockerfile_ref }}"
+          if [[ "${REF}" == refs/heads/* ]]; then
+            BRANCH="${REF#refs/heads/}"
+            git fetch origin "${BRANCH}"
+            git checkout FETCH_HEAD -- Dockerfile
+          else
+            git fetch origin "${REF}:${REF}"
+            git checkout "${REF}" -- Dockerfile
+          fi
 
       - name: Build image
         run: |
