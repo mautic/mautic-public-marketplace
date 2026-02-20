@@ -42,12 +42,32 @@ jobs:
                 core.setFailed(`PR #${prNumber} is from a fork; refusing to deploy`);
                 return;
               }
-              const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber });
-              const hasApproval = reviews.some((review) => review.state === 'APPROVED');
-              if (!hasApproval) {
-                core.setFailed(`PR #${prNumber} has no approved review`);
-                return;
+            const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber });
+            // Keep the latest review per user.
+            const latestByUser = new Map();
+            for (const review of reviews.sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at))) {
+              if (review.user?.login) {
+                latestByUser.set(review.user.login, review.state);
               }
+            }
+
+            const approvers = [];
+            for (const [login, state] of latestByUser.entries()) {
+              if (state !== 'APPROVED') continue;
+              const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner,
+                repo,
+                username: login,
+              });
+              if (['admin', 'maintain', 'write'].includes(perm.permission)) {
+                approvers.push(login);
+              }
+            }
+
+            if (approvers.length === 0) {
+              core.setFailed(`PR #${prNumber} has no approved review from a user with write access`);
+              return;
+            }
 
               core.setOutput('ref', `refs/pull/${prNumber}/head`);
               core.setOutput('pr_number', String(prNumber));
