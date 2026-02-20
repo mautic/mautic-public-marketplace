@@ -70,6 +70,8 @@ final class MarketplaceController extends AbstractController
                 'query' => $query,
                 'mautic' => $mautic,
             ],
+            'auth0_domain' => $this->auth0Domain,
+            'auth0_client_id' => $this->auth0ClientId,
         ]);
     }
 

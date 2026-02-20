@@ -61,7 +61,14 @@ if (container) {
 
     document.getElementById('auth0-login-btn').addEventListener('click', async function () {
         try {
-            await auth0Client.loginWithRedirect();
+            await auth0Client.loginWithRedirect({
+                authorizationParams: {
+                    redirect_uri: window.location.origin
+                },
+                appState: {
+                    returnTo: window.location.pathname + window.location.search
+                }
+            });
         } catch (e) {
             console.error('Login error:', e);
             showError('Login failed. Please try again.');

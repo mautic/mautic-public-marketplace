@@ -11,7 +11,8 @@
     <link rel="stylesheet" href="{{ asset('assets/marketplace.css') }}">
     {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
-<body>
+<body data-auth0-domain="{{ auth0_domain|default('') }}"
+      data-auth0-client-id="{{ auth0_client_id|default('') }}">
     <header>
         <div class="container">
             <strong>Mautic Marketplace</strong>
