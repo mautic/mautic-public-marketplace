@@ -63,7 +63,7 @@ if (container) {
         try {
             await auth0Client.loginWithRedirect({
                 authorizationParams: {
-                    redirect_uri: window.location.origin
+                    redirect_uri: window.location.origin + '/auth/callback'
                 },
                 appState: {
                     returnTo: window.location.pathname + window.location.search
