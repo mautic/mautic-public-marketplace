@@ -134,6 +134,12 @@ jobs:
           ls -la "${TAR_NAME}"
           test -s "${TAR_NAME}"
 
+      - name: Verify tar in workspace
+        run: |
+          pwd
+          ls -la
+          stat marketplace-staging.tar
+
       - name: Copy image to droplet
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -141,7 +147,7 @@ jobs:
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
-          source: ${{ env.TAR_NAME }}
+          source: marketplace-staging.tar
           target: /tmp
 
       - name: Copy deploy script to droplet
