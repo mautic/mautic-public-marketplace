@@ -8,6 +8,11 @@ on:
         required: true
         default: 'main'
         type: string
+      dockerfile_source:
+        description: 'Branch name or PR number to take Dockerfile from (use "same" to match source)'
+        required: true
+        default: 'same'
+        type: string
 
 concurrency:
   group: deploy-staging-${{ github.ref }}
@@ -20,6 +25,7 @@ jobs:
       ref: ${{ steps.resolve.outputs.ref }}
       mode: ${{ steps.resolve.outputs.mode }}
       pr_number: ${{ steps.resolve.outputs.pr_number }}
+      dockerfile_ref: ${{ steps.resolve.outputs.dockerfile_ref }}
     steps:
       - name: Resolve source
         id: resolve
@@ -27,66 +33,82 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const rawInput = core.getInput('source') || (context.payload.inputs && context.payload.inputs.source) || 'main';
-            const source = String(rawInput).trim();
+            const rawSource = core.getInput('source') || (context.payload.inputs && context.payload.inputs.source) || 'main';
+            const source = String(rawSource).trim();
+            const rawDockerfileSource = core.getInput('dockerfile_source') || (context.payload.inputs && context.payload.inputs.dockerfile_source) || 'same';
+            const dockerfileSource = String(rawDockerfileSource).trim();
             const { owner, repo } = context.repo;
 
-            if (/^\d+$/.test(source)) {
-              const prNumber = Number(source);
-              const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
-              if (pr.state !== 'open') {
-                core.setFailed(`PR #${prNumber} is not open`);
-                return;
+            async function resolveRef(input, requireApproval) {
+              if (/^\d+$/.test(input)) {
+                const prNumber = Number(input);
+                const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+                if (pr.state !== 'open') {
+                  core.setFailed(`PR #${prNumber} is not open`);
+                  return null;
+                }
+                if (requireApproval) {
+                  const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber });
+                  // Keep the latest review per user.
+                  const latestByUser = new Map();
+                  for (const review of reviews.sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at))) {
+                    if (review.user?.login) {
+                      latestByUser.set(review.user.login, review.state);
+                    }
+                  }
+
+                  const approvers = [];
+                  for (const [login, state] of latestByUser.entries()) {
+                    if (state !== 'APPROVED') continue;
+                    const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
+                      owner,
+                      repo,
+                      username: login,
+                    });
+                    if (['admin', 'maintain', 'write'].includes(perm.permission)) {
+                      approvers.push(login);
+                    }
+                  }
+
+                  if (approvers.length === 0) {
+                    core.setFailed(`PR #${prNumber} has no approved review from a user with write access`);
+                    return null;
+                  }
+                }
+                return { ref: `refs/pull/${prNumber}/head`, prNumber: String(prNumber), mode: 'pr' };
               }
-            const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber });
-            // Keep the latest review per user.
-            const latestByUser = new Map();
-            for (const review of reviews.sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at))) {
-              if (review.user?.login) {
-                latestByUser.set(review.user.login, review.state);
+
+              // Treat as branch name
+              try {
+                await github.rest.git.getRef({ owner, repo, ref: `heads/${input}` });
+              } catch (error) {
+                core.setFailed(`Branch '${input}' not found`);
+                return null;
               }
+
+              return { ref: `refs/heads/${input}`, prNumber: '', mode: 'branch' };
             }
 
-            const approvers = [];
-            for (const [login, state] of latestByUser.entries()) {
-              if (state !== 'APPROVED') continue;
-              const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-                owner,
-                repo,
-                username: login,
-              });
-              if (['admin', 'maintain', 'write'].includes(perm.permission)) {
-                approvers.push(login);
-              }
-            }
+            const sourceResolved = await resolveRef(source, true);
+            if (!sourceResolved) return;
 
-            if (approvers.length === 0) {
-              core.setFailed(`PR #${prNumber} has no approved review from a user with write access`);
-              return;
-            }
+            const dockerfileInput = dockerfileSource === 'same' ? source : dockerfileSource;
+            const dockerfileResolved = await resolveRef(dockerfileInput, true);
+            if (!dockerfileResolved) return;
 
-              core.setOutput('ref', `refs/pull/${prNumber}/head`);
-              core.setOutput('pr_number', String(prNumber));
-              core.setOutput('mode', 'pr');
-              return;
-            }
-
-            // Treat as branch name
-            try {
-              await github.rest.git.getRef({ owner, repo, ref: `heads/${source}` });
-            } catch (error) {
-              core.setFailed(`Branch '${source}' not found`);
-              return;
-            }
-
-            core.setOutput('ref', `refs/heads/${source}`);
-            core.setOutput('pr_number', '');
-            core.setOutput('mode', 'branch');
+            core.setOutput('ref', sourceResolved.ref);
+            core.setOutput('pr_number', sourceResolved.prNumber);
+            core.setOutput('mode', sourceResolved.mode);
+            core.setOutput('dockerfile_ref', dockerfileResolved.ref);
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.resolve.outputs.ref }}
+
+      - name: Use selected Dockerfile
+        run: |
+          git checkout "${{ steps.resolve.outputs.dockerfile_ref }}" -- Dockerfile
 
       - name: Build image
         run: |

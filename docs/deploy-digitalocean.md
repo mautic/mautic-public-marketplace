@@ -185,6 +185,9 @@ If you use this deploy user, set `DO_SSH_USER=deploy`.
 - Use GitHub Actions → **Deploy Staging** → set `source`:
   - Branch name (e.g., `main`) to deploy that branch, or
   - PR number to deploy a PR.
+- Optional: set `dockerfile_source` to control which Dockerfile is used.
+  - Use `same` to match `source` (default).
+  - Use a branch name or PR number to override.
 - The workflow requires at least one approved review from a user with write access before it will deploy a PR.
 - Staging responses include `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet` to discourage indexing.
 - The staging workflow also runs Supabase functions/migrations against the staging Supabase project.
