@@ -13,7 +13,8 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-p
 COPY . ./
 RUN composer dump-autoload --classmap-authoritative --no-dev \
     && APP_ENV=prod php bin/console importmap:install --no-interaction \
-    && APP_ENV=prod php bin/console asset-map:compile
+    && APP_ENV=prod php bin/console asset-map:compile \
+    && APP_ENV=prod php bin/console cache:warmup
 
 FROM php:8.4-apache
 
@@ -40,5 +41,7 @@ RUN printf '%s\n' \
   '</Directory>' \
   > /etc/apache2/conf-available/marketplace.conf \
   && a2enconf marketplace.conf
+
+RUN chown -R www-data:www-data /var/www/html/var
 
 EXPOSE 80
