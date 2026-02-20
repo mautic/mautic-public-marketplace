@@ -192,6 +192,25 @@ If you use this deploy user, set `DO_SSH_USER=deploy`.
 - Staging responses include `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet` to discourage indexing.
 - The staging workflow also runs Supabase functions/migrations against the staging Supabase project.
 
+## Auth0 configuration
+Create an Auth0 **Single Page Application** and configure it for staging/prod:
+
+- **Application type:** Single Page Application (SPA)
+- **Allowed Callback URLs:**
+  - `https://marketplace-staging.mautic.org/auth/callback`
+  - `https://marketplace.mautic.org/auth/callback`
+- **Allowed Logout URLs:**
+  - `https://marketplace-staging.mautic.org/`
+  - `https://marketplace.mautic.org/`
+- **Allowed Web Origins:**
+  - `https://marketplace-staging.mautic.org`
+  - `https://marketplace.mautic.org`
+
+Set these env vars in `/etc/marketplace/prod.env` and `/etc/marketplace/staging.env`:
+- `AUTH0_DOMAIN` (e.g., `mautic-dev.us.auth0.com`)
+- `AUTH0_CLIENT_ID` (SPA client ID)
+- `AUTH0_CLIENT_SECRET` is not used by the SPA SDK but kept for parity
+
 ## Rollback
 - Re-deploy the previous image tag on the droplet.
 - If a migration is non-reversible, document manual rollback steps.
