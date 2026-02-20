@@ -12,7 +12,8 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-p
 
 COPY . ./
 RUN composer dump-autoload --classmap-authoritative --no-dev \
-    && php bin/console importmap:install --no-interaction
+    && APP_ENV=prod php bin/console importmap:install --no-interaction \
+    && APP_ENV=prod php bin/console asset-map:compile
 
 FROM php:8.4-apache
 
