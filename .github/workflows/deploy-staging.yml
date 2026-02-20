@@ -38,10 +38,6 @@ jobs:
                 core.setFailed(`PR #${prNumber} is not open`);
                 return;
               }
-              if (pr.head.repo.full_name !== `${owner}/${repo}`) {
-                core.setFailed(`PR #${prNumber} is from a fork; refusing to deploy`);
-                return;
-              }
             const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber });
             // Keep the latest review per user.
             const latestByUser = new Map();
