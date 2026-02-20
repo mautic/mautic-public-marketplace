@@ -112,10 +112,10 @@ jobs:
           if [[ "${REF}" == refs/heads/* ]]; then
             BRANCH="${REF#refs/heads/}"
             git fetch origin "${BRANCH}"
-            git checkout FETCH_HEAD -- Dockerfile
+            git checkout FETCH_HEAD -- Dockerfile scripts/deploy/remote_deploy.sh
           else
             git fetch origin "${REF}:${REF}"
-            git checkout "${REF}" -- Dockerfile
+            git checkout "${REF}" -- Dockerfile scripts/deploy/remote_deploy.sh
           fi
 
       - name: Build image
