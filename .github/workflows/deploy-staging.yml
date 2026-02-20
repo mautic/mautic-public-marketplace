@@ -122,11 +122,10 @@ jobs:
         run: |
           if [[ "${{ steps.resolve.outputs.mode }}" == "pr" ]]; then
             IMAGE_TAG="marketplace:pr-${{ steps.resolve.outputs.pr_number }}-${{ github.sha }}"
-            TAR_NAME="marketplace-pr-${{ steps.resolve.outputs.pr_number }}.tar"
           else
             IMAGE_TAG="marketplace:staging-${{ github.sha }}"
-            TAR_NAME="marketplace-staging.tar"
           fi
+          TAR_NAME="marketplace-staging.tar"
           echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
           echo "TAR_NAME=${TAR_NAME}" >> "$GITHUB_ENV"
           docker build -t "${IMAGE_TAG}" .
