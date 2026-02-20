@@ -39,6 +39,7 @@ RUN printf '%s\n' \
   '    AllowOverride All' \
   '    Require all granted' \
   '</Directory>' \
+  'SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' \
   > /etc/apache2/conf-available/marketplace.conf \
   && a2enconf marketplace.conf
 
