@@ -23,7 +23,10 @@ if (container) {
             auth0Client = await createAuth0Client({
                 domain: AUTH0_DOMAIN,
                 clientId: AUTH0_CLIENT_ID,
-                cacheLocation: 'localstorage'
+                cacheLocation: 'localstorage',
+                authorizationParams: {
+                    redirect_uri: window.location.origin
+                }
             });
 
             if (window.location.search.includes('code=')) {
@@ -58,8 +61,7 @@ if (container) {
 
     document.getElementById('auth0-login-btn').addEventListener('click', async function () {
         try {
-            await auth0Client.loginWithPopup();
-            await updateUI();
+            await auth0Client.loginWithRedirect();
         } catch (e) {
             console.error('Login error:', e);
             showError('Login failed. Please try again.');
