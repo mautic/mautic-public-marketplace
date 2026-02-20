@@ -129,7 +129,6 @@ jobs:
           fi
           echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
           echo "TAR_NAME=${TAR_NAME}" >> "$GITHUB_ENV"
-          echo "TAR_PATH=${GITHUB_WORKSPACE}/${TAR_NAME}" >> "$GITHUB_ENV"
           docker build -t "${IMAGE_TAG}" .
           docker save "${IMAGE_TAG}" -o "${TAR_NAME}"
           chmod 644 "${TAR_NAME}"
@@ -143,7 +142,7 @@ jobs:
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
-          source: ${{ env.TAR_PATH }}
+          source: ${{ env.TAR_NAME }}
           target: /tmp
 
       - name: Copy deploy script to droplet
