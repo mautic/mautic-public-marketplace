@@ -19,10 +19,8 @@ if (params.has('code') && params.has('state') && AUTH0_DOMAIN && AUTH0_CLIENT_ID
             const result = await auth0Client.handleRedirectCallback();
             const returnTo = result?.appState?.returnTo || '/';
 
-            window.history.replaceState({}, document.title, returnTo);
-            if (returnTo !== window.location.pathname) {
-                window.location.assign(returnTo);
-            }
+            // Always reload to the return target so the correct template renders.
+            window.location.assign(returnTo);
         } catch (e) {
             console.error('Auth0 redirect error:', e);
         }
