@@ -22,7 +22,8 @@
         "symfony/translation": "7.4.*",
         "symfony/twig-bundle": "7.4.*",
         "symfony/validator": "7.4.*",
-        "symfony/yaml": "7.4.*"
+        "symfony/yaml": "7.4.*",
+        "twbs/bootstrap": "^5.3"
     },
     "config": {
         "allow-plugins": {
@@ -68,10 +69,16 @@
         "supabase:status": "supabase status",
         "test": "vendor/bin/phpunit",
         "post-install-cmd": [
-            "@auto-scripts"
+            "@auto-scripts",
+            "@bootstrap:copy"
         ],
         "post-update-cmd": [
-            "@auto-scripts"
+            "@auto-scripts",
+            "@bootstrap:copy"
+        ],
+        "bootstrap:copy": [
+            "cp vendor/twbs/bootstrap/dist/css/bootstrap.min.css public/assets/bootstrap.min.css",
+            "cp vendor/twbs/bootstrap/dist/js/bootstrap.bundle.min.js public/assets/bootstrap.bundle.min.js"
         ]
     },
     "conflict": {

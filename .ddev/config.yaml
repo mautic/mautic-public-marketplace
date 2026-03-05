@@ -11,3 +11,6 @@ omit_containers:
   - dba
 upload_dirs:
   - var
+hooks:
+  post-start:
+    - exec: composer install
