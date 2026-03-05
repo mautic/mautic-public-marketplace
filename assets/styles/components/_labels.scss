@@ -1,0 +1,285 @@
+//
+// Labels
+// --------------------------------------------------
+
+.label {
+  // CSS variable assignment - for clamp, SCSS does not support ~"" interpolation, so use as a string, fallback provided
+  --layout-size-height-local: var(--layout-size-height-md);
+  --layout-size-height-sm: 18px;
+  --layout-size-height-md: 24px;
+  --layout-size-height-lg: 32px;
+  display: inline-flex;
+  position: relative;
+  font-size: 11px;
+  font-weight: 600;
+  gap: 6px;
+  line-height: 1;
+  height: var(--layout-size-height-local);
+  padding: 0 $spacing-03;
+  border-radius: 100px;
+  min-width: 30px;
+  justify-content: center;
+  align-items: center;
+  transition: var(--transition-all-productive);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  // Exception for category color labels
+  &.label-category,
+  &.label-icon {
+    min-width: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  // Add hover effects, but only for links
+  &[href],
+  > a {
+    color: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    &:hover,
+    &:focus {
+      text-decoration: none;
+      cursor: pointer;
+    }
+  }
+
+  // Empty labels collapse automatically (not available in IE8)
+  &:empty {
+    display: none;
+  }
+
+  // Quick fix for labels in buttons
+  .btn & {
+    position: relative;
+    top: -1px;
+  }
+
+  // Sizes
+  &[size="sm"] {
+    --layout-size-height-local: var(--layout-size-height-sm);
+    padding: 0 $spacing-03;
+  }
+  &[size="md"] {
+    --layout-size-height-local: var(--layout-size-height-md);
+    padding: 0 $spacing-03;
+  }
+  &[size="lg"] {
+    --layout-size-height-local: var(--layout-size-height-lg);
+    padding: 0 $spacing-04;
+  }
+
+  // Icons
+  i {
+    font-size: calc(1em + 2px);
+    font-weight: normal;
+  }
+
+  &:has(.label-close) {
+    padding-right: var(--layout-size-height-local);
+  }
+
+  .label-close {
+    display: flex;
+    position: absolute;
+    right: 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    margin: 0 0 0 0.125rem;
+    background-color: rgba(0, 0, 0, 0);
+    block-size: var(--layout-size-height-local);
+    color: currentColor;
+    cursor: pointer;
+    inline-size: var(--layout-size-height-local);
+    transition: var(--transition-all-productive);
+  }
+}
+
+.label__divider {
+  box-shadow: 0px 6px 24px 0px rgba(0, 0, 0, 0.05), 0px 0px 0px 1px rgba(0, 0, 0, 0.08);
+  margin: 5px;
+}
+
+// Colors
+/// Neutral variations
+
+.label-gray {
+  background-color: #{$label-background-gray};
+  color: #{$label-color-gray};
+}
+
+.label-cool-gray {
+  background-color: #{$label-background-cool-gray};
+  color: #{$label-color-cool-gray};
+}
+
+.label-warm-gray {
+  background-color: #{$label-background-warm-gray};
+  color: #{$label-color-warm-gray};
+}
+
+.label-red {
+  background-color: #{$label-background-red};
+  color: #{$label-color-red};
+}
+
+.label-magenta {
+  background-color: #{$label-background-magenta};
+  color: #{$label-color-magenta};
+}
+
+.label-purple {
+  background-color: #{$label-background-purple};
+  color: #{$label-color-purple};
+}
+
+.label-blue {
+  background-color: #{$label-background-blue};
+  color: #{$label-color-blue};
+}
+
+.label-cyan {
+  background-color: #{$label-background-cyan};
+  color: #{$label-color-cyan};
+}
+
+.label-teal {
+  background-color: #{$label-background-teal};
+  color: #{$label-color-teal};
+}
+
+.label-green {
+  background-color: #{$label-background-green};
+  color: #{$label-color-green};
+}
+
+.label-primary {
+  background-color: #{$label-background-primary};
+  color: #{$label-color-primary};
+}
+
+.label-brand {
+  background-color: #{$label-background-brand};
+  color: #{$label-color-brand};
+}
+
+.label-outline,
+.label-selectable {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--background-inverse);
+
+  &:hover {
+    border: 1px solid var(--background-inverse);
+  }
+}
+
+.label-selectable.active {
+  background-color: var(--layer-selected-inverse);
+  color: var(--text-inverse);
+  border-color: var(--layer-selected-inverse);
+}
+
+.label-high-contrast {
+  background-color: var(--background-inverse);
+  color: var(--text-inverse);
+}
+
+// Interactive
+
+.label[href],
+.label:has(> a) {
+  border: 1px solid #00000017;
+
+  &.label-gray {
+    border: 1px solid #{$label-border-gray};
+    color: #{$label-color-gray};
+    &:hover {
+      background-color: #{$label-background-hover-gray};
+    }
+  }
+  &.label-cool-gray {
+    border: 1px solid #{$label-border-cool-gray};
+    color: #{$label-color-cool-gray};
+    &:hover {
+      background-color: #{$label-background-hover-cool-gray};
+    }
+  }
+  &.label-warm-gray {
+    border: 1px solid #{$label-border-warm-gray};
+    color: #{$label-color-warm-gray};
+    &:hover {
+      background-color: #{$label-background-hover-warm-gray};
+    }
+  }
+  &.label-red {
+    border: 1px solid #{$label-border-red};
+    color: #{$label-color-red};
+    &:hover {
+      background-color: #{$label-background-hover-red};
+    }
+  }
+  &.label-magenta {
+    border: 1px solid #{$label-border-magenta};
+    color: #{$label-color-magenta};
+    &:hover {
+      background-color: #{$label-background-hover-magenta};
+    }
+  }
+  &.label-purple {
+    border: 1px solid #{$label-border-purple};
+    color: #{$label-color-purple};
+    &:hover {
+      background-color: #{$label-background-hover-purple};
+    }
+  }
+  &.label-blue {
+    border: 1px solid #{$label-border-blue};
+    color: #{$label-color-blue};
+    &:hover {
+      background-color: #{$label-background-hover-blue};
+    }
+  }
+  &.label-cyan {
+    border: 1px solid #{$label-border-cyan};
+    color: #{$label-color-cyan};
+    &:hover {
+      background-color: #{$label-background-hover-cyan};
+    }
+  }
+  &.label-teal {
+    border: 1px solid #{$label-border-teal};
+    color: #{$label-color-teal};
+    &:hover {
+      background-color: #{$label-background-hover-teal};
+    }
+  }
+  &.label-green {
+    border: 1px solid #{$label-border-green};
+    color: #{$label-color-green};
+    &:hover {
+      background-color: #{$label-background-hover-green};
+    }
+  }
+  &.label-primary {
+    border: 1px solid #{$label-border-primary};
+    color: #{$label-color-primary};
+    &:hover {
+      background-color: #{$label-background-hover-primary};
+    }
+  }
+  &.label-brand {
+    border: 1px solid #{$label-border-brand};
+    color: #{$label-color-brand};
+    &:hover {
+      background-color: #{$label-background-hover-brand};
+    }
+  }
+}
