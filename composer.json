@@ -71,16 +71,10 @@
         "supabase:status": "supabase status",
         "test": "vendor/bin/phpunit",
         "post-install-cmd": [
-            "@auto-scripts",
-            "@bootstrap:copy"
+            "@auto-scripts"
         ],
         "post-update-cmd": [
-            "@auto-scripts",
-            "@bootstrap:copy"
-        ],
-        "bootstrap:copy": [
-            "cp vendor/twbs/bootstrap/dist/css/bootstrap.min.css public/assets/bootstrap.min.css",
-            "cp vendor/twbs/bootstrap/dist/js/bootstrap.bundle.min.js public/assets/bootstrap.bundle.min.js"
+            "@auto-scripts"
         ]
     },
     "conflict": {

@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mautic Marketplace{% endblock %}</title>
-    <link rel="stylesheet" href="{{ asset('assets/bootstrap.min.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/carbon-components@10.58.8/css/carbon-components.min.css">
     <link rel="stylesheet" href="{{ asset('assets/marketplace.css') }}">
     {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
@@ -20,7 +23,6 @@
             {% block body %}{% endblock %}
         </div>
     </main>
-    <script src="{{ asset('assets/bootstrap.bundle.min.js') }}" defer></script>
     <script src="{{ asset('assets/marketplace.js') }}" defer></script>
 </body>
 </html>

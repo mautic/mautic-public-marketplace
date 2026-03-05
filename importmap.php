@@ -19,4 +19,7 @@ return [
     '@auth0/auth0-spa-js' => [
         'version' => '2.14.0',
     ],
+    'bootstrap' => [
+        'path' => 'bootstrap.bundle.min.js',
+    ],
 ];
