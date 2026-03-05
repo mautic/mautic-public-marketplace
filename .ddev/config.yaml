@@ -5,7 +5,8 @@ docroot: public
 webserver_type: nginx-fpm
 xdebug_enabled: false
 use_dns_when_possible: true
-additional_fqdns: []
+additional_fqdns:
+  - localhost
 additional_hostnames: []
 omit_containers:
   - dba

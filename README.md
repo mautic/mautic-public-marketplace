@@ -28,6 +28,9 @@ The Supabase CLI scripts are still available for cloud projects:
 - Build: `docker build -t mautic-marketplace .`
 - Run: `docker compose up -d`
 
+## Deployment
+- DigitalOcean + GitHub Actions: `docs/deploy-digitalocean.md`
+
 ## Reference Links
 - Existing marketplace UI in Mautic admin: https://github.com/mautic/mautic/tree/7.x/app/bundles/MarketplaceBundle
 - Supabase middleware integration PR: https://github.com/mautic/mautic/pull/15500

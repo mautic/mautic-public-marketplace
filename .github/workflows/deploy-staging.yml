@@ -1,0 +1,206 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Branch name (e.g., main) or PR number'
+        required: true
+        default: 'main'
+        type: string
+      dockerfile_source:
+        description: 'Branch name or PR number to take Dockerfile from (use "same" to match source)'
+        required: true
+        default: 'same'
+        type: string
+
+concurrency:
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy_staging:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.resolve.outputs.ref }}
+      mode: ${{ steps.resolve.outputs.mode }}
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+      dockerfile_ref: ${{ steps.resolve.outputs.dockerfile_ref }}
+    steps:
+      - name: Resolve source
+        id: resolve
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const rawSource = core.getInput('source') || (context.payload.inputs && context.payload.inputs.source) || 'main';
+            const source = String(rawSource).trim();
+            const rawDockerfileSource = core.getInput('dockerfile_source') || (context.payload.inputs && context.payload.inputs.dockerfile_source) || 'same';
+            const dockerfileSource = String(rawDockerfileSource).trim();
+            const { owner, repo } = context.repo;
+
+            async function resolveRef(input, requireApproval) {
+              if (/^\d+$/.test(input)) {
+                const prNumber = Number(input);
+                const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+                if (pr.state !== 'open') {
+                  core.setFailed(`PR #${prNumber} is not open`);
+                  return null;
+                }
+                if (requireApproval) {
+                  const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber });
+                  // Keep the latest review per user.
+                  const latestByUser = new Map();
+                  for (const review of reviews.sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at))) {
+                    if (review.user?.login) {
+                      latestByUser.set(review.user.login, review.state);
+                    }
+                  }
+
+                  const approvers = [];
+                  for (const [login, state] of latestByUser.entries()) {
+                    if (state !== 'APPROVED') continue;
+                    const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
+                      owner,
+                      repo,
+                      username: login,
+                    });
+                    if (['admin', 'maintain', 'write'].includes(perm.permission)) {
+                      approvers.push(login);
+                    }
+                  }
+
+                  if (approvers.length === 0) {
+                    core.setFailed(`PR #${prNumber} has no approved review from a user with write access`);
+                    return null;
+                  }
+                }
+                return { ref: `refs/pull/${prNumber}/head`, prNumber: String(prNumber), mode: 'pr' };
+              }
+
+              // Treat as branch name
+              try {
+                await github.rest.git.getRef({ owner, repo, ref: `heads/${input}` });
+              } catch (error) {
+                core.setFailed(`Branch '${input}' not found`);
+                return null;
+              }
+
+              return { ref: `refs/heads/${input}`, prNumber: '', mode: 'branch' };
+            }
+
+            const sourceResolved = await resolveRef(source, true);
+            if (!sourceResolved) return;
+
+            const dockerfileInput = dockerfileSource === 'same' ? source : dockerfileSource;
+            const dockerfileResolved = await resolveRef(dockerfileInput, true);
+            if (!dockerfileResolved) return;
+
+            core.setOutput('ref', sourceResolved.ref);
+            core.setOutput('pr_number', sourceResolved.prNumber);
+            core.setOutput('mode', sourceResolved.mode);
+            core.setOutput('dockerfile_ref', dockerfileResolved.ref);
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.ref }}
+
+      - name: Use selected Dockerfile
+        run: |
+          REF="${{ steps.resolve.outputs.dockerfile_ref }}"
+          if [[ "${REF}" == refs/heads/* ]]; then
+            BRANCH="${REF#refs/heads/}"
+            git fetch origin "${BRANCH}"
+            git checkout FETCH_HEAD -- Dockerfile scripts/deploy/remote_deploy.sh
+          else
+            git fetch origin "${REF}:${REF}"
+            git checkout "${REF}" -- Dockerfile scripts/deploy/remote_deploy.sh
+          fi
+
+      - name: Build image
+        run: |
+          if [[ "${{ steps.resolve.outputs.mode }}" == "pr" ]]; then
+            IMAGE_TAG="marketplace:pr-${{ steps.resolve.outputs.pr_number }}-${{ github.sha }}"
+          else
+            IMAGE_TAG="marketplace:staging-${{ github.sha }}"
+          fi
+          TAR_NAME="marketplace-staging.tar"
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
+          echo "TAR_NAME=${TAR_NAME}" >> "$GITHUB_ENV"
+          docker build -t "${IMAGE_TAG}" .
+          docker save "${IMAGE_TAG}" -o "${TAR_NAME}"
+          chmod 644 "${TAR_NAME}"
+          ls -la "${TAR_NAME}"
+          test -s "${TAR_NAME}"
+
+      - name: Verify tar in workspace
+        run: |
+          pwd
+          ls -la
+          stat marketplace-staging.tar
+
+      - name: Copy image to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_SSH_HOST }}
+          username: ${{ secrets.DO_SSH_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_SSH_PORT || 22 }}
+          source: marketplace-staging.tar
+          target: /tmp
+
+      - name: Copy deploy script to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_SSH_HOST }}
+          username: ${{ secrets.DO_SSH_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_SSH_PORT || 22 }}
+          source: scripts/deploy/remote_deploy.sh
+          target: /tmp
+
+      - name: Deploy staging on droplet
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_SSH_HOST }}
+          username: ${{ secrets.DO_SSH_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_SSH_PORT || 22 }}
+          script: |
+            if [[ -f /tmp/remote_deploy.sh ]]; then
+              DEPLOY_SCRIPT=/tmp/remote_deploy.sh
+            else
+              DEPLOY_SCRIPT=/tmp/scripts/deploy/remote_deploy.sh
+            fi
+            chmod +x "${DEPLOY_SCRIPT}"
+            IMAGE_TAG="${{ env.IMAGE_TAG }}" \
+            IMAGE_TAR="/tmp/${{ env.TAR_NAME }}" \
+            APP_NAME=marketplace-staging \
+            CONTAINER_NAME=marketplace-staging \
+            APP_PORT=8081 \
+            APP_ENV_FILE=/etc/marketplace/staging.env \
+            "${DEPLOY_SCRIPT}"
+
+  deploy_staging_supabase:
+    needs: deploy_staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.deploy_staging.outputs.ref }}
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Supabase functions and migrations (staging)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_STAGING_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_STAGING_PROJECT_ID }}
+        run: |
+          supabase link --project-ref "${SUPABASE_PROJECT_ID}"
+          supabase functions deploy fetch_package
+          supabase db push

@@ -140,6 +140,7 @@ async function main(req: Request) {
   const urls = [
     "https://packagist.org/packages/list.json?type=mautic-plugin",
     "https://packagist.org/packages/list.json?type=mautic-theme",
+    "https://packagist.org/packages/list.json?type=mautic-resource",
   ];
   for (const url of urls) {
     await fetchPackages(url, supabaseClient);

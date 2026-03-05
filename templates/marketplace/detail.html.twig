@@ -138,5 +138,50 @@
                 <p class="muted">No reviews yet.</p>
             {% endif %}
         </section>
+
+        <section class="section" id="marketplace-review-container"
+            data-auth0-domain="{{ auth0_domain }}"
+            data-auth0-client-id="{{ auth0_client_id }}"
+            data-api-url="{{ path('review_api_submit', {package: name}) }}"
+            data-package-name="{{ name }}">
+            <h2>Write a review</h2>
+
+            <div id="auth-loading">
+                <p class="muted">Loading authentication...</p>
+            </div>
+
+            <div id="auth-login" style="display:none">
+                <button type="button" id="auth0-login-btn" class="bx--btn bx--btn--primary">
+                    Log in to write a review
+                </button>
+            </div>
+
+            <div id="auth-form" style="display:none">
+                <p class="muted">Logged in as <strong id="auth-user-name"></strong>
+                    (<a href="#" id="auth0-logout-btn">log out</a>)
+                </p>
+                <form id="review-form" class="review-form">
+                    <div class="review-form__stars">
+                        <label>Rating</label>
+                        <div id="rating-stars" class="star-rating">
+                            <span class="star-icon" data-rating="1">&#9733;</span>
+                            <span class="star-icon" data-rating="2">&#9733;</span>
+                            <span class="star-icon" data-rating="3">&#9733;</span>
+                            <span class="star-icon" data-rating="4">&#9733;</span>
+                            <span class="star-icon" data-rating="5">&#9733;</span>
+                        </div>
+                        <input type="hidden" id="rating" name="rating" value="0">
+                    </div>
+                    <div class="review-form__text">
+                        <label for="review">Review</label>
+                        <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="Write your review here..."></textarea>
+                    </div>
+                    <button type="submit" id="submit-btn" class="bx--btn bx--btn--primary">Submit review</button>
+                </form>
+            </div>
+
+            <div id="review-error" class="alert alert--error" style="display:none"></div>
+            <div id="review-success" class="alert alert--success" style="display:none"></div>
+        </section>
     {% endif %}
 {% endblock %}
