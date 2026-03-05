@@ -66,6 +66,8 @@
         "cs:fix": "php-cs-fixer fix",
         "phpstan": "phpstan analyse",
         "rector": "rector process",
+        "sass:build": "php bin/console sass:build",
+        "sass:watch": "php bin/console sass:build --watch",
         "supabase:link": "supabase link --project-ref ${SUPABASE_PROJECT_REF}",
         "supabase:db:push": "supabase db push",
         "supabase:functions:deploy": "supabase functions deploy fetch_package",
