@@ -23,7 +23,9 @@
         "symfony/translation": "7.4.*",
         "symfony/twig-bundle": "7.4.*",
         "symfony/validator": "7.4.*",
-        "symfony/yaml": "7.4.*"
+        "symfony/yaml": "7.4.*",
+        "symfonycasts/sass-bundle": "^0.9.0",
+        "twbs/bootstrap": "5.3.8"
     },
     "config": {
         "allow-plugins": {
