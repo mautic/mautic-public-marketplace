@@ -24,6 +24,10 @@ final class CopyVendorAssetsCommand extends Command
             'source' => 'node_modules/@carbon/pictograms/svg',
             'target' => 'public/assets/pictograms',
         ],
+        'icons' => [
+            'source' => 'node_modules/remixicon/fonts',
+            'target' => 'public/assets/icons',
+        ],
     ];
 
     public function __construct(
