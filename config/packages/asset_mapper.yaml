@@ -3,6 +3,7 @@ framework:
         # The paths to make available to the asset mapper.
         paths:
             - assets/
+            - vendor/twbs/bootstrap/dist/js/
         missing_import_mode: strict
 
 when@prod:
