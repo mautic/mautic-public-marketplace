@@ -35,7 +35,9 @@ Variables:
                         <div part="content-container" class="leadspace--content__container d-flex fd-column jc-space-between mb-32">
                             <div part="row row--content" class="leadspace__row">
                                 {% if tags is defined and tags is iterable %}
-                                    {% include 'components/_tag.html.twig' with {tags: tags} %}
+                                <div class="mb-16">
+                                    {% include 'components/tags.html.twig' with {tags: tags} %}
+                                </div>
                                 {% endif %}
                                 <div class="row">
                                     <div class="col-xs-12 col-md-9 col-lg-6">

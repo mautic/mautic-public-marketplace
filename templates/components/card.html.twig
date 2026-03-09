@@ -49,7 +49,7 @@
 {% set common_tags_content %}
     {% if tags is defined %}
         <div class="mt-16">
-            {% include 'components/_tag.html.twig' with {'tags': tags} %}
+            {% include 'components/tags.html.twig' with {'tags': tags} %}
         </div>
     {% endif %}
 {% endset %}
