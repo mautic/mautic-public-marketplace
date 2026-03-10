@@ -1,7 +1,11 @@
 FROM php:8.4-cli AS build
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip curl \
+    && apt-get install -y --no-install-recommends git unzip curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -10,8 +14,12 @@ WORKDIR /app
 COPY composer.json composer.lock symfony.lock ./
 RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-progress
 
+COPY package.json ./
+RUN npm install
+
 COPY . ./
-RUN composer dump-autoload --classmap-authoritative --no-dev \
+RUN php bin/console app:assets:copy \
+    && composer dump-autoload --classmap-authoritative --no-dev \
     && APP_ENV=prod php bin/console importmap:install --no-interaction \
     && APP_ENV=prod php bin/console asset-map:compile \
     && APP_ENV=prod php bin/console cache:warmup

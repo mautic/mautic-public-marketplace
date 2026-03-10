@@ -1,6 +1,7 @@
 services:
   supabase-db:
     image: supabase/postgres:15.1.0.117
+    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
@@ -14,6 +15,7 @@ services:
 
   supabase-rest:
     image: postgrest/postgrest:latest
+    restart: unless-stopped
     environment:
       PGRST_DB_URI: postgres://postgres:postgres@supabase-db:5432/postgres
       PGRST_DB_SCHEMA: public,storage,auth
@@ -25,6 +27,7 @@ services:
 
   supabase-auth:
     image: supabase/gotrue:v2.186.0
+    restart: unless-stopped
     environment:
       API_EXTERNAL_URL: http://localhost:8000
       GOTRUE_API_HOST: 0.0.0.0
@@ -44,6 +47,7 @@ services:
 
   supabase-storage:
     image: supabase/storage-api:v1.22.17
+    restart: unless-stopped
     environment:
       PGRST_JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
       ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsLWRldiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzcwMzIxMzM5LCJleHAiOjIwODU2ODEzMzl9.wSJj3yVYt9N7NkN5GRV-ImVZiTwG2frnPobGsDkMdD0
@@ -59,6 +63,7 @@ services:
 
   supabase-realtime:
     image: supabase/realtime:latest
+    restart: unless-stopped
     environment:
       APP_NAME: supabase-realtime
       DB_HOST: supabase-db
@@ -67,6 +72,7 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: postgres
       JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
+      METRICS_JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
       SECRET_KEY_BASE: super-secret-key-base-with-at-least-64-characters
       PORT: 4000
     depends_on:
@@ -75,6 +81,7 @@ services:
 
   supabase-meta:
     image: supabase/postgres-meta:v0.95.2
+    restart: unless-stopped
     environment:
       PG_META_DB_HOST: supabase-db
       PG_META_DB_PORT: 5432
