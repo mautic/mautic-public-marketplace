@@ -19,6 +19,11 @@
 ###< phpunit/phpunit ###
 
 ###> symfony/asset-mapper ###
-/public/assets/
+/public/assets/*
+!/public/assets/pictograms/
+/public/assets/pictograms/*
+!/public/assets/pictograms/.gitkeep
 /assets/vendor/
 ###< symfony/asset-mapper ###
+
+/node_modules/

@@ -5,6 +5,7 @@ docroot: public
 webserver_type: nginx-fpm
 xdebug_enabled: false
 use_dns_when_possible: true
+nodejs_version: "24"
 additional_fqdns:
   - localhost
 additional_hostnames: []

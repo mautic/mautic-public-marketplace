@@ -1,0 +1,8 @@
+{
+  "name": "mautic-marketplace",
+  "private": true,
+  "description": "Frontend assets for Mautic Marketplace",
+  "dependencies": {
+    "@carbon/pictograms": "^11.0.0"
+  }
+}
