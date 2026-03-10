@@ -26,8 +26,4 @@
 /assets/vendor/
 ###< symfony/asset-mapper ###
 
-###> symfonycasts/sass-bundle ###
-/public/assets/
-###< symfonycasts/sass-bundle ###
-
 /node_modules/
