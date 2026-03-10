@@ -5,6 +5,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 cd "$ROOT_DIR"
 
-ddev stop --remove-data
+ddev stop --remove-data --omit-snapshot
 
 "$ROOT_DIR"/bin/dev-setup
