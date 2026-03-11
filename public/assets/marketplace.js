@@ -1,4 +1,4 @@
-(function () {
+function initMarketplaceForm() {
     const form = document.querySelector('form[data-autosubmit="true"]');
     if (!form) {
         return;
@@ -18,7 +18,7 @@
                     position: focusTarget.selectionStart ?? focusTarget.value.length,
                 }));
             }
-            form.submit();
+            form.requestSubmit();
         }
     };
 
@@ -57,4 +57,6 @@
     } catch (e) {
         sessionStorage.removeItem(focusKey);
     }
-})();
+}
+
+document.addEventListener('turbo:load', initMarketplaceForm);
