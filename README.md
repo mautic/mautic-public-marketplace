@@ -25,7 +25,7 @@ The Supabase CLI scripts are still available for cloud projects:
 - Tests: `composer test`
 
 ## Sass development (no npm)
-- One-time cleanup in dev (if assets look stale): `rm -rf public/assets/*`
+- One-time cleanup in dev (if Sass-generated assets look stale): `rm -f public/assets/*.css public/assets/*.css.map`
 - Build once: `ddev composer sass:build`
 - Watch mode (recommended during development): `ddev composer sass:watch`
 
