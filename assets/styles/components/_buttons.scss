@@ -6,7 +6,7 @@
 // Base styles
 // ---------------------
 .btn {
-  --btn-height: #{$spacing-08}; 
+  --btn-height: var(--spacing-08);
   --btn-line-height: var(--btn-height);
   border: 1px solid transparent;
   display: inline-flex;
@@ -14,8 +14,8 @@
   height: var(--btn-height);
   line-height: var(--btn-line-height);
   font-size: 14px;
-  padding: 0 $spacing-05;
-  gap: $spacing-03;
+  padding: 0 var(--spacing-05);
+  gap: var(--spacing-03);
   justify-content: space-between;
   width: fit-content;
    @include outline;
@@ -139,13 +139,13 @@
 .btn-primary,
 .btn-secondary,
 .btn-tertiary {
-  padding-left: $spacing-05;
-  padding-right: $spacing-10;
-  gap: $spacing-07;
-  &:has(i) {padding-right: $spacing-05;}
+  padding-left: var(--spacing-05);
+  padding-right: var(--spacing-10);
+  gap: var(--spacing-07);
+  &:has(i) {padding-right: var(--spacing-05);}
   &:not(:has(i)) {
-    padding-left: $spacing-07;
-    padding-right: $spacing-07;
+    padding-left: var(--spacing-07);
+    padding-right: var(--spacing-07);
     span { display: initial }
   }
   &.btn--icon-only {
@@ -154,7 +154,7 @@
   }
   span {
     justify-content: space-between;
-    gap: $spacing-07;
+    gap: var(--spacing-07);
     width: 100%;
     height: var(--btn-line-height);
   }
@@ -172,9 +172,9 @@
     $disabled-background: transparent,
     $disabled-text-color: rgba($black, .4)
   );
-  padding-inline: $spacing-05;
+  padding-inline: var(--spacing-05);
   justify-content: center;
-  span {gap: $spacing-03;}
+  span {gap: var(--spacing-03);}
 
   //// Ghost Danger
   &.btn-danger,
@@ -223,12 +223,12 @@
 }
 
 // Standard sizes
-.btn-xs, .btn[size="xs"] { --btn-height: #{$spacing-06}; }
-.btn-sm, .btn[size="sm"] { --btn-height: #{$spacing-07}; }
-.btn-md, .btn[size="md"] { --btn-height: #{$spacing-08}; }
-.btn-lg, .btn[size="lg"] { --btn-height: #{$spacing-09}; }
-.btn-xl, .btn[size="xl"] { --btn-height: #{$spacing-10}; --btn-line-height: #{$spacing-08}; align-items: flex-start; }
-.btn-2xl, .btn[size="2xl"] { --btn-height: #{$spacing-11}; --btn-line-height: #{$spacing-08}; align-items: flex-start; }
+.btn-xs, .btn[size="xs"] { --btn-height: var(--spacing-06); }
+.btn-sm, .btn[size="sm"] { --btn-height: var(--spacing-07); }
+.btn-md, .btn[size="md"] { --btn-height: var(--spacing-08); }
+.btn-lg, .btn[size="lg"] { --btn-height: var(--spacing-09); }
+.btn-xl, .btn[size="xl"] { --btn-height: var(--spacing-10); --btn-line-height: var(--spacing-08); align-items: flex-start; }
+.btn-2xl, .btn[size="2xl"] { --btn-height: var(--spacing-11); --btn-line-height: var(--spacing-08); align-items: flex-start; }
 
 // Fix for outline
 .dropdown-toggle,
@@ -250,7 +250,7 @@
   color: $link-color;
   height: var(--btn-height);
   line-height: var(--btn-line-height);
-  padding: 0 $spacing-05;
+  padding: 0 var(--spacing-05);
   &:hover,
   &:focus { text-decoration: none; }
 
@@ -285,7 +285,7 @@
 
 // Back to index button
 .btn-back {
-  gap: $spacing-02;
+  gap: var(--spacing-02);
   font-size: 92%;
   i { order: unset; }
 }
@@ -300,8 +300,8 @@
     
     .btn {
       align-items: flex-start;
-      height: $spacing-10;
-      width: $spacing-13;
+      height: var(--spacing-10);
+      width: var(--spacing-13);
       border-radius: 0;
       &:only-child { flex-grow: 1; }
     }
@@ -317,7 +317,7 @@
   .btn {
     align-items: flex-start;
     min-width: 0;
-    width: $spacing-13;
+    width: var(--spacing-13);
     border-radius: 0;
     &:first-child { border-radius: 0 0 0 var(--border-radius-md); }
     &:last-child { border-radius: 0 0 var(--border-radius-md) 0; }

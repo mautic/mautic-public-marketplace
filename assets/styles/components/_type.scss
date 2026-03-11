@@ -238,15 +238,15 @@
 
 // Contextual colors
 // -------------------------
-.text-primary { color: #{$text-primary}; }
-.text-secondary { color: #{$text-secondary}; }
-.text-placeholder { color: #{$text-placeholder}; }
-.text-on-color { color: #{$text-on-color}; }
-.text-on-color-disabled { color: #{$text-on-color-disabled}; }
-.text-helper { color: #{$text-helper}; }
-.text-error { color: #{$text-error}; }
-.text-inverse { color: #{$text-inverse}; }
-.text-disabled { color: #{$text-disabled}; }
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-placeholder { color: var(--text-placeholder); }
+.text-on-color { color: var(--text-on-color); }
+.text-on-color-disabled { color: var(--text-on-color-disabled); }
+.text-helper { color: var(--text-helper); }
+.text-error { color: var(--text-error); }
+.text-inverse { color: var(--text-inverse); }
+.text-disabled { color: var(--text-disabled); }
 
 // Blockquote
 // -------------------------
@@ -291,7 +291,7 @@ blockquote {
   color: var(--text-helper);
 }
 code {
-  padding: $spacing-01 $spacing-03;
+  padding: var(--spacing-01) var(--spacing-03);
   overflow: hidden;
   border-radius: clamp(4px, var(--border-radius-sm), 6px);
 }

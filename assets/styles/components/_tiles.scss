@@ -21,7 +21,7 @@
         font-weight: 400;
         line-height: 1.28572;
         cursor: pointer;
-        transition: background-color $easing-standard-productive $duration-productive, outline-color $easing-standard-productive $duration-productive;
+        transition: background-color var(--duration-productive) var(--easing-standard-productive), outline-color var(--duration-productive) var(--easing-standard-productive);
         text-align: unset;
         
         &:hover { background: var(--layer-hover); }
@@ -107,7 +107,7 @@
 .tile__chevron svg {
     -webkit-transform: rotate(180deg);
     transform: rotate(180deg);
-    transition: $transition-all-productive;
+    transition: var(--transition-all-productive);
 }
 
 .collapsed svg {
@@ -140,7 +140,7 @@
     inline-size: calc(var(--layout-density-padding-inline-local)* 2 + 1rem);
     inset-block-end: 0;
     inset-inline-end: 0;
-    transition: $transition-all-productive;
+    transition: var(--transition-all-productive);
 }
 
 .tile__chevron--interactive:hover {
@@ -337,7 +337,7 @@
                 inline-size: 100%;
                 opacity: 0;
                 left: 0;
-                transition: opacity $duration-productive $easing-standard-productive;
+                transition: opacity var(--duration-productive) var(--easing-standard-productive);
             }
         }
     
