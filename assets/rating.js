@@ -1,8 +1,12 @@
 import { createAuth0Client } from '@auth0/auth0-spa-js';
 
-const container = document.getElementById('marketplace-review-container');
+function initRating() {
+    const container = document.getElementById('marketplace-review-container');
 
-if (container) {
+    if (!container) {
+        return;
+    }
+
     const AUTH0_DOMAIN = container.getAttribute('data-auth0-domain');
     const AUTH0_CLIENT_ID = container.getAttribute('data-auth0-client-id');
     const API_URL = container.getAttribute('data-api-url');
@@ -190,3 +194,5 @@ if (container) {
 
     initAuth0();
 }
+
+document.addEventListener('turbo:load', initRating);
