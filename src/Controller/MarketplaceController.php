@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Marketplace\Exception\MarketplaceApiException;
 use App\Marketplace\MarketplaceApiClient;
+use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -14,6 +15,10 @@ final class MarketplaceController extends AbstractController
 {
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
+        #[Autowire(env: 'AUTH0_DOMAIN')]
+        private readonly string $auth0Domain,
+        #[Autowire(env: 'AUTH0_CLIENT_ID')]
+        private readonly string $auth0ClientId,
     ) {
     }
 
@@ -43,7 +48,7 @@ final class MarketplaceController extends AbstractController
                 \is_string($maintainer) ? $maintainer : null,
                 \is_string($popularity) ? $popularity : null,
             );
-        } catch (MarketplaceApiException $exception) {
+        } catch (SupabaseApiException $exception) {
             return $this->render('marketplace/index.html.twig', [
                 'error' => $exception->getMessage(),
                 'result' => null,
@@ -77,6 +82,8 @@ final class MarketplaceController extends AbstractController
                 'maintainer' => $maintainer,
                 'popularity' => $popularity,
             ],
+            'auth0_domain' => $this->auth0Domain,
+            'auth0_client_id' => $this->auth0ClientId,
         ]);
     }
 
@@ -84,7 +91,7 @@ final class MarketplaceController extends AbstractController
     {
         try {
             $detail = $this->apiClient->getPackage($package);
-        } catch (MarketplaceApiException $exception) {
+        } catch (SupabaseApiException $exception) {
             return $this->render('marketplace/detail.html.twig', [
                 'error' => $exception->getMessage(),
                 'package' => null,
@@ -100,6 +107,8 @@ final class MarketplaceController extends AbstractController
             'error' => null,
             'package' => $detail,
             'name' => $package,
+            'auth0_domain' => $this->auth0Domain,
+            'auth0_client_id' => $this->auth0ClientId,
         ]);
     }
 

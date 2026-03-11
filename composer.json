@@ -10,6 +10,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "symfony/asset": "7.4.*",
+        "symfony/asset-mapper": "7.4.*",
         "symfony/console": "7.4.*",
         "symfony/dotenv": "7.4.*",
         "symfony/flex": "^2",
@@ -19,10 +20,14 @@
         "symfony/runtime": "7.4.*",
         "symfony/security-bundle": "7.4.*",
         "symfony/serializer": "7.4.*",
+        "symfony/stimulus-bundle": "^2.32",
         "symfony/translation": "7.4.*",
         "symfony/twig-bundle": "7.4.*",
+        "symfony/ux-turbo": "^2.32",
         "symfony/validator": "7.4.*",
-        "symfony/yaml": "7.4.*"
+        "symfony/yaml": "7.4.*",
+        "symfonycasts/sass-bundle": "^0.9.0",
+        "twbs/bootstrap": "^5.3"
     },
     "config": {
         "allow-plugins": {
@@ -56,12 +61,15 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
         },
         "cs:check": "php-cs-fixer fix --diff --dry-run",
         "cs:fix": "php-cs-fixer fix",
         "phpstan": "phpstan analyse",
         "rector": "rector process",
+        "sass:build": "php bin/console sass:build",
+        "sass:watch": "php bin/console sass:build --watch",
         "supabase:link": "supabase link --project-ref ${SUPABASE_PROJECT_REF}",
         "supabase:db:push": "supabase db push",
         "supabase:functions:deploy": "supabase functions deploy fetch_package",

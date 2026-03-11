@@ -2,6 +2,7 @@ services:
   supabase-db:
     container_name: ddev-${DDEV_SITENAME}-supabase-db
     image: supabase/postgres:15.1.0.117
+    restart: unless-stopped
     labels:
       - com.ddev.site-name=${DDEV_SITENAME}
     environment:
@@ -9,10 +10,16 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - supabase-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   supabase-rest:
     container_name: ddev-${DDEV_SITENAME}-supabase-rest
     image: postgrest/postgrest:latest
+    restart: unless-stopped
     labels:
       - com.ddev.site-name=${DDEV_SITENAME}
     environment:
@@ -21,11 +28,13 @@ services:
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
     depends_on:
-      - supabase-db
+      supabase-db:
+        condition: service_healthy
 
   supabase-auth:
     container_name: ddev-${DDEV_SITENAME}-supabase-auth
     image: supabase/gotrue:v2.186.0
+    restart: unless-stopped
     labels:
       - com.ddev.site-name=${DDEV_SITENAME}
     environment:
@@ -42,11 +51,13 @@ services:
       GOTRUE_MAILER_AUTOCONFIRM: "true"
       GOTRUE_SMS_AUTOCONFIRM: "true"
     depends_on:
-      - supabase-db
+      supabase-db:
+        condition: service_healthy
 
   supabase-storage:
     container_name: ddev-${DDEV_SITENAME}-supabase-storage
     image: supabase/storage-api:v1.22.17
+    restart: unless-stopped
     labels:
       - com.ddev.site-name=${DDEV_SITENAME}
     environment:
@@ -61,11 +72,13 @@ services:
     volumes:
       - supabase-storage-data:/var/lib/storage
     depends_on:
-      - supabase-db
+      supabase-db:
+        condition: service_healthy
 
   supabase-realtime:
     container_name: ddev-${DDEV_SITENAME}-supabase-realtime
     image: supabase/realtime:latest
+    restart: unless-stopped
     labels:
       - com.ddev.site-name=${DDEV_SITENAME}
     environment:
@@ -76,14 +89,17 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: postgres
       JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
+      METRICS_JWT_SECRET: mautic-marketplace-local-jwt-secret-32chars
       SECRET_KEY_BASE: super-secret-key-base-with-at-least-64-characters
       PORT: 4000
     depends_on:
-      - supabase-db
+      supabase-db:
+        condition: service_healthy
 
   supabase-meta:
     container_name: ddev-${DDEV_SITENAME}-supabase-meta
     image: supabase/postgres-meta:v0.95.2
+    restart: unless-stopped
     labels:
       - com.ddev.site-name=${DDEV_SITENAME}
     environment:
@@ -93,7 +109,8 @@ services:
       PG_META_DB_USER: postgres
       PG_META_DB_PASSWORD: postgres
     depends_on:
-      - supabase-db
+      supabase-db:
+        condition: service_healthy
 
   supabase-kong:
     container_name: ddev-${DDEV_SITENAME}-supabase-kong

@@ -1,0 +1,3 @@
+auth_callback:
+  path: /auth/callback
+  controller: App\Controller\AuthController::callback

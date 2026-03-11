@@ -19,15 +19,20 @@ services:
     App\:
         resource: '../src/'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
-    App\Marketplace\MarketplaceApiClient:
-        arguments:
-            $httpClient: '@marketplace.http_client'
-            $anonKey: '%env(SUPABASE_ANON_KEY)%'
+when@test:
+    services:
+        App\Tests\Mock\Auth0MockHttpClient:
+            class: App\Tests\Mock\Auth0MockHttpClient
 
-    marketplace.http_client:
-        class: Symfony\Contracts\HttpClient\HttpClientInterface
-        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
-        arguments:
-            - base_uri: '%env(SUPABASE_API_BASE)%'
+        App\Tests\Mock\SupabaseMockHttpClient:
+            class: App\Tests\Mock\SupabaseMockHttpClient
+
+        App\Auth0\Auth0Client:
+            autowire: true
+            arguments:
+                $httpClient: '@App\Tests\Mock\Auth0MockHttpClient'
+
+        App\Supabase\SupabaseClient:
+            autowire: true
+            arguments:
+                $httpClient: '@App\Tests\Mock\SupabaseMockHttpClient'

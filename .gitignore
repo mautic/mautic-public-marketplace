@@ -17,3 +17,16 @@
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+###> symfony/asset-mapper ###
+/public/assets/*
+!/public/assets/pictograms/
+/public/assets/pictograms/*
+!/public/assets/pictograms/.gitkeep
+!/public/assets/icons/
+/public/assets/icons/*
+!/public/assets/icons/.gitkeep
+/assets/vendor/
+###< symfony/asset-mapper ###
+
+/node_modules/

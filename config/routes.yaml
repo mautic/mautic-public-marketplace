@@ -16,3 +16,10 @@ marketplace_detail:
     controller: App\Controller\MarketplaceController::detail
     requirements:
         package: .+
+
+review_api_submit:
+    path: /api/review/{package}
+    controller: App\Controller\Api\ReviewApiController::submit
+    methods: [POST]
+    requirements:
+        package: .+

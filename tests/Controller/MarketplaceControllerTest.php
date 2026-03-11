@@ -25,6 +25,7 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Marketplace');
         self::assertSelectorTextContains('table', 'Zebra Theme');
+        self::assertSelectorTextNotContains('table', 'Beta Resource');
         self::assertSelectorTextNotContains('table', 'Alpha Plugin');
     }
 
@@ -48,6 +49,17 @@ final class MarketplaceControllerTest extends WebTestCase
         $rows = $client->getCrawler()->filter('tbody tr');
         self::assertGreaterThanOrEqual(1, $rows->count());
         self::assertStringContainsString('Zebra Theme', $rows->first()->text());
+    }
+
+    public function testFilteringByResourceType(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?type=mautic-resource');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('table', 'Beta Resource');
+        self::assertSelectorTextNotContains('table', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('table', 'Zebra Theme');
     }
 
     public function testDetailPageLoads(): void

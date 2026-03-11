@@ -8,9 +8,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/carbon-components@10.58.8/css/carbon-components.min.css">
-    <link rel="stylesheet" href="{{ asset('assets/marketplace.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/marketplace.css') }}" data-turbo-track="reload">
+    <script src="{{ asset('assets/marketplace.js') }}" defer data-turbo-track="reload"></script>
+    {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
-<body>
+<body data-auth0-domain="{{ auth0_domain|default('') }}"
+      data-auth0-client-id="{{ auth0_client_id|default('') }}">
     <header>
         <div class="container">
             <strong>Mautic Marketplace</strong>
@@ -21,6 +24,5 @@
             {% block body %}{% endblock %}
         </div>
     </main>
-    <script src="{{ asset('assets/marketplace.js') }}" defer></script>
 </body>
 </html>

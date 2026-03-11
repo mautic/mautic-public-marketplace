@@ -1,11 +1,28 @@
-FROM composer:2.7 AS build
+FROM php:8.4-cli AS build
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git unzip curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 WORKDIR /app
 COPY composer.json composer.lock symfony.lock ./
 RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-progress
 
+COPY package.json ./
+RUN npm install
+
 COPY . ./
-RUN composer dump-autoload --classmap-authoritative --no-dev
+RUN php bin/console app:assets:copy \
+    && composer dump-autoload --classmap-authoritative --no-dev \
+    && APP_ENV=prod php bin/console importmap:install --no-interaction \
+    && APP_ENV=prod php bin/console asset-map:compile \
+    && APP_ENV=prod php bin/console cache:warmup
 
 FROM php:8.4-apache
 
@@ -24,5 +41,16 @@ WORKDIR /var/www/html
 
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www!/var/www/html/public!g' /etc/apache2/apache2.conf
+
+RUN printf '%s\n' \
+  '<Directory /var/www/html/public>' \
+  '    AllowOverride All' \
+  '    Require all granted' \
+  '</Directory>' \
+  'SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' \
+  > /etc/apache2/conf-available/marketplace.conf \
+  && a2enconf marketplace.conf
+
+RUN chown -R www-data:www-data /var/www/html/var
 
 EXPOSE 80

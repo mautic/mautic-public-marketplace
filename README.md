@@ -24,9 +24,19 @@ The Supabase CLI scripts are still available for cloud projects:
 - Rector: `composer rector`
 - Tests: `composer test`
 
+## Sass development (no npm)
+- One-time cleanup in dev (if assets look stale): `rm -rf public/assets/*`
+- Build once: `ddev composer sass:build`
+- Watch mode (recommended during development): `ddev composer sass:watch`
+
+When `sass:watch` is running, reloading the page picks up Sass changes automatically.
+
 ## Production Docker
 - Build: `docker build -t mautic-marketplace .`
 - Run: `docker compose up -d`
+
+## Deployment
+- DigitalOcean + GitHub Actions: `docs/deploy-digitalocean.md`
 
 ## Reference Links
 - Existing marketplace UI in Mautic admin: https://github.com/mautic/mautic/tree/7.x/app/bundles/MarketplaceBundle
