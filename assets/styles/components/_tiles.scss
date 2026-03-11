@@ -56,32 +56,15 @@
 
     &.tile--expandable,
     &.tile--expandable--interactive {
-        padding-bottom: calc(var(--layout-density-padding-inline-local)* 2 + 16px);
+        padding-bottom: calc(var(--layout-density-padding-inline-local)* 2 + 1rem);
     }
 
     &.tile--expandable--interactive {
-        &:hover { 
-            background: var(--layer); 
+        &:hover {
+            background: var(--layer);
             cursor: default;
         }
     }
-
-    &.tile--expandable {
-        padding-bottom: calc(var(--layout-density-padding-inline-local)* 2 + 16px);    
-    }
-
-    &.tile--expandable,
-    &.tile--expandable--interactive {
-        padding-bottom: calc(var(--layout-density-padding-inline-local)* 2 + 1rem);    
-    }
-
-    &.tile--expandable--interactive {
-        &:hover { 
-            background: var(--layer); 
-            cursor: default;
-        }
-    }
-
     .tile-icon {
         position: absolute;
         inset-block-start: var(--layout-density-padding-inline-local);
