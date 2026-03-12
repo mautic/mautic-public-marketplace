@@ -8,11 +8,45 @@
     {% endif %}
 
     {% if package %}
-        <p class="muted">
+        <p class="muted pt-16">
             <a href="{{ path('marketplace_index') }}">&larr; Back to Marketplace</a>
         </p>
-        <header class="detail-header">
-            <h1 class="detail-title">{{ package.displayName ?: package.name }}</h1>
+        {% set color = (
+            package.type == 'mautic-plugin' ? '#4e5e9e' :
+            package.type == 'mautic-theme' ? '#fdb933' :
+            package.type == 'mautic-resource' ? '#00b49d' :
+            '#ad9bd3'
+        ) %}
+        {% set media_src = (
+            package.type == 'mautic-plugin' ? 'assets/images/google-deepmind-2ufXB-oAyG0-unsplash.jpg' :
+            package.type == 'mautic-theme' ? 'assets/images/google-deepmind-osySqI7kwL0-unsplash.jpg' :
+            package.type == 'mautic-resource' ? 'assets/images/faseeh-fawaz-A6H2BwIskZQ-unsplash.jpg' :
+            'assets/images/google-deepmind-2ufXB-oAyG0-unsplash.jpg'
+        ) %}
+        {% set type_label = package.type == 'mautic-plugin' ? 'mautic.marketplace.detail.type.plugin' :
+            package.type == 'mautic-theme' ? 'mautic.marketplace.detail.type.theme' :
+            package.type == 'mautic-resource' ? 'mautic.marketplace.detail.type.resource' :
+            'mautic.marketplace.detail.type.other' %}
+        {% set version_keys_sorted = package.versions ? (package.versions|keys|sort|reverse) : [] %}
+        {% set latest_package_version = version_keys_sorted|length > 0 ? version_keys_sorted|first : null %}
+        {% set latest_mautic_version = (latest_package_version and package.versions[latest_package_version].smv is defined) ? package.versions[latest_package_version].smv : null %}
+        {% set leadspace_tags = [{ label: type_label|trans, color: 'gray' }] %}
+        {% if latest_mautic_version %}
+            {% set leadspace_tags = leadspace_tags|merge([{ label: 'mautic.marketplace.detail.latest_mautic_supported'|trans({ '%version%': latest_mautic_version }), color: 'blue' }]) %}
+        {% endif %}
+        {% include 'components/lead-space.html.twig' with {
+            variant: 'short',
+            heading: package.displayName ?: package.name,
+            description: package.description,
+            gradientStyleScheme: 'with-gradient',
+            gradientStyleSchemeColor: color,
+            tags: leadspace_tags,
+            media: {
+                src: media_src,
+                alt: 'mautic.marketplace.leadspace.image_alt'
+            }
+        } %}
+        <header class="detail-header mt-32">
             <div class="detail-subtitle">
                 <span class="muted">{{ package.name }}</span>
                 {% if package.type %}
