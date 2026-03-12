@@ -22,6 +22,7 @@
     {% endif %}
 
     {% set translated_label = tag.label|trans %}
+    {% set translated_tooltip = attributes.title|default('') %}
     {% set classes = ['label', 'label-' ~ color] %}
 
     {% if icon_only %}
@@ -33,33 +34,33 @@
         {% set classes = attributes.class is iterable ? classes|merge(attributes.class) : classes|merge([attributes.class]) %}
     {% endif %}
 
-    {% set other_attributes = attributes|filter((v, k) => k != 'class' and k != 'id') %}
+    {% set other_attributes = attributes|filter((v, k) => k != 'class' and k != 'id' and k != 'href') %}
     {% set truncated_label = translated_label %}
-    {% set label_tooltip = '' %}
-    {% if translated_label|striptags|length > 27 %}
+    {% set label_tooltip = translated_tooltip %}
+    {% if not label_tooltip and translated_label|striptags|length > 27 %}
         {% set truncated_label = translated_label|slice(0,24) ~ '...' %}
         {% set label_tooltip = translated_label|striptags %}
     {% endif %}
 
     {# Wrapper element switching logic #}
     {% set wrapper_tag = attributes.href is defined ? 'a' : 'div' %}
-    <{{ wrapper_tag }} id="{{ id }}" class="{{ classes|join(' ') }}" aria-label="{{ translated_label|striptags }}" size="{{ size }}"
+    <{{ wrapper_tag }} id="{{ id }}" class="{{ classes|join(' ') }}" aria-label="{{ (translated_tooltip ?: translated_label)|striptags }}" size="{{ size }}"
         {% if wrapper_tag == 'a' %} href="{{ attributes.href }}" {% endif %}
         {% for attr_key, attr_value in other_attributes %}
             {{ attr_key }}="{{ attr_value }}"
         {% endfor %}>
 
         {% if icon_only %}
-            <i class="{{ icon }}" aria-hidden="true" focusable="false" title="{{ translated_label|striptags }}" data-toggle="tooltip" tooltip-placement="top"></i>
+            <i class="{{ icon }}" aria-hidden="true" focusable="false"></i>
         {% else %}
             {% if type == 'dismissible' %}
                 {% if icon %}
                     <i class="{{ icon }}" aria-hidden="true" focusable="false"></i>
                 {% endif %}
-                <span aria-hidden="true" {% if label_tooltip %} title="{{ label_tooltip }}" data-toggle="tooltip" tooltip-placement="top"{% endif %}>
+                <span aria-hidden="true">
                     {{ truncated_label|raw }}
                 </span>
-                <button type="button" class="label-close" onclick="{{ dismissible_onclick|default('') }}" aria-label="{{ 'mautic.core.dismiss'|trans }}" title="{{ 'mautic.core.dismiss'|trans }}" data-toggle="tooltip" tooltip-placement="top">
+                <button type="button" class="label-close" onclick="{{ dismissible_onclick|default('') }}" aria-label="{{ 'mautic.core.dismiss'|trans }}" title="{{ 'mautic.core.dismiss'|trans }}" data-bs-toggle="tooltip" data-bs-placement="top">
                     <i class="ri-close-line" aria-hidden="true" focusable="false"></i>
                 </button>
 
@@ -67,7 +68,7 @@
                 {% if icon %}
                     <i class="{{ icon }}" aria-hidden="true" focusable="false"></i>
                 {% endif %}
-                <span aria-hidden="true" {% if label_tooltip %} title="{{ label_tooltip }}" data-toggle="tooltip" tooltip-placement="top"{% endif %}>
+                <span aria-hidden="true">
                     {{ truncated_label|raw }}
                 </span>
 
