@@ -23,11 +23,10 @@
 !/public/assets/pictograms/
 /public/assets/pictograms/*
 !/public/assets/pictograms/.gitkeep
+!/public/assets/icons/
+/public/assets/icons/*
+!/public/assets/icons/.gitkeep
 /assets/vendor/
 ###< symfony/asset-mapper ###
-
-###> symfonycasts/sass-bundle ###
-/public/assets/
-###< symfonycasts/sass-bundle ###
 
 /node_modules/
