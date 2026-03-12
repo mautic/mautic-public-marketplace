@@ -48,7 +48,7 @@
 
 {% set common_tags_content %}
     {% if tags is defined %}
-        <div class="mt-16">
+        <div class="d-flex flex-wrap mt-16 gap-4">
             {% include 'components/tags.html.twig' with {'tags': tags} %}
         </div>
     {% endif %}
