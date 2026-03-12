@@ -7,45 +7,56 @@
     {% set orderby = filters.orderby %}
     {% set orderdir = filters.orderdir %}
 
-    <h1 class="page-title">Marketplace</h1>
-    <p class="muted">Browse community packages compatible with Mautic.</p>
+    {% include 'components/lead-space.html.twig' with {
+        variant: 'medium',
+        heading: 'mautic.marketplace.leadspace.heading',
+        description: 'mautic.marketplace.leadspace.description',
+        gradientStyleScheme: 'with-gradient',
+        gradientStyleSchemeColor: '#f1edea',
+        media: {
+            src: 'assets/images/google-deepmind-4sRFTaQSM8Q-unsplash.jpg',
+            alt: 'mautic.marketplace.leadspace.image_alt'
+        }
+    } %}
 
     {% if error %}
         <p class="muted">{{ error }}</p>
     {% endif %}
 
-    <form class="toolbar" method="get" id="marketplace-filters" data-autosubmit="true">
-        <div class="bx--form-item">
-            <label class="bx--label" for="query">Search</label>
-            <input class="bx--text-input" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages">
-        </div>
-        <div class="bx--form-item">
-            <label class="bx--label" for="type">Type</label>
-            <div class="bx--select">
-                <select class="bx--select-input" id="type" name="type">
-                    <option value="">All types</option>
-                    <option value="mautic-plugin" {% if filters.type == 'mautic-plugin' %}selected{% endif %}>Plugin</option>
-                    <option value="mautic-theme" {% if filters.type == 'mautic-theme' %}selected{% endif %}>Theme</option>
-                    <option value="mautic-resource" {% if filters.type == 'mautic-resource' %}selected{% endif %}>Resource</option>
-                </select>
-                <svg class="bx--select__arrow" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-                    <path d="M8 11L3 6h10L8 11z" fill="currentColor"></path>
-                </svg>
+    <form class="mt-48" method="get" id="marketplace-filters" data-autosubmit="true">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-group mb-16">
+                    <label for="query">Search</label>
+                    <input class="form-control" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages">
+                </div>
             </div>
         </div>
-        <div class="bx--form-item">
-            <label class="bx--label" for="mautic">Mautic version</label>
-            <input class="bx--text-input" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="e.g. ^5.0">
-        </div>
-        <input type="hidden" name="orderby" value="{{ orderby }}">
-        <input type="hidden" name="orderdir" value="{{ orderdir }}">
-        <input type="hidden" name="limit" value="{{ filters.limit }}">
-    </form>
+        <div class="row">
+            <div class="col-xs-12 col-lg-3">
+                <div class="form-group">
+                    <label for="type">Type</label>
+                    <select class="form-control" id="type" name="type">
+                        <option value="">All types</option>
+                        <option value="mautic-plugin" {% if filters.type == 'mautic-plugin' %}selected{% endif %}>Plugin</option>
+                        <option value="mautic-theme" {% if filters.type == 'mautic-theme' %}selected{% endif %}>Theme</option>
+                        <option value="mautic-resource" {% if filters.type == 'mautic-resource' %}selected{% endif %}>Resource</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="mautic">Mautic version</label>
+                    <input class="form-control" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="e.g. ^5.0">
+                </div>
+                <input type="hidden" name="orderby" value="{{ orderby }}">
+                <input type="hidden" name="orderdir" value="{{ orderdir }}">
+                <input type="hidden" name="limit" value="{{ filters.limit }}">
+            </div>
+            <div class="col-xs-12 col-lg-9">
 
     {% if result and result.items is not empty %}
         <div class="table-wrap">
             <div class="table-scroll">
-                <table class="bx--data-table bx--data-table--compact bx--data-table--zebra">
+                <table class="table table-hover table-condensed">
                     <thead>
                         <tr>
                             {% set nameDir = (orderby == 'name' and orderdir == 'asc') ? 'desc' : 'asc' %}
@@ -119,17 +130,17 @@
                     {% set nextOffset = result.offset + result.limit %}
                     <div class="pagination__controls">
                         {% if prevOffset >= 0 %}
-                            <a class="bx--btn bx--btn--tertiary bx--btn--sm"
+                            <a class="btn btn-default"
                                href="{{ path('marketplace_index', current|merge({'offset': prevOffset})) }}">Previous</a>
                         {% else %}
-                            <span class="bx--btn bx--btn--tertiary bx--btn--sm bx--btn--disabled">Previous</span>
+                            <span class="btn btn-default disabled">Previous</span>
                         {% endif %}
 
                         {% if nextOffset < result.total %}
-                            <a class="bx--btn bx--btn--tertiary bx--btn--sm"
+                            <a class="btn btn-default"
                                href="{{ path('marketplace_index', current|merge({'offset': nextOffset})) }}">Next</a>
                         {% else %}
-                            <span class="bx--btn bx--btn--tertiary bx--btn--sm bx--btn--disabled">Next</span>
+                            <span class="btn btn-default disabled">Next</span>
                         {% endif %}
                     </div>
                     <div class="pagination__meta muted">
@@ -139,6 +150,10 @@
             {% endif %}
         {% endif %}
     {% else %}
-        <div class="empty-state muted">No packages found.</div>
+            <div class="empty-state muted">No packages found.</div>
     {% endif %}
+            </div>
+        </div>
+    </form>
+
 {% endblock %}
