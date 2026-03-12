@@ -40,7 +40,6 @@ final class MarketplaceApiClient
         ?string $query = null,
         ?string $mauticVersion = null,
         ?string $dateRange = null,
-        ?string $maintainer = null,
         ?string $popularity = null,
     ): PackageListResult {
         $params = [
@@ -64,10 +63,6 @@ final class MarketplaceApiClient
 
         if (null !== $dateRange && '' !== $dateRange) {
             $params['_date_range'] = $dateRange;
-        }
-
-        if (null !== $maintainer && '' !== $maintainer) {
-            $params['_maintainer'] = $maintainer;
         }
 
         if (null !== $popularity && '' !== $popularity) {

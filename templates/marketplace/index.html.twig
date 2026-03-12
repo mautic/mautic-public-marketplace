@@ -17,7 +17,7 @@
     <form class="toolbar" method="get" id="marketplace-filters" data-autosubmit="true">
         <div class="bx--form-item">
             <label class="bx--label" for="query">Search</label>
-            <input class="bx--text-input" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages">
+            <input class="bx--text-input" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages or maintainers">
         </div>
         <div class="bx--form-item">
             <label class="bx--label" for="type">Type</label>
@@ -51,10 +51,6 @@
                     <path d="M8 11L3 6h10L8 11z" fill="currentColor"></path>
                 </svg>
             </div>
-        </div>
-        <div class="bx--form-item">
-            <label class="bx--label" for="maintainer">Maintainer</label>
-            <input class="bx--text-input" id="maintainer" name="maintainer" type="text" value="{{ filters.maintainer ?? '' }}" placeholder="Search by maintainer">
         </div>
         <div class="bx--form-item">
             <label class="bx--label" for="date_range">Upload date</label>

@@ -1,6 +1,7 @@
 -- Drop old get_view overloads to prevent PostgREST conflict
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
 
 CREATE OR REPLACE FUNCTION get_view(
     _limit INT,
@@ -11,7 +12,6 @@ CREATE OR REPLACE FUNCTION get_view(
     _smv TEXT DEFAULT NULL,
     _type TEXT DEFAULT NULL,
     _date_range TEXT DEFAULT NULL,
-    _maintainer TEXT DEFAULT NULL,
     _popularity TEXT DEFAULT NULL
 )
 RETURNS JSON AS $$
@@ -70,16 +70,15 @@ BEGIN
          FROM packages p
          LEFT JOIN reviews r ON p.name = r."objectId"
          WHERE p.latest_mautic_support = TRUE
-           AND (%L IS NULL OR p.name ILIKE ''%%'' || %L || ''%%'')
+           AND (%L IS NULL OR p.name ILIKE ''%%'' || %L || ''%%'' OR p.maintainers::text ILIKE ''%%'' || %L || ''%%'')
            AND (%L IS NULL OR p.type = %L)
-           AND (%L IS NULL OR p.maintainers::text ILIKE ''%%'' || %L || ''%%'')
            AND (%L IS NULL OR EXISTS (
                   SELECT 1 FROM versions v
                   WHERE v.package_name = p.name
                   AND v.smv ILIKE ''%%'' || %L || ''%%''
                ))
            ' || date_filter,
-        _query, _query, _type, _type, _maintainer, _maintainer, _smv, _smv
+        _query, _query, _query, _type, _type, _smv, _smv
     ) INTO total;
 
     -- Fetch paginated results
@@ -100,9 +99,8 @@ BEGIN
                FROM packages p
                LEFT JOIN reviews r ON p.name = r."objectId"
                WHERE p.latest_mautic_support = TRUE
-                 AND (%L IS NULL OR p.name ILIKE ''%%'' || %L || ''%%'')
+                 AND (%L IS NULL OR p.name ILIKE ''%%'' || %L || ''%%'' OR p.maintainers::text ILIKE ''%%'' || %L || ''%%'')
                  AND (%L IS NULL OR p.type = %L)
-                 AND (%L IS NULL OR p.maintainers::text ILIKE ''%%'' || %L || ''%%'')
                  AND (%L IS NULL OR EXISTS (
                         SELECT 1 FROM versions v
                         WHERE v.package_name = p.name
@@ -112,7 +110,7 @@ BEGIN
                GROUP BY p.name, p.url, p.repository, p.description, p.downloads, p.favers, p.type, p.displayname, p.time, p.created_at
                ORDER BY %s %s, p.name ASC
                LIMIT %L OFFSET %L
-         ) t', _query, _query, _type, _type, _maintainer, _maintainer, _smv, _smv, _orderby, _orderdir, _limit, _offset);
+         ) t', _query, _query, _query, _type, _type, _smv, _smv, _orderby, _orderdir, _limit, _offset);
 
     EXECUTE sql_query INTO todo;
 

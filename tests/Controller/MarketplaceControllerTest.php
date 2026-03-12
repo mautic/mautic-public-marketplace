@@ -93,10 +93,10 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextNotContains('table', 'Welcome Campaign');
     }
 
-    public function testFilterByMaintainer(): void
+    public function testSearchByMaintainer(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?maintainer=rcheesley');
+        $client->request('GET', '/?query=rcheesley');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('table', 'Alpha Plugin');
@@ -192,7 +192,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testCombinedFilters(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?type=mautic-plugin&maintainer=escopecz');
+        $client->request('GET', '/?type=mautic-plugin&query=escopecz');
 
         self::assertResponseIsSuccessful();
         // escopecz maintains example-plugin (plugin), zebra-theme (theme)

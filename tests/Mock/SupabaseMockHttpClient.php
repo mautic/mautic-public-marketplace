@@ -100,16 +100,11 @@ final class SupabaseMockHttpClient extends MockHttpClient
             $rows = array_values(array_filter($rows, static fn (array $r) => ($r['type'] ?? '') === $type));
         }
 
-        // Filter by query (name search)
+        // Filter by query (searches both name and maintainers)
         if (isset($params['_query']) && '' !== $params['_query']) {
             $q = strtolower($params['_query']);
-            $rows = array_values(array_filter($rows, static fn (array $r) => str_contains(strtolower($r['name']), $q)));
-        }
-
-        // Filter by maintainer
-        if (isset($params['_maintainer']) && '' !== $params['_maintainer']) {
-            $m = strtolower($params['_maintainer']);
-            $rows = array_values(array_filter($rows, static fn (array $r) => str_contains(strtolower($r['maintainers'] ?? ''), $m)));
+            $rows = array_values(array_filter($rows, static fn (array $r) => str_contains(strtolower($r['name']), $q)
+                || str_contains(strtolower($r['maintainers'] ?? ''), $q)));
         }
 
         // Filter by SMV

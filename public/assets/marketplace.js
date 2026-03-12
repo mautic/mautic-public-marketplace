@@ -8,7 +8,6 @@ function initMarketplaceForm() {
     const typeSelect = form.querySelector('select[name="type"]');
     const mauticInput = form.querySelector('input[name="mautic"]');
     const popularitySelect = form.querySelector('select[name="popularity"]');
-    const maintainerInput = form.querySelector('input[name="maintainer"]');
     const dateRangeSelect = form.querySelector('select[name="date_range"]');
     const focusKey = 'marketplace:focus';
 
@@ -47,13 +46,6 @@ function initMarketplaceForm() {
         popularitySelect.addEventListener('change', () => submitForm(popularitySelect));
     }
 
-    if (maintainerInput) {
-        maintainerInput.addEventListener('input', () => {
-            window.clearTimeout(debounceTimer);
-            debounceTimer = window.setTimeout(() => submitForm(maintainerInput), 400);
-        });
-    }
-
     if (dateRangeSelect) {
         dateRangeSelect.addEventListener('change', () => submitForm(dateRangeSelect));
     }
@@ -62,7 +54,7 @@ function initMarketplaceForm() {
         const saved = sessionStorage.getItem(focusKey);
         if (saved) {
             const data = JSON.parse(saved);
-            const focusTargets = { query: searchInput, mautic: mauticInput, maintainer: maintainerInput };
+            const focusTargets = { query: searchInput, mautic: mauticInput };
             const target = (data && focusTargets[data.focus]) || searchInput;
             if (target) {
                 target.focus({ preventScroll: true });

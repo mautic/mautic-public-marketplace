@@ -32,7 +32,6 @@ final class MarketplaceController extends AbstractController
         $query = $request->query->get('query');
         $mautic = $request->query->get('mautic');
         $dateRange = $request->query->get('date_range');
-        $maintainer = $request->query->get('maintainer');
         $popularity = $request->query->get('popularity');
 
         try {
@@ -45,7 +44,6 @@ final class MarketplaceController extends AbstractController
                 \is_string($query) ? $query : null,
                 \is_string($mautic) ? $mautic : null,
                 \is_string($dateRange) ? $dateRange : null,
-                \is_string($maintainer) ? $maintainer : null,
                 \is_string($popularity) ? $popularity : null,
             );
         } catch (SupabaseApiException $exception) {
@@ -61,7 +59,6 @@ final class MarketplaceController extends AbstractController
                     'query' => $query,
                     'mautic' => $mautic,
                     'date_range' => $dateRange,
-                    'maintainer' => $maintainer,
                     'popularity' => $popularity,
                 ],
             ], new Response('', Response::HTTP_BAD_GATEWAY));
@@ -79,7 +76,6 @@ final class MarketplaceController extends AbstractController
                 'query' => $query,
                 'mautic' => $mautic,
                 'date_range' => $dateRange,
-                'maintainer' => $maintainer,
                 'popularity' => $popularity,
             ],
             'auth0_domain' => $this->auth0Domain,
