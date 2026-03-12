@@ -1,0 +1,7 @@
+{% set pictogram_name = pictogram|default('') %}
+{% if pictogram_name %}
+{% set svg_path = '@pictograms/' ~ pictogram_name ~ '.svg' %}
+<div class="pictogram pictogram--size-{{ size|default(32) }}" style="fill: {{ color|default('var(--icon-primary, currentColor)') }};">
+    {{ source(svg_path) }}
+</div>
+{% endif %}
