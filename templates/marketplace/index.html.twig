@@ -8,26 +8,20 @@
     {% set orderdir = filters.orderdir %}
 
     {% include 'components/lead-space.html.twig' with {
-        variant: 'medium',
+        variant: 'short',
         heading: 'mautic.marketplace.leadspace.heading',
-        description: 'mautic.marketplace.leadspace.description',
-        gradientStyleScheme: 'with-gradient',
+        gradientStyleScheme: 'without-gradient',
         gradientStyleSchemeColor: '#f1edea',
-        media: {
-            src: 'assets/images/google-deepmind-4sRFTaQSM8Q-unsplash.jpg',
-            alt: 'mautic.marketplace.leadspace.image_alt'
-        }
     } %}
 
     {% if error %}
         <p class="muted">{{ error }}</p>
     {% endif %}
 
-    <form class="mt-48" method="get" id="marketplace-filters" data-autosubmit="true">
+    <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true">
         <div class="row">
             <div class="col-xs-12">
                 <div class="form-group mb-16">
-                    <label for="query">Search</label>
                     <input class="form-control" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages or maintainers">
                 </div>
             </div>

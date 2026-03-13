@@ -17,12 +17,6 @@
             package.type == 'mautic-resource' ? '#fdb933' :
             '#ad9bd3'
         ) %}
-        {% set media_src = (
-            package.type == 'mautic-plugin' ? 'assets/images/google-deepmind-2ufXB-oAyG0-unsplash.jpg' :
-            package.type == 'mautic-theme' ? 'assets/images/faseeh-fawaz-A6H2BwIskZQ-unsplash.jpg' :
-            package.type == 'mautic-resource' ? 'assets/images/google-deepmind-osySqI7kwL0-unsplash.jpg' :
-            'assets/images/google-deepmind-2ufXB-oAyG0-unsplash.jpg'
-        ) %}
         {% set type_label = package.type == 'mautic-plugin' ? 'mautic.marketplace.detail.type.plugin' :
             package.type == 'mautic-theme' ? 'mautic.marketplace.detail.type.theme' :
             package.type == 'mautic-resource' ? 'mautic.marketplace.detail.type.resource' :
@@ -38,13 +32,9 @@
             variant: 'short',
             heading: package.displayName ?: package.name,
             description: package.description,
-            gradientStyleScheme: 'with-gradient',
+            gradientStyleScheme: 'without-gradient',
             gradientStyleSchemeColor: color,
             tags: leadspace_tags,
-            media: {
-                src: media_src,
-                alt: 'mautic.marketplace.leadspace.image_alt'
-            }
         } %}
         <header class="detail-header mt-32">
             <div class="detail-subtitle">
