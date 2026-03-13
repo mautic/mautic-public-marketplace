@@ -37,6 +37,36 @@
             <label class="bx--label" for="mautic">{{ 'marketplace.index.filters.mautic.label'|trans }}</label>
             <input class="bx--text-input" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="{{ 'marketplace.index.filters.mautic.placeholder'|trans }}">
         </div>
+        <div class="bx--form-item">
+            <label class="bx--label" for="popularity">Popularity</label>
+            <div class="bx--select">
+                <select class="bx--select-input" id="popularity" name="popularity">
+                    <option value="">Default</option>
+                    <option value="most_popular" {% if filters.popularity == 'most_popular' %}selected{% endif %}>Most popular</option>
+                    <option value="top_rated" {% if filters.popularity == 'top_rated' %}selected{% endif %}>Top rated</option>
+                    <option value="newest" {% if filters.popularity == 'newest' %}selected{% endif %}>Newest</option>
+                    <option value="rising" {% if filters.popularity == 'rising' %}selected{% endif %}>Rising</option>
+                </select>
+                <svg class="bx--select__arrow" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 11L3 6h10L8 11z" fill="currentColor"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="bx--form-item">
+            <label class="bx--label" for="date_range">Upload date</label>
+            <div class="bx--select">
+                <select class="bx--select-input" id="date_range" name="date_range">
+                    <option value="">All time</option>
+                    <option value="7d" {% if filters.date_range == '7d' %}selected{% endif %}>Last 7 days</option>
+                    <option value="30d" {% if filters.date_range == '30d' %}selected{% endif %}>Last 30 days</option>
+                    <option value="90d" {% if filters.date_range == '90d' %}selected{% endif %}>Last 90 days</option>
+                    <option value="365d" {% if filters.date_range == '365d' %}selected{% endif %}>Last year</option>
+                </select>
+                <svg class="bx--select__arrow" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 11L3 6h10L8 11z" fill="currentColor"></path>
+                </svg>
+            </div>
+        </div>
         <input type="hidden" name="orderby" value="{{ orderby }}">
         <input type="hidden" name="orderdir" value="{{ orderdir }}">
         <input type="hidden" name="limit" value="{{ filters.limit }}">

@@ -151,7 +151,9 @@ async function main(req: Request) {
   return new Response('Success', { status: 200 });
 }
 
-Deno.serve(main);
+if (import.meta.main) {
+  Deno.serve(main);
+}
 
 export { fetchPackagistData, storeInSupabase };
 
