@@ -28,7 +28,7 @@
             <div class="col-xs-12">
                 <div class="form-group mb-16">
                     <label for="query">Search</label>
-                    <input class="form-control" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages">
+                    <input class="form-control" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages or maintainers">
                 </div>
             </div>
         </div>
@@ -47,12 +47,31 @@
                     <label for="mautic">Mautic version</label>
                     <input class="form-control" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="e.g. ^5.0">
                 </div>
+                <div class="form-group">
+                    <label for="popularity">Popularity</label>
+                    <select class="form-control" id="popularity" name="popularity">
+                        <option value="">Default</option>
+                        <option value="most_popular" {% if filters.popularity == 'most_popular' %}selected{% endif %}>Most popular</option>
+                        <option value="top_rated" {% if filters.popularity == 'top_rated' %}selected{% endif %}>Top rated</option>
+                        <option value="newest" {% if filters.popularity == 'newest' %}selected{% endif %}>Newest</option>
+                        <option value="rising" {% if filters.popularity == 'rising' %}selected{% endif %}>Rising</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="date_range">Upload date</label>
+                    <select class="form-control" id="date_range" name="date_range">
+                        <option value="">All time</option>
+                        <option value="7d" {% if filters.date_range == '7d' %}selected{% endif %}>Last 7 days</option>
+                        <option value="30d" {% if filters.date_range == '30d' %}selected{% endif %}>Last 30 days</option>
+                        <option value="90d" {% if filters.date_range == '90d' %}selected{% endif %}>Last 90 days</option>
+                        <option value="365d" {% if filters.date_range == '365d' %}selected{% endif %}>Last year</option>
+                    </select>
+                </div>
                 <input type="hidden" name="orderby" value="{{ orderby }}">
                 <input type="hidden" name="orderdir" value="{{ orderdir }}">
                 <input type="hidden" name="limit" value="{{ filters.limit }}">
             </div>
             <div class="col-xs-12 col-lg-9">
-
     {% if result and result.items is not empty %}
         <div class="table-wrap">
             <div class="table-scroll">

@@ -7,7 +7,9 @@ INSERT INTO packages (
     favers,
     url,
     displayname,
+    maintainers,
     latest_mautic_support,
+    time,
     created_at
 )
 VALUES (
@@ -19,8 +21,10 @@ VALUES (
     10,
     'https://packagist.org/packages/mautic/example-plugin',
     'Example Plugin',
+    '[{"name": "escopecz", "avatar_url": "https://www.gravatar.com/avatar/06d22001?d=identicon"}]'::jsonb,
     true,
-    NOW()
+    NOW() - INTERVAL '5 days',
+    NOW() - INTERVAL '5 days'
 )
 ON CONFLICT (name) DO UPDATE SET
     description = EXCLUDED.description,
@@ -30,7 +34,9 @@ ON CONFLICT (name) DO UPDATE SET
     favers = EXCLUDED.favers,
     url = EXCLUDED.url,
     displayname = EXCLUDED.displayname,
-    latest_mautic_support = EXCLUDED.latest_mautic_support;
+    maintainers = EXCLUDED.maintainers,
+    latest_mautic_support = EXCLUDED.latest_mautic_support,
+    time = EXCLUDED.time;
 
 INSERT INTO versions (
     package_name,
@@ -61,7 +67,9 @@ INSERT INTO packages (
     favers,
     url,
     displayname,
+    maintainers,
     latest_mautic_support,
+    time,
     created_at
 )
 VALUES (
@@ -73,8 +81,10 @@ VALUES (
     2,
     'https://packagist.org/packages/mautic/alpha-plugin',
     'Alpha Plugin',
+    '[{"name": "rcheesley", "avatar_url": "https://www.gravatar.com/avatar/bc9131bb?d=identicon"}]'::jsonb,
     true,
-    NOW()
+    NOW() - INTERVAL '60 days',
+    NOW() - INTERVAL '60 days'
 )
 ON CONFLICT (name) DO UPDATE SET
     description = EXCLUDED.description,
@@ -84,7 +94,9 @@ ON CONFLICT (name) DO UPDATE SET
     favers = EXCLUDED.favers,
     url = EXCLUDED.url,
     displayname = EXCLUDED.displayname,
-    latest_mautic_support = EXCLUDED.latest_mautic_support;
+    maintainers = EXCLUDED.maintainers,
+    latest_mautic_support = EXCLUDED.latest_mautic_support,
+    time = EXCLUDED.time;
 
 INSERT INTO versions (
     package_name,
@@ -115,7 +127,9 @@ INSERT INTO packages (
     favers,
     url,
     displayname,
+    maintainers,
     latest_mautic_support,
+    time,
     created_at
 )
 VALUES (
@@ -127,8 +141,10 @@ VALUES (
     5,
     'https://packagist.org/packages/mautic/zebra-theme',
     'Zebra Theme',
+    '[{"name": "escopecz", "avatar_url": "https://www.gravatar.com/avatar/06d22001?d=identicon"}]'::jsonb,
     true,
-    NOW()
+    NOW() - INTERVAL '200 days',
+    NOW() - INTERVAL '200 days'
 )
 ON CONFLICT (name) DO UPDATE SET
     description = EXCLUDED.description,
@@ -138,7 +154,9 @@ ON CONFLICT (name) DO UPDATE SET
     favers = EXCLUDED.favers,
     url = EXCLUDED.url,
     displayname = EXCLUDED.displayname,
-    latest_mautic_support = EXCLUDED.latest_mautic_support;
+    maintainers = EXCLUDED.maintainers,
+    latest_mautic_support = EXCLUDED.latest_mautic_support,
+    time = EXCLUDED.time;
 
 INSERT INTO versions (
     package_name,
@@ -156,6 +174,66 @@ VALUES (
     '2.0.0.0',
     'mautic-theme',
     '^4.4 || ^5.0',
+    NOW()
+)
+ON CONFLICT (package_name, version) DO NOTHING;
+
+INSERT INTO packages (
+    name,
+    description,
+    type,
+    repository,
+    downloads,
+    favers,
+    url,
+    displayname,
+    maintainers,
+    latest_mautic_support,
+    time,
+    created_at
+)
+VALUES (
+    'mautic/welcome-campaign',
+    'Welcome drip campaign resource template.',
+    'mautic-resource',
+    'https://github.com/mautic/welcome-campaign',
+    '{"total": 500}'::jsonb,
+    3,
+    'https://packagist.org/packages/mautic/welcome-campaign',
+    'Welcome Campaign',
+    '[{"name": "rcheesley", "avatar_url": "https://www.gravatar.com/avatar/bc9131bb?d=identicon"}]'::jsonb,
+    true,
+    NOW() - INTERVAL '10 days',
+    NOW() - INTERVAL '10 days'
+)
+ON CONFLICT (name) DO UPDATE SET
+    description = EXCLUDED.description,
+    type = EXCLUDED.type,
+    repository = EXCLUDED.repository,
+    downloads = EXCLUDED.downloads,
+    favers = EXCLUDED.favers,
+    url = EXCLUDED.url,
+    displayname = EXCLUDED.displayname,
+    maintainers = EXCLUDED.maintainers,
+    latest_mautic_support = EXCLUDED.latest_mautic_support,
+    time = EXCLUDED.time;
+
+INSERT INTO versions (
+    package_name,
+    description,
+    version,
+    version_normalized,
+    type,
+    smv,
+    time
+)
+VALUES (
+    'mautic/welcome-campaign',
+    'Welcome campaign v1.',
+    '1.0.0',
+    '1.0.0.0',
+    'mautic-resource',
+    '^5.0',
     NOW()
 )
 ON CONFLICT (package_name, version) DO NOTHING;

@@ -26,11 +26,13 @@ final class MarketplaceController extends AbstractController
     {
         $limit = $this->toInt($request->query->get('limit'), 10);
         $offset = $this->toInt($request->query->get('offset'), 0);
-        $orderBy = (string) $request->query->get('orderby', 'name');
-        $orderDir = (string) $request->query->get('orderdir', 'asc');
+        $orderBy = (string) $request->query->get('orderby', 'downloads');
+        $orderDir = (string) $request->query->get('orderdir', 'desc');
         $type = $request->query->get('type');
         $query = $request->query->get('query');
         $mautic = $request->query->get('mautic');
+        $dateRange = $request->query->get('date_range');
+        $popularity = $request->query->get('popularity');
 
         try {
             $result = $this->apiClient->listPackages(
@@ -41,6 +43,8 @@ final class MarketplaceController extends AbstractController
                 \is_string($type) ? $type : null,
                 \is_string($query) ? $query : null,
                 \is_string($mautic) ? $mautic : null,
+                \is_string($dateRange) ? $dateRange : null,
+                \is_string($popularity) ? $popularity : null,
             );
         } catch (SupabaseApiException $exception) {
             return $this->render('marketplace/index.html.twig', [
@@ -54,6 +58,8 @@ final class MarketplaceController extends AbstractController
                     'type' => $type,
                     'query' => $query,
                     'mautic' => $mautic,
+                    'date_range' => $dateRange,
+                    'popularity' => $popularity,
                 ],
             ], new Response('', Response::HTTP_BAD_GATEWAY));
         }
@@ -69,6 +75,8 @@ final class MarketplaceController extends AbstractController
                 'type' => $type,
                 'query' => $query,
                 'mautic' => $mautic,
+                'date_range' => $dateRange,
+                'popularity' => $popularity,
             ],
             'auth0_domain' => $this->auth0Domain,
             'auth0_client_id' => $this->auth0ClientId,
