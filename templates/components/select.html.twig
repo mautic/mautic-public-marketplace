@@ -1,0 +1,67 @@
+{% set name = name|default('select') %}
+{% set id = id|default(name|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
+{% set label = label|default(null) %}
+{% set options = options|default([]) %}
+{% set value = value|default(null) %}
+{% set placeholder = placeholder|default(null) %}
+{% set help_text = help_text|default(null) %}
+{% set size = size|default(null) %}
+{% set disabled = disabled|default(false) %}
+{% set required = required|default(false) %}
+{% set multiple = multiple|default(false) %}
+{% set wrapper_class = wrapper_class|default('') %}
+{% set describedby = describedby|default([]) %}
+{% set attributes = attributes|default({}) %}
+{% set select_class = 'form-select' %}
+
+{% if size in ['sm', 'lg'] %}
+    {% set select_class = select_class ~ ' form-select-' ~ size %}
+{% endif %}
+
+{% if attributes.class is defined %}
+    {% set select_class = select_class ~ ' ' ~ attributes.class %}
+{% endif %}
+
+{% if help_text %}
+    {% set describedby = describedby|merge([id ~ '-help']) %}
+{% endif %}
+
+<div class="{% if wrapper_class %}{{ wrapper_class }}{% endif %}">
+    {% if label %}
+        <label for="{{ id }}" class="form-label">{{ label|trans }}</label>
+    {% endif %}
+
+    <select
+        class="{{ select_class|trim }}"
+        id="{{ id }}"
+        name="{{ name }}"
+        {% if describedby is not empty %}aria-describedby="{{ describedby|join(' ') }}"{% endif %}
+        {% if disabled %}disabled{% endif %}
+        {% if required %}required{% endif %}
+        {% if multiple %}multiple{% endif %}
+        {% for attribute, attribute_value in attributes %}
+            {% if attribute != 'class' %}
+                {{ attribute }}="{{ attribute_value }}"
+            {% endif %}
+        {% endfor %}
+    >
+        {% if placeholder is not null %}
+            <option value="" {% if value is same as(null) or value == '' %}selected{% endif %}>{{ placeholder|trans }}</option>
+        {% endif %}
+        {% for option in options %}
+            {% set option_value = option.value|default('') %}
+            {% set selected = multiple ? option_value in (value|default([])) : option_value == value %}
+            <option
+                value="{{ option_value }}"
+                {% if selected %}selected{% endif %}
+                {% if option.disabled|default(false) %}disabled{% endif %}
+            >
+                {{ option.label|default('')|trans }}
+            </option>
+        {% endfor %}
+    </select>
+
+    {% if help_text %}
+        <div id="{{ id }}-help" class="form-text">{{ help_text|trans }}</div>
+    {% endif %}
+</div>

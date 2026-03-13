@@ -1,0 +1,55 @@
+{% set id = id|default(name|default('input-group')|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
+{% set label = label|default(null) %}
+{% set help_text = help_text|default(null) %}
+{% set size = size|default(null) %}
+{% set wrapper_class = wrapper_class|default('') %}
+{% set addons_prepend = addons_prepend|default([]) %}
+{% set addons_append = addons_append|default([]) %}
+{% set control = control|default({}) %}
+{% set attributes = attributes|default({}) %}
+{% set group_class = 'input-group' %}
+
+{% if size in ['sm', 'lg'] %}
+    {% set group_class = group_class ~ ' input-group-' ~ size %}
+{% endif %}
+
+{% if attributes.class is defined %}
+    {% set group_class = group_class ~ ' ' ~ attributes.class %}
+{% endif %}
+
+<div class="{% if wrapper_class %}{{ wrapper_class }}{% endif %}">
+    {% if label %}
+        <label for="{{ control.id|default(id ~ '-control') }}" class="form-label">{{ label|trans }}</label>
+    {% endif %}
+
+    <div
+        class="{{ group_class|trim }}"
+        {% for attribute, attribute_value in attributes %}
+            {% if attribute != 'class' %}
+                {{ attribute }}="{{ attribute_value }}"
+            {% endif %}
+        {% endfor %}
+    >
+        {% for addon in addons_prepend %}
+            <span class="input-group-text">{{ addon|trans }}</span>
+        {% endfor %}
+
+        {% set control_type = control.component|default('form-control') %}
+        {% set control_context = control|merge({
+            id: control.id|default(id ~ '-control'),
+            label: null,
+            help_text: null,
+            wrapper_class: '',
+            describedby: help_text ? [id ~ '-help'] : []
+        }) %}
+        {% include 'components/' ~ control_type ~ '.html.twig' with control_context only %}
+
+        {% for addon in addons_append %}
+            <span class="input-group-text">{{ addon|trans }}</span>
+        {% endfor %}
+    </div>
+
+    {% if help_text %}
+        <div id="{{ id }}-help" class="form-text">{{ help_text|trans }}</div>
+    {% endif %}
+</div>
