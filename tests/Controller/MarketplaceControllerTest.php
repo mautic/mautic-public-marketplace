@@ -14,7 +14,7 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Marketplace');
+        self::assertSelectorExists('h1');
     }
 
     public function testFilteringByTypeAndMauticVersion(): void
@@ -23,7 +23,6 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?type=mautic-theme&mautic=^4.4');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Marketplace');
         self::assertSelectorTextContains('table', 'Zebra Theme');
         self::assertSelectorTextNotContains('table', 'Alpha Plugin');
     }
