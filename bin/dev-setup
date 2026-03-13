@@ -68,9 +68,9 @@ SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
 ENV
 fi
 
-# Seed packages via edge function runner
+# Seed packages via CLI runner (not the edge function server)
 SUPABASE_URL="${SUPABASE_URL_LOCAL}" \
 SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY}" \
-  deno run --allow-env --allow-read --allow-net supabase/functions/fetch_package/index.ts
+  deno run --allow-env --allow-read --allow-net supabase/functions/fetch_package/seed_cli.ts
 
 echo "Dev setup complete."
