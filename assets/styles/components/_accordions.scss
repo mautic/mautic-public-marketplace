@@ -97,8 +97,7 @@
   display: flex;
   flex-direction: column;
   padding-inline: var(--layout-density-padding-inline-local);
-  margin-block: 20px;
-  margin-block-end: 25px;
+  margin-block: 5px;
 }
 
 .accordion-content--slim { --layout-density-padding-inline-local: 0; }
