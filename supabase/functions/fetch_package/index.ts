@@ -10,6 +10,39 @@ async function fetchPackagistData(packageName: string) {
   return data;
 }
 
+function validateMauticResource(packageData: any): boolean {
+  const versions = packageData.package?.versions;
+  if (!versions) return false;
+
+  // Check any version for required composer.json fields
+  for (const [_, version] of Object.entries(versions) as [string, any][]) {
+    if (version.type !== 'mautic-resource') continue;
+
+    // Required standard fields
+    if (!version.description || typeof version.description !== 'string' || version.description.trim() === '') return false;
+    if (!version.license) return false;
+
+    // Required extra fields
+    const extra = version.extra;
+    if (!extra) return false;
+    if (!extra.display_name || typeof extra.display_name !== 'string' || extra.display_name.trim() === '') return false;
+    if (extra.display_name.length > 150) return false;
+    if (!extra.detailed_description || typeof extra.detailed_description !== 'string' || extra.detailed_description.trim() === '') return false;
+    if (extra.detailed_description.length > 5000) return false;
+    if (!extra.expected_outcomes || typeof extra.expected_outcomes !== 'string' || extra.expected_outcomes.trim() === '') return false;
+    if (extra.expected_outcomes.length > 2000) return false;
+
+    // Validate optional fields if present
+    if (version.description.length > 300) return false;
+    if (extra.industry && !Array.isArray(extra.industry)) return false;
+
+    // If we found a valid mautic-resource version, it passes
+    return true;
+  }
+
+  return false;
+}
+
 async function storeInSupabase(supabaseClient: any, packageData: any) {
   if (!packageData || !packageData.package) {
     console.error('Invalid package data structure:', packageData);
@@ -31,6 +64,9 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     return;
   }
 
+  // Validate mautic-resource packages
+  const templateValid = type === 'mautic-resource' ? validateMauticResource(packageData) : null;
+
   // Insert into packages table first
   const { data: packageDataResponse, error: packageError } = await supabaseClient
     .from('packages')
@@ -50,6 +86,7 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
       suggesters,
       downloads,
       favers,
+      template_valid: templateValid,
     }], { onConflict: 'name' });
 
   if (packageError) {

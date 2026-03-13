@@ -95,6 +95,7 @@ final class MarketplaceApiClient
                 $this->toFloat($row['average_rating'] ?? null),
                 $this->toInt($row['total_review'] ?? null),
                 $this->toBool($row['latest_mautic_support'] ?? null),
+                $this->toBool($row['template_valid'] ?? null),
                 $this->toDateTime($row['time'] ?? null),
             );
         }
@@ -137,6 +138,7 @@ final class MarketplaceApiClient
             $row['url'] ?? null,
             $this->toBool($row['isreviewed'] ?? null),
             $this->toBool($row['latest_mautic_support'] ?? null),
+            $this->toBool($row['template_valid'] ?? null),
             $this->toArray($row['maintainers'] ?? null),
             isset($row['time']) ? (string) $row['time'] : null,
             $this->toArray($row['reviews'] ?? null),
