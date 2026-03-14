@@ -70,4 +70,20 @@ function initMarketplaceForm() {
     }
 }
 
-document.addEventListener('turbo:load', initMarketplaceForm);
+function initTooltips() {
+    if (!window.bootstrap || !window.bootstrap.Tooltip) {
+        return;
+    }
+
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((element) => {
+        if (!window.bootstrap.Tooltip.getInstance(element)) {
+            new window.bootstrap.Tooltip(element);
+        }
+    });
+}
+
+document.addEventListener('turbo:load', () => {
+    initMarketplaceForm();
+    initTooltips();
+});
+
