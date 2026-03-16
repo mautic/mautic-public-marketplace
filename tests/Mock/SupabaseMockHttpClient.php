@@ -181,6 +181,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'repository' => $pkg['repository'],
                 'downloads' => ['total' => $pkg['downloads']],
                 'favers' => $pkg['favers'],
+                'time' => $pkg['time'],
                 'versions' => [],
                 'reviews' => [],
                 'maintainers' => [],
