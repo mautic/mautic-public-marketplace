@@ -21,7 +21,7 @@ final class PackageSummary
         public readonly ?float $averageRating,
         public readonly ?int $totalReviews,
         public readonly ?bool $latestMauticSupport,
-        public readonly ?bool $templateValid,
+        public readonly ?string $validationErrors,
         public readonly ?\DateTimeImmutable $updatedAt,
     ) {
     }

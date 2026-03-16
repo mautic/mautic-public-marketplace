@@ -1,10 +1,10 @@
--- Add template_valid column to packages table
-ALTER TABLE packages ADD COLUMN IF NOT EXISTS template_valid BOOLEAN DEFAULT NULL;
+-- Add validation_errors column to packages table
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS validation_errors TEXT DEFAULT NULL;
 
 -- Drop the old get_view to avoid PostgREST overload conflict
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
 
--- Recreate get_view with template_valid included
+-- Recreate get_view with validation_errors included
 CREATE OR REPLACE FUNCTION get_view(
     _limit INT,
     _offset INT,
@@ -95,7 +95,7 @@ BEGIN
                   p.favers,
                   p.type,
                   p.displayname,
-                  p.template_valid,
+                  p.validation_errors,
                   COALESCE(ROUND(AVG(r.rating), 1), 0) AS average_rating,
                   COALESCE(COUNT(r.review), 0) AS total_review,
                   COALESCE(p.time, p.created_at) AS time
@@ -110,7 +110,7 @@ BEGIN
                         AND v.smv ILIKE ''%%'' || %L || ''%%''
                      ))
                  ' || date_filter || '
-               GROUP BY p.name, p.url, p.repository, p.description, p.downloads, p.favers, p.type, p.displayname, p.template_valid, p.time, p.created_at
+               GROUP BY p.name, p.url, p.repository, p.description, p.downloads, p.favers, p.type, p.displayname, p.validation_errors, p.time, p.created_at
                ORDER BY %s %s, p.name ASC
                LIMIT %L OFFSET %L
          ) t', _query, _query, _query, _type, _type, _smv, _smv, _orderby, _orderdir, _limit, _offset);
@@ -124,7 +124,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE;
 
--- Update get_pack to include template_valid
+-- Update get_pack to include validation_errors
 CREATE OR REPLACE FUNCTION get_pack(packag_name TEXT)
 RETURNS JSON AS $$
 DECLARE
@@ -186,7 +186,7 @@ BEGIN
             'suggesters', p.suggesters,
             'downloads', p.downloads,
             'favers', p.favers,
-            'template_valid', p.template_valid
+            'validation_errors', p.validation_errors
         )
     ) INTO package_data
     FROM packages p
