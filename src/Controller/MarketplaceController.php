@@ -13,6 +13,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class MarketplaceController extends AbstractController
 {
+    private const PACKAGE_TYPES = [
+        'mautic-plugin',
+        'mautic-theme',
+        'mautic-resource',
+    ];
+
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
         #[Autowire(env: 'AUTH0_DOMAIN')]
@@ -46,10 +52,17 @@ final class MarketplaceController extends AbstractController
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
+            $typeCounts = $this->buildTypeCounts(
+                \is_string($query) ? $query : null,
+                \is_string($mautic) ? $mautic : null,
+                \is_string($dateRange) ? $dateRange : null,
+                \is_string($popularity) ? $popularity : null,
+            );
         } catch (SupabaseApiException $exception) {
             return $this->render('marketplace/index.html.twig', [
                 'error' => $exception->getMessage(),
                 'result' => null,
+                'type_counts' => $this->emptyTypeCounts(),
                 'filters' => [
                     'limit' => $limit,
                     'offset' => $offset,
@@ -67,6 +80,7 @@ final class MarketplaceController extends AbstractController
         return $this->render('marketplace/index.html.twig', [
             'error' => null,
             'result' => $result,
+            'type_counts' => $typeCounts,
             'filters' => [
                 'limit' => $limit,
                 'offset' => $offset,
@@ -115,5 +129,59 @@ final class MarketplaceController extends AbstractController
         }
 
         return is_numeric($value) ? (int) $value : $default;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function buildTypeCounts(?string $query, ?string $mautic, ?string $dateRange, ?string $popularity): array
+    {
+        $baseResult = $this->apiClient->listPackages(
+            1,
+            0,
+            'downloads',
+            'desc',
+            null,
+            $query,
+            $mautic,
+            $dateRange,
+            $popularity,
+        );
+
+        $total = $baseResult->total ?? \count($baseResult->items);
+        if ($total <= 0) {
+            return $this->emptyTypeCounts();
+        }
+
+        $fullResult = $this->apiClient->listPackages(
+            $total,
+            0,
+            'downloads',
+            'desc',
+            null,
+            $query,
+            $mautic,
+            $dateRange,
+            $popularity,
+        );
+
+        $counts = $this->emptyTypeCounts();
+        foreach ($fullResult->items as $item) {
+            if (null === $item->type || !\array_key_exists($item->type, $counts)) {
+                continue;
+            }
+
+            ++$counts[$item->type];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function emptyTypeCounts(): array
+    {
+        return array_fill_keys(self::PACKAGE_TYPES, 0);
     }
 }

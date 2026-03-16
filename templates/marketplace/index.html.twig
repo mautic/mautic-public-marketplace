@@ -30,15 +30,14 @@
         <div class="row mt-12">
             <div class="col-xs-12 col-lg-3">
                 {% set typeAccordionContent %}
-                    {% include 'components/select.html.twig' with {
-                        id: 'type',
+                    {% set allTypesCount = (type_counts['mautic-plugin'] ?? 0) + (type_counts['mautic-theme'] ?? 0) + (type_counts['mautic-resource'] ?? 0) %}
+                    {% include 'components/radio.html.twig' with {
                         name: 'type',
-                        value: filters.type ?? '',
-                        placeholder: 'All types',
-                        options: [
-                            { value: 'mautic-plugin', label: 'Plugin' },
-                            { value: 'mautic-theme', label: 'Theme' },
-                            { value: 'mautic-resource', label: 'Resource' }
+                        items: [
+                            { value: '', label: 'marketplace.index.filters.type.all_count'|trans({'%count%': allTypesCount}), checked: (filters.type ?? '') == '' },
+                            { value: 'mautic-plugin', label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-plugin' },
+                            { value: 'mautic-theme', label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-theme' },
+                            { value: 'mautic-resource', label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-resource' }
                         ]
                     } only %}
                 {% endset %}
