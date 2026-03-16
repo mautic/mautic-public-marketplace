@@ -4,19 +4,18 @@
 {% set label = label|default('') %}
 {% set placeholder = placeholder|default(label) %}
 {% set wrapper_class = wrapper_class|default('') %}
-{% set floating_class = 'form-floating' %}
 {% set attributes = attributes|default({}) %}
+{% set icon = icon|default(null) %}
 
-{% if wrapper_class %}
-    {% set floating_class = floating_class ~ ' ' ~ wrapper_class %}
-{% endif %}
 
-<div class="{{ floating_class|trim }}">
+<div class="form-floating">
     {% if component == 'select' %}
         {% include 'components/select.html.twig' with {
             id: id,
             name: name,
-            label: null,
+            label: label,
+            label_position: 'bottom',
+            icon: icon,
             options: options|default([]),
             value: value|default(null),
             disabled: disabled|default(false),
@@ -31,7 +30,9 @@
             id: id,
             name: name,
             type: type|default('text'),
-            label: null,
+            label: label,
+            label_position: 'bottom',
+            icon: icon,
             value: value|default(''),
             placeholder: placeholder,
             rows: rows|default(3),
@@ -45,6 +46,5 @@
             attributes: attributes
         } only %}
     {% endif %}
-
-    <label for="{{ id }}">{{ label|trans }}</label>
 </div>
+
