@@ -89,19 +89,18 @@
                 <input type="hidden" name="limit" value="{{ filters.limit }}">
             </div>
             <div class="col-xs-12 col-lg-9">
-                <div class="row justify-content-end mb-12">
+                <div class="row justify-content-end">
                     <div class="col-md-3">
-                        {% include 'components/select.html.twig' with {
-                            id: 'popularity',
+                        {% include 'components/floating-label.html.twig' with {
+                            component: 'select',
                             name: 'popularity',
                             value: filters.popularity ?? '',
-                            size: 'sm',
                             label: 'marketplace.index.filters.popularity.placeholder',
                             options: [
-                            { value: 'most_popular', label: 'marketplace.index.filters.popularity.most_popular' },
-                            { value: 'top_rated', label: 'marketplace.index.filters.popularity.top_rated' },
-                            { value: 'newest', label: 'marketplace.index.filters.popularity.newest' },
-                            { value: 'rising', label: 'marketplace.index.filters.popularity.rising' }
+                                { value: 'most_popular', label: 'marketplace.index.filters.popularity.most_popular' },
+                                { value: 'top_rated', label: 'marketplace.index.filters.popularity.top_rated' },
+                                { value: 'newest', label: 'marketplace.index.filters.popularity.newest' },
+                                { value: 'rising', label: 'marketplace.index.filters.popularity.rising' }
                             ]
                         } only %}
                         
