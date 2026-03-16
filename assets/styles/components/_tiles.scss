@@ -1,4 +1,5 @@
 .tile {
+    --layout-density-padding-inline-local: 16px;
     position: relative;
     display: flex;
     flex-grow: 1;
@@ -104,15 +105,15 @@
     inset-inline-end: 0;
 }
 
-.tile__chevron svg {
-    -webkit-transform: rotate(180deg);
-    transform: rotate(180deg);
+.tile__chevron i {
+    -webkit-transform: scaleY(-1);
+    transform: scaleY(-1);
     transition: var(--transition-all-productive);
 }
 
-.collapsed svg {
-    -webkit-transform: rotate(0deg);
-    transform: rotate(0deg);
+.collapsed i {
+    -webkit-transform: scaleY(1);
+    transform: scaleY(1);
 }
 
 .tile__chevron--interactive {

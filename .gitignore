@@ -20,6 +20,7 @@
 
 ###> symfony/asset-mapper ###
 /public/assets/*
+!/public/assets/images
 !/public/assets/pictograms/
 /public/assets/pictograms/*
 !/public/assets/pictograms/.gitkeep
