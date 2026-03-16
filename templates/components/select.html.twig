@@ -1,5 +1,5 @@
 {% set name = name|default('select') %}
-{% set id = id|default(name|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
+{% set id = name|replace({'[': '-', ']': '', ' ': '-', '.': '-'}) %}
 {% set label = label|default(null) %}
 {% set options = options|default([]) %}
 {% set value = value|default(null) %}
