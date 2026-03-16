@@ -6,7 +6,7 @@
 
 {% for item in items %}
     {% set item_label = item.label|default('') %}
-    {% set item_value = item.value|default(loop.index0) %}
+    {% set item_value = item.value is defined ? item.value : loop.index0 %}
     {% set item_id = item.id|default(base_id ~ '-' ~ loop.index0 ~ '-' ~ item_value|replace({' ': '-', '.': '-', '_': '-', '[': '-', ']': ''})|lower) %}
     {% set item_name = item.name|default(name) %}
     {% set classes = ['form-check'] %}

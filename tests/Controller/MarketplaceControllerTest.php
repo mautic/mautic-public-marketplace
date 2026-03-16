@@ -92,10 +92,12 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $labels = $client->getCrawler()->filter('input[name="type"] + label')
             ->each(static fn ($node): string => trim($node->text()));
+        $allTypesValue = $client->getCrawler()->filter('input[name="type"]')->first()->attr('value');
 
         self::assertContains('Campaign (1)', $labels);
         self::assertContains('Plugin (2)', $labels);
         self::assertContains('Theme (1)', $labels);
+        self::assertSame('', $allTypesValue);
     }
 
     public function testTypeCountsAreCustomizedBySearch(): void
