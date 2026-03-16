@@ -14,10 +14,6 @@
         gradientStyleSchemeColor: '#f1edea',
     } %}
 
-    {% if error %}
-        <p class="muted">{{ error }}</p>
-    {% endif %}
-
     <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true">
         <div class="row">
             <div class="col-xs-12">
@@ -179,6 +175,9 @@
         {% endif %}
     {% else %}
             <div class="empty-state muted">No packages found.</div>
+    {% endif %}
+    {% if error %}
+        <p class="muted">{{ error }}</p>
     {% endif %}
             </div>
         </div>
