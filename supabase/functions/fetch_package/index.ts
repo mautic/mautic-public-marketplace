@@ -137,13 +137,26 @@ async function main(req: Request) {
   const token = authHeader.replace('Bearer ', '');
 
   const supabaseClient = getSupabaseClient(token);
-  const urls = [
-    "https://packagist.org/packages/list.json?type=mautic-plugin",
-    "https://packagist.org/packages/list.json?type=mautic-theme",
-    "https://packagist.org/packages/list.json?type=mautic-resource",
-  ];
-  for (const url of urls) {
-    await fetchPackages(url, supabaseClient);
+
+  const validTypes = ["mautic-plugin", "mautic-theme", "mautic-resource"];
+  const requestUrl = new URL(req.url);
+  let typeParam = requestUrl.searchParams.get("type");
+
+  if (!typeParam) {
+    try {
+      const body = await req.json();
+      if (body && typeof body.type === "string") {
+        typeParam = body.type;
+      }
+    } catch {
+      // No JSON body, use all types
+    }
+  }
+
+  const types = typeParam && validTypes.includes(typeParam) ? [typeParam] : validTypes;
+
+  for (const t of types) {
+    await fetchPackages(`https://packagist.org/packages/list.json?type=${t}`, supabaseClient);
   }
 
   await updateAllowlist();
@@ -151,7 +164,9 @@ async function main(req: Request) {
   return new Response('Success', { status: 200 });
 }
 
-Deno.serve(main);
+if (import.meta.main) {
+  Deno.serve(main);
+}
 
 export { fetchPackagistData, storeInSupabase };
 
