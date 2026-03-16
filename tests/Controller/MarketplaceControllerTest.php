@@ -69,6 +69,8 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Alpha Plugin');
         self::assertSelectorTextContains('body', 'Alpha plugin for sorting.');
+        self::assertSelectorTextContains('time', '2 months ago');
+        self::assertSelectorExists(sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
     }
 
     public function testFilterByResourceType(): void

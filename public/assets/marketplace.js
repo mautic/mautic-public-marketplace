@@ -8,6 +8,7 @@ function initMarketplaceForm() {
     const mauticInput = form.querySelector('input[name="mautic"]');
     const changeInputs = form.querySelectorAll('select, input[type="radio"], input[type="checkbox"]');
     const focusKey = 'marketplace:focus';
+    const scrollKey = 'marketplace:scroll';
 
     let debounceTimer = null;
     const submitForm = (focusTarget) => {
@@ -18,6 +19,7 @@ function initMarketplaceForm() {
                     position: focusTarget.selectionStart ?? focusTarget.value.length,
                 }));
             }
+            sessionStorage.setItem(scrollKey, String(window.scrollY));
             form.requestSubmit();
         }
     };
@@ -57,6 +59,18 @@ function initMarketplaceForm() {
         sessionStorage.removeItem(focusKey);
     } catch (e) {
         sessionStorage.removeItem(focusKey);
+    }
+
+    try {
+        const savedScrollY = sessionStorage.getItem(scrollKey);
+        if (null !== savedScrollY) {
+            window.requestAnimationFrame(() => {
+                window.scrollTo({ top: Number.parseInt(savedScrollY, 10) || 0, left: 0 });
+            });
+        }
+        sessionStorage.removeItem(scrollKey);
+    } catch (e) {
+        sessionStorage.removeItem(scrollKey);
     }
 }
 
