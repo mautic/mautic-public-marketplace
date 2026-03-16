@@ -67,7 +67,11 @@
                     <!-- Last updated -->
                     <dt class="type-heading-01">{{ 'mautic.marketplace.detail.last_updated'|trans }}</dt>
                     {% if package.time %}
-                    <dd>{{ package.time|date('Y-m-d') }}</dd>
+                    {% set updated_at = date(package.time) %}
+                    <dd>
+                        <time datetime="{{ updated_at|date('c') }}">{{ updated_at|relative_time_ago }}</time>
+                        <i class="ri-information-2-line" aria-hidden="true" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ updated_at|date('Y-m-d') }}"></i>
+                    </dd>
                     {% else %}
                     <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
                     {% endif %}
