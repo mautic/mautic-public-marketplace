@@ -10,6 +10,7 @@ function initMarketplaceForm() {
     const popularitySelect = form.querySelector('select[name="popularity"]');
     const dateRangeSelect = form.querySelector('select[name="date_range"]');
     const focusKey = 'marketplace:focus';
+    const scrollKey = 'marketplace:scroll';
 
     let debounceTimer = null;
     const submitForm = (focusTarget) => {
@@ -20,6 +21,7 @@ function initMarketplaceForm() {
                     position: focusTarget.selectionStart ?? focusTarget.value.length,
                 }));
             }
+            sessionStorage.setItem(scrollKey, String(window.scrollY));
             form.requestSubmit();
         }
     };
@@ -68,6 +70,18 @@ function initMarketplaceForm() {
     } catch (e) {
         sessionStorage.removeItem(focusKey);
     }
+
+    try {
+        const savedScrollY = sessionStorage.getItem(scrollKey);
+        if (null !== savedScrollY) {
+            window.requestAnimationFrame(() => {
+                window.scrollTo({ top: Number.parseInt(savedScrollY, 10) || 0, left: 0 });
+            });
+        }
+        sessionStorage.removeItem(scrollKey);
+    } catch (e) {
+        sessionStorage.removeItem(scrollKey);
+    }
 }
 
 function initTooltips() {
@@ -86,4 +100,3 @@ document.addEventListener('turbo:load', () => {
     initMarketplaceForm();
     initTooltips();
 });
-
