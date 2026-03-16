@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Marketplace{% endblock %}
+{% block title %}{{ 'mautic.marketplace.title'|trans }}{% endblock %}
 
 {% block body %}
     {% set current = app.request.query.all %}
@@ -21,7 +21,7 @@
                     id: 'query',
                     name: 'query',
                     value: filters.query ?? '',
-                    label: 'Search packages or maintainers',
+                    label: 'marketplace.index.filters.search.placeholder',
                     wrapper_class: 'mb-16',
                     icon: 'ri-search-line'
                 } only %}
@@ -43,7 +43,7 @@
                 {% endset %}
                 {% set mauticAccordionContent %}
                     <div class="form-group">
-                        <input class="form-control" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="e.g. ^5.0">
+                        <input class="form-control" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="{{ 'marketplace.index.filters.mautic.placeholder'|trans }}">
                     </div>
                 {% endset %}
 
@@ -52,33 +52,33 @@
                         id: 'date_range',
                         name: 'date_range',
                         value: filters.date_range ?? '',
-                        placeholder: 'All time',
+                        placeholder: 'marketplace.index.filters.date_range.all',
                         options: [
-                            { value: '7d', label: 'Last 7 days' },
-                            { value: '30d', label: 'Last 30 days' },
-                            { value: '90d', label: 'Last 90 days' },
-                            { value: '365d', label: 'Last year' }
+                            { value: '7d', label: 'marketplace.index.filters.date_range.7d' },
+                            { value: '30d', label: 'marketplace.index.filters.date_range.30d' },
+                            { value: '90d', label: 'marketplace.index.filters.date_range.90d' },
+                            { value: '365d', label: 'marketplace.index.filters.date_range.365d' }
                         ]
                     } only %}
                 {% endset %}
-                <div class="type-heading-01 mb-16 px-16">Filters</div>
+                <div class="type-heading-01 mb-16 px-16">{{ 'marketplace.index.filters.heading'|trans }}</div>
                 {% include 'components/accordion.html.twig' with {
                     items: [
                         {
                             id: 'marketplace_filter_type',
-                            title: 'Type',
+                            title: 'marketplace.index.filters.type.label',
                             content: typeAccordionContent,
                             padding_inline: false
                         },
                         {
                             id: 'marketplace_filter_mautic',
-                            title: 'Mautic version',
+                            title: 'marketplace.index.filters.mautic.label',
                             content: mauticAccordionContent,
                             padding_inline: false
                         },
                         {
                             id: 'marketplace_filter_date_range',
-                            title: 'Upload date',
+                            title: 'marketplace.index.filters.date_range.label',
                             content: dateRangeAccordionContent,
                             padding_inline: false
                         }
@@ -96,12 +96,12 @@
                             name: 'popularity',
                             value: filters.popularity ?? '',
                             size: 'sm',
-                            placeholder: 'Sorting options',
+                            placeholder: 'marketplace.index.filters.popularity.placeholder',
                             options: [
-                            { value: 'most_popular', label: 'Most popular' },
-                            { value: 'top_rated', label: 'Top rated' },
-                            { value: 'newest', label: 'Newest' },
-                            { value: 'rising', label: 'Rising' }
+                            { value: 'most_popular', label: 'marketplace.index.filters.popularity.most_popular' },
+                            { value: 'top_rated', label: 'marketplace.index.filters.popularity.top_rated' },
+                            { value: 'newest', label: 'marketplace.index.filters.popularity.newest' },
+                            { value: 'rising', label: 'marketplace.index.filters.popularity.rising' }
                             ]
                         } only %}
                         
@@ -148,32 +148,32 @@
             {% set totalPages = (result.total / result.limit)|round(0, 'ceil') %}
             {% if totalPages > 1 %}
                 {% set currentPage = (result.offset / result.limit)|round(0, 'floor') + 1 %}
-                <nav class="pagination" aria-label="Pagination">
+                <nav class="pagination" aria-label="{{ 'marketplace.index.pagination.aria'|trans }}">
                     {% set prevOffset = result.offset - result.limit %}
                     {% set nextOffset = result.offset + result.limit %}
                     <div class="pagination__controls">
                         {% if prevOffset >= 0 %}
                             <a class="btn btn-default"
-                               href="{{ path('marketplace_index', current|merge({'offset': prevOffset})) }}">Previous</a>
+                               href="{{ path('marketplace_index', current|merge({'offset': prevOffset})) }}">{{ 'marketplace.index.pagination.previous'|trans }}</a>
                         {% else %}
-                            <span class="btn btn-default disabled">Previous</span>
+                            <span class="btn btn-default disabled">{{ 'marketplace.index.pagination.previous'|trans }}</span>
                         {% endif %}
 
                         {% if nextOffset < result.total %}
                             <a class="btn btn-default"
-                               href="{{ path('marketplace_index', current|merge({'offset': nextOffset})) }}">Next</a>
+                               href="{{ path('marketplace_index', current|merge({'offset': nextOffset})) }}">{{ 'marketplace.index.pagination.next'|trans }}</a>
                         {% else %}
-                            <span class="btn btn-default disabled">Next</span>
+                            <span class="btn btn-default disabled">{{ 'marketplace.index.pagination.next'|trans }}</span>
                         {% endif %}
                     </div>
                     <div class="pagination__meta muted">
-                        Page {{ currentPage }} of {{ totalPages }} • {{ result.total }} results
+                        {{ 'marketplace.index.pagination.meta'|trans({'%page%': currentPage, '%pages%': totalPages, '%results%': result.total}) }}
                     </div>
                 </nav>
             {% endif %}
         {% endif %}
     {% else %}
-            <div class="empty-state muted">No packages found.</div>
+            <div class="empty-state muted">{{ 'marketplace.index.empty'|trans }}</div>
     {% endif %}
     {% if error %}
         <p class="muted">{{ error }}</p>
