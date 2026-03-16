@@ -21,9 +21,14 @@
     <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true">
         <div class="row">
             <div class="col-xs-12">
-                <div class="form-group mb-16">
-                    <input class="form-control" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages or maintainers">
-                </div>
+                {% include 'components/floating-label.html.twig' with {
+                    id: 'query',
+                    name: 'query',
+                    value: filters.query ?? '',
+                    label: 'Search packages or maintainers',
+                    wrapper_class: 'mb-16',
+                    icon: 'ri-search-line'
+                } only %}
             </div>
         </div>
         <div class="row mt-12">
