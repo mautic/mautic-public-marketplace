@@ -67,73 +67,41 @@
             </div>
             <div class="col-xs-12 col-lg-9">
     {% if result and result.items is not empty %}
-        <div class="table-wrap">
-            <div class="table-scroll">
-                <table class="table table-hover table-condensed">
-                    <thead>
-                        <tr>
-                            {% set nameDir = (orderby == 'name' and orderdir == 'asc') ? 'desc' : 'asc' %}
-                            <th>
-                                <a class="sort-link" href="{{ path('marketplace_index', current|merge({'orderby': 'name', 'orderdir': nameDir})) }}">
-                                    Name
-                                    {% if orderby == 'name' %}
-                                        <span class="sort-indicator">{{ orderdir == 'asc' ? '▲' : '▼' }}</span>
-                                    {% endif %}
-                                </a>
-                            </th>
-                            <th>Type</th>
-                            {% set downloadsDir = (orderby == 'downloads' and orderdir == 'asc') ? 'desc' : 'asc' %}
-                            <th>
-                                <a class="sort-link" href="{{ path('marketplace_index', current|merge({'orderby': 'downloads', 'orderdir': downloadsDir})) }}">
-                                    Downloads
-                                    {% if orderby == 'downloads' %}
-                                        <span class="sort-indicator">{{ orderdir == 'asc' ? '▲' : '▼' }}</span>
-                                    {% endif %}
-                                </a>
-                            </th>
-                            {% set ratingDir = (orderby == 'rating' and orderdir == 'asc') ? 'desc' : 'asc' %}
-                            <th>
-                                <a class="sort-link" href="{{ path('marketplace_index', current|merge({'orderby': 'rating', 'orderdir': ratingDir})) }}">
-                                    Rating
-                                    {% if orderby == 'rating' %}
-                                        <span class="sort-indicator">{{ orderdir == 'asc' ? '▲' : '▼' }}</span>
-                                    {% endif %}
-                                </a>
-                            </th>
-                            <th>Reviews</th>
-                            <th>Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in result.items %}
-                            <tr>
-                                <td>
-                                    <div>
-                                        <a href="{{ path('marketplace_detail', { package: item.name }) }}">
-                                            {{ item.displayName ?: item.name }}
-                                        </a>
-                                    </div>
-                                    {% if item.description %}
-                                        <div class="muted">{{ item.description }}</div>
-                                    {% endif %}
-                                </td>
-                                <td>{{ item.type ?? '—' }}</td>
-                                <td>{{ item.downloadsTotal is not null ? item.downloadsTotal|number_format(0, '.', ',') : 0 }}</td>
-                                <td>{{ item.averageRating is not null ? item.averageRating|number_format(1) : '—' }}</td>
-                                <td>{{ item.totalReviews ?? 0 }}</td>
-                                <td>
-                                    {% if item.updatedAt %}
-                                        {{ item.updatedAt|date('Y-m-d') }}
-                                    {% else %}
-                                        —
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    {% set cards = [] %}
+    {% for item in result.items %}
+        {% set typeLabel = item.type == 'mautic-theme'
+            ? 'marketplace.package.type.theme'
+            : (item.type == 'mautic-resource' ? 'marketplace.package.type.resource' : 'marketplace.package.type.plugin')
+        %}
+        {% set ratingSummary = item.averageRating is not null
+            ? item.averageRating|number_format(1)
+            : 'marketplace.package.rating.none'
+        %}
+        {% set reviewCount = item.totalReviews ?? 0 %}
+        {% set downloadsTotal = item.downloadsTotal is not null ? item.downloadsTotal|number_format(0, '.', ',') : '0' %}
+        {% set reviewsTooltipKey = reviewCount == 1
+            ? 'marketplace.package.review.tooltip'
+            : 'marketplace.package.reviews.tooltip'
+        %}
+        {% set card = {
+            heading: item.displayName ?: item.name,
+            copy: item.description ?: 'marketplace.package.description.none',
+            eyebrow: typeLabel,
+            href: path('marketplace_detail', { package: item.name }),
+            tags: [
+                { label: downloadsTotal, icon: 'ri-download-line', color: 'brand', attributes: { title: 'marketplace.package.downloads.tooltip'|trans({'%count%': downloadsTotal}), 'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top' } },
+                { label: ratingSummary, icon: 'ri-star-line', color: 'brand', attributes: { title: reviewsTooltipKey|trans({'%count%': reviewCount}), 'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top' } }
+            ]
+        } %}
+        {% set cards = cards|merge([card]) %}
+    {% endfor %}
+    
+    {% include 'components/card-group.html.twig' with {
+        cards: cards,
+        type: 'default',
+        cardsPerRow: 4,
+        gridMode: 'narrow'
+    } only %}
         {% if result.total is not null %}
             {% set totalPages = (result.total / result.limit)|round(0, 'ceil') %}
             {% if totalPages > 1 %}

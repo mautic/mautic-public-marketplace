@@ -8,6 +8,18 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class MarketplaceControllerTest extends WebTestCase
 {
+    private function packageCardsLinks(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client): \Symfony\Component\DomCrawler\Crawler
+    {
+        return $client->getCrawler()->filter('.card-group .card-group__item > a.tile--clickable');
+    }
+
+    private function packageCardTitles(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client): array
+    {
+        return $this->packageCardsLinks($client)
+            ->filter('.card-heading')
+            ->each(static fn ($node): string => trim($node->text()));
+    }
+
     public function testHomepageLoads(): void
     {
         $client = self::createClient();
@@ -23,8 +35,8 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?type=mautic-theme&mautic=^4.4');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('table', 'Zebra Theme');
-        self::assertSelectorTextNotContains('table', 'Alpha Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
     }
 
     public function testSortingByNameAsc(): void
@@ -33,9 +45,9 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?orderby=name&orderdir=asc');
 
         self::assertResponseIsSuccessful();
-        $rows = $client->getCrawler()->filter('tbody tr td:first-child a');
-        self::assertGreaterThanOrEqual(2, $rows->count());
-        self::assertSame('Alpha Plugin', trim($rows->first()->text()));
+        $titles = $this->packageCardTitles($client);
+        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertSame('Alpha Plugin', $titles[0]);
     }
 
     public function testSortingByDownloadsDesc(): void
@@ -44,9 +56,9 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?orderby=downloads&orderdir=desc');
 
         self::assertResponseIsSuccessful();
-        $rows = $client->getCrawler()->filter('tbody tr');
-        self::assertGreaterThanOrEqual(1, $rows->count());
-        self::assertStringContainsString('Zebra Theme', $rows->first()->text());
+        $titles = $this->packageCardTitles($client);
+        self::assertGreaterThanOrEqual(1, count($titles));
+        self::assertSame('Zebra Theme', $titles[0]);
     }
 
     public function testDetailPageLoads(): void
@@ -65,9 +77,9 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?type=mautic-resource');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('table', 'Welcome Campaign');
-        self::assertSelectorTextNotContains('table', 'Example Plugin');
-        self::assertSelectorTextNotContains('table', 'Zebra Theme');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 
     public function testResourceTypeOptionInDropdown(): void
@@ -87,9 +99,9 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?type=mautic-plugin');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('table', 'Example Plugin');
-        self::assertSelectorTextNotContains('table', 'Zebra Theme');
-        self::assertSelectorTextNotContains('table', 'Welcome Campaign');
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
     }
 
     public function testSearchByMaintainer(): void
@@ -98,9 +110,9 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?query=rcheesley');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('table', 'Alpha Plugin');
-        self::assertSelectorTextContains('table', 'Welcome Campaign');
-        self::assertSelectorTextNotContains('table', 'Zebra Theme');
+        self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 
     public function testPopularityMostPopular(): void
@@ -109,9 +121,9 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?popularity=most_popular');
 
         self::assertResponseIsSuccessful();
-        $rows = $client->getCrawler()->filter('tbody tr td:first-child a');
-        self::assertGreaterThanOrEqual(2, $rows->count());
-        self::assertSame('Zebra Theme', trim($rows->first()->text()));
+        $titles = $this->packageCardTitles($client);
+        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertSame('Zebra Theme', $titles[0]);
     }
 
     public function testPopularityNewest(): void
@@ -120,10 +132,10 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?popularity=newest');
 
         self::assertResponseIsSuccessful();
-        $rows = $client->getCrawler()->filter('tbody tr td:first-child a');
-        self::assertGreaterThanOrEqual(2, $rows->count());
+        $titles = $this->packageCardTitles($client);
+        self::assertGreaterThanOrEqual(2, count($titles));
         // Example Plugin is 5 days old, the most recent
-        self::assertSame('Example Plugin', trim($rows->first()->text()));
+        self::assertSame('Example Plugin', $titles[0]);
     }
 
     public function testDateRangeFilter30Days(): void
@@ -133,11 +145,11 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         // Example Plugin (5 days) and Welcome Campaign (10 days) are within 30 days
-        self::assertSelectorTextContains('table', 'Example Plugin');
-        self::assertSelectorTextContains('table', 'Welcome Campaign');
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
         // Alpha Plugin (60 days) and Zebra Theme (200 days) are outside 30 days
-        self::assertSelectorTextNotContains('table', 'Alpha Plugin');
-        self::assertSelectorTextNotContains('table', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 
     public function testDateRangeFilter7Days(): void
@@ -147,9 +159,9 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         // Only Example Plugin (5 days old) is within 7 days
-        self::assertSelectorTextContains('table', 'Example Plugin');
-        self::assertSelectorTextNotContains('table', 'Welcome Campaign');
-        self::assertSelectorTextNotContains('table', 'Alpha Plugin');
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
     }
 
     public function testSearchQuery(): void
@@ -158,8 +170,8 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?query=zebra');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('table', 'Zebra Theme');
-        self::assertSelectorTextNotContains('table', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
     }
 
     public function testPaginationLimitOffset(): void
@@ -168,14 +180,14 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?limit=2&offset=0&orderby=name&orderdir=asc');
 
         self::assertResponseIsSuccessful();
-        $rows = $client->getCrawler()->filter('tbody tr');
-        self::assertSame(2, $rows->count());
+        $cards = $this->packageCardsLinks($client);
+        self::assertSame(2, $cards->count());
 
         // Second page
         $client->request('GET', '/?limit=2&offset=2&orderby=name&orderdir=asc');
         self::assertResponseIsSuccessful();
-        $rows = $client->getCrawler()->filter('tbody tr');
-        self::assertGreaterThanOrEqual(1, $rows->count());
+        $cards = $this->packageCardsLinks($client);
+        self::assertGreaterThanOrEqual(1, $cards->count());
     }
 
     public function testPaginationShowsControls(): void
@@ -196,7 +208,7 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         // escopecz maintains example-plugin (plugin), zebra-theme (theme)
         // Only the plugin should show with type filter
-        self::assertSelectorTextContains('table', 'Example Plugin');
-        self::assertSelectorTextNotContains('table', 'Zebra Theme');
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 }
