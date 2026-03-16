@@ -2,7 +2,7 @@
 {% set name = name|default('radio') %}
 {% set inline = inline|default(false) %}
 {% set reverse = reverse|default(false) %}
-{% set base_id = id_prefix|default(name|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
+{% set base_id = name|replace({'[': '-', ']': '', ' ': '-', '.': '-'}) %}
 
 {% for item in items %}
     {% set item_label = item.label|default('') %}
