@@ -15,20 +15,9 @@
     } %}
 
     <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true">
-        <div class="row">
-            <div class="col-xs-12">
-                {% include 'components/floating-label.html.twig' with {
-                    id: 'query',
-                    name: 'query',
-                    value: filters.query ?? '',
-                    label: 'marketplace.index.filters.search.placeholder',
-                    wrapper_class: 'mb-16',
-                    icon: 'ri-search-line'
-                } only %}
-            </div>
-        </div>
         <div class="row mt-12">
-            <div class="col-xs-12 col-lg-3">
+            <div class="col-12 col-lg-3 order-2 order-lg-1 mt-24 mt-lg-0">
+                <div class="type-heading-01 my-16 px-16">{{ 'marketplace.index.filters.heading'|trans }}</div>
                 {% set typeAccordionContent %}
                     {% set allTypesCount = (type_counts['mautic-plugin'] ?? 0) + (type_counts['mautic-theme'] ?? 0) + (type_counts['mautic-resource'] ?? 0) %}
                     {% include 'components/radio.html.twig' with {
@@ -61,35 +50,46 @@
                         ]
                     } only %}
                 {% endset %}
-                <div class="type-heading-01 mb-16 px-16">{{ 'marketplace.index.filters.heading'|trans }}</div>
-                {% include 'components/accordion.html.twig' with {
-                    items: [
-                        {
-                            id: 'marketplace_filter_type',
-                            title: 'marketplace.index.filters.type.label',
-                            content: typeAccordionContent,
-                            padding_inline: false
-                        },
-                        {
-                            id: 'marketplace_filter_mautic',
-                            title: 'marketplace.index.filters.mautic.label',
-                            content: mauticAccordionContent,
-                            padding_inline: false
-                        },
-                        {
-                            id: 'marketplace_filter_date_range',
-                            title: 'marketplace.index.filters.date_range.label',
-                            content: dateRangeAccordionContent,
-                            padding_inline: false
-                        }
-                    ]
-                } only %}
+                <div class="mb-16">
+                    {% include 'components/accordion.html.twig' with {
+                        items: [
+                            {
+                                id: 'marketplace_filter_type',
+                                title: 'marketplace.index.filters.type.label',
+                                content: typeAccordionContent,
+                                padding_inline: false
+                            },
+                            {
+                                id: 'marketplace_filter_mautic',
+                                title: 'marketplace.index.filters.mautic.label',
+                                content: mauticAccordionContent,
+                                padding_inline: false
+                            },
+                            {
+                                id: 'marketplace_filter_date_range',
+                                title: 'marketplace.index.filters.date_range.label',
+                                content: dateRangeAccordionContent,
+                                padding_inline: false
+                            }
+                        ]
+                    } only %}
+                </div>
                 <input type="hidden" name="orderby" value="{{ orderby }}">
                 <input type="hidden" name="orderdir" value="{{ orderdir }}">
                 <input type="hidden" name="limit" value="{{ filters.limit }}">
             </div>
-            <div class="col-xs-12 col-lg-9">
+            <div class="col-12 col-lg-9 order-1 order-lg-2">
                 <div class="row justify-content-end">
+                    <div class="col-md-9">
+                        {% include 'components/floating-label.html.twig' with {
+                            id: 'query',
+                            name: 'query',
+                            value: filters.query ?? '',
+                            label: 'marketplace.index.filters.search.placeholder',
+                            wrapper_class: 'mb-16',
+                            icon: 'ri-search-line ri-lg'
+                        } only %}
+                    </div>
                     <div class="col-md-3">
                         {% include 'components/floating-label.html.twig' with {
                             component: 'select',
