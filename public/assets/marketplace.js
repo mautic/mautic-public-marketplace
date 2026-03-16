@@ -5,10 +5,8 @@ function initMarketplaceForm() {
     }
 
     const searchInput = form.querySelector('input[name="query"]');
-    const typeSelect = form.querySelector('select[name="type"]');
     const mauticInput = form.querySelector('input[name="mautic"]');
-    const popularitySelect = form.querySelector('select[name="popularity"]');
-    const dateRangeSelect = form.querySelector('select[name="date_range"]');
+    const changeInputs = form.querySelectorAll('select, input[type="radio"], input[type="checkbox"]');
     const focusKey = 'marketplace:focus';
 
     let debounceTimer = null;
@@ -31,10 +29,6 @@ function initMarketplaceForm() {
         });
     }
 
-    if (typeSelect) {
-        typeSelect.addEventListener('change', () => submitForm(typeSelect));
-    }
-
     if (mauticInput) {
         mauticInput.addEventListener('input', () => {
             window.clearTimeout(debounceTimer);
@@ -42,13 +36,9 @@ function initMarketplaceForm() {
         });
     }
 
-    if (popularitySelect) {
-        popularitySelect.addEventListener('change', () => submitForm(popularitySelect));
-    }
-
-    if (dateRangeSelect) {
-        dateRangeSelect.addEventListener('change', () => submitForm(dateRangeSelect));
-    }
+    changeInputs.forEach((input) => {
+        input.addEventListener('change', () => submitForm(input));
+    });
 
     try {
         const saved = sessionStorage.getItem(focusKey);
@@ -86,4 +76,3 @@ document.addEventListener('turbo:load', () => {
     initMarketplaceForm();
     initTooltips();
 });
-
