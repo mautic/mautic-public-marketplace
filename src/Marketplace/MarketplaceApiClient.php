@@ -34,11 +34,13 @@ final class MarketplaceApiClient
     public function listPackages(
         int $limit = 10,
         int $offset = 0,
-        string $orderBy = 'name',
-        string $orderDir = 'asc',
+        string $orderBy = 'downloads',
+        string $orderDir = 'desc',
         ?string $type = null,
         ?string $query = null,
         ?string $mauticVersion = null,
+        ?string $dateRange = null,
+        ?string $popularity = null,
     ): PackageListResult {
         $params = [
             '_limit' => $limit,
@@ -57,6 +59,14 @@ final class MarketplaceApiClient
 
         if (null !== $mauticVersion && '' !== $mauticVersion) {
             $params['_smv'] = $mauticVersion;
+        }
+
+        if (null !== $dateRange && '' !== $dateRange) {
+            $params['_date_range'] = $dateRange;
+        }
+
+        if (null !== $popularity && '' !== $popularity) {
+            $params['_popularity'] = $popularity;
         }
 
         $data = $this->supabaseClient->query('GET', '/rest/v1/rpc/get_view', $params);

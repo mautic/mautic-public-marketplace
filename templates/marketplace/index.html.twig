@@ -7,109 +7,134 @@
     {% set orderby = filters.orderby %}
     {% set orderdir = filters.orderdir %}
 
-    <h1 class="page-title">Marketplace</h1>
-    <p class="muted">Browse community packages compatible with Mautic.</p>
+    {% include 'components/lead-space.html.twig' with {
+        variant: 'short',
+        heading: 'mautic.marketplace.leadspace.heading',
+        gradientStyleScheme: 'without-gradient',
+        gradientStyleSchemeColor: '#f1edea',
+    } %}
 
     {% if error %}
         <p class="muted">{{ error }}</p>
     {% endif %}
 
-    <form class="toolbar" method="get" id="marketplace-filters" data-autosubmit="true">
-        <div class="bx--form-item">
-            <label class="bx--label" for="query">Search</label>
-            <input class="bx--text-input" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages">
-        </div>
-        <div class="bx--form-item">
-            <label class="bx--label" for="type">Type</label>
-            <div class="bx--select">
-                <select class="bx--select-input" id="type" name="type">
-                    <option value="">All types</option>
-                    <option value="mautic-plugin" {% if filters.type == 'mautic-plugin' %}selected{% endif %}>Plugin</option>
-                    <option value="mautic-theme" {% if filters.type == 'mautic-theme' %}selected{% endif %}>Theme</option>
-                    <option value="mautic-resource" {% if filters.type == 'mautic-resource' %}selected{% endif %}>Resource</option>
-                </select>
-                <svg class="bx--select__arrow" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-                    <path d="M8 11L3 6h10L8 11z" fill="currentColor"></path>
-                </svg>
+    <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-group mb-16">
+                    <input class="form-control" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages or maintainers">
+                </div>
             </div>
         </div>
-        <div class="bx--form-item">
-            <label class="bx--label" for="mautic">Mautic version</label>
-            <input class="bx--text-input" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="e.g. ^5.0">
-        </div>
-        <input type="hidden" name="orderby" value="{{ orderby }}">
-        <input type="hidden" name="orderdir" value="{{ orderdir }}">
-        <input type="hidden" name="limit" value="{{ filters.limit }}">
-    </form>
-
+        <div class="row mt-12">
+            <div class="col-xs-12 col-lg-3">
+                {% set typeAccordionContent %}
+                    <div class="form-group">
+                        <select class="form-control" id="type" name="type">
+                            <option value="">All types</option>
+                            <option value="mautic-plugin" {% if filters.type == 'mautic-plugin' %}selected{% endif %}>Plugin</option>
+                            <option value="mautic-theme" {% if filters.type == 'mautic-theme' %}selected{% endif %}>Theme</option>
+                            <option value="mautic-resource" {% if filters.type == 'mautic-resource' %}selected{% endif %}>Resource</option>
+                        </select>
+                    </div>
+                {% endset %}
+                {% set mauticAccordionContent %}
+                    <div class="form-group">
+                        <input class="form-control" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="e.g. ^5.0">
+                    </div>
+                {% endset %}
+                {% set popularityAccordionContent %}
+                    <div class="form-group">
+                        <select class="form-control" id="popularity" name="popularity">
+                            <option value="">Default</option>
+                            <option value="most_popular" {% if filters.popularity == 'most_popular' %}selected{% endif %}>Most popular</option>
+                            <option value="top_rated" {% if filters.popularity == 'top_rated' %}selected{% endif %}>Top rated</option>
+                            <option value="newest" {% if filters.popularity == 'newest' %}selected{% endif %}>Newest</option>
+                            <option value="rising" {% if filters.popularity == 'rising' %}selected{% endif %}>Rising</option>
+                        </select>
+                    </div>
+                {% endset %}
+                {% set dateRangeAccordionContent %}
+                    <div class="form-group">
+                        <select class="form-control" id="date_range" name="date_range">
+                            <option value="">All time</option>
+                            <option value="7d" {% if filters.date_range == '7d' %}selected{% endif %}>Last 7 days</option>
+                            <option value="30d" {% if filters.date_range == '30d' %}selected{% endif %}>Last 30 days</option>
+                            <option value="90d" {% if filters.date_range == '90d' %}selected{% endif %}>Last 90 days</option>
+                            <option value="365d" {% if filters.date_range == '365d' %}selected{% endif %}>Last year</option>
+                        </select>
+                    </div>
+                {% endset %}
+                <div class="type-heading-01 mb-16 px-16">Filters</div>
+                {% include 'components/accordion.html.twig' with {
+                    items: [
+                        {
+                            id: 'marketplace_filter_type',
+                            title: 'Type',
+                            content: typeAccordionContent,
+                            padding_inline: false
+                        },
+                        {
+                            id: 'marketplace_filter_mautic',
+                            title: 'Mautic version',
+                            content: mauticAccordionContent,
+                            padding_inline: false
+                        },
+                        {
+                            id: 'marketplace_filter_popularity',
+                            title: 'Popularity',
+                            content: popularityAccordionContent,
+                            padding_inline: false
+                        },
+                        {
+                            id: 'marketplace_filter_date_range',
+                            title: 'Upload date',
+                            content: dateRangeAccordionContent,
+                            padding_inline: false
+                        }
+                    ]
+                } only %}
+                <input type="hidden" name="orderby" value="{{ orderby }}">
+                <input type="hidden" name="orderdir" value="{{ orderdir }}">
+                <input type="hidden" name="limit" value="{{ filters.limit }}">
+            </div>
+            <div class="col-xs-12 col-lg-9">
     {% if result and result.items is not empty %}
-        <div class="table-wrap">
-            <div class="table-scroll">
-                <table class="bx--data-table bx--data-table--compact bx--data-table--zebra">
-                    <thead>
-                        <tr>
-                            {% set nameDir = (orderby == 'name' and orderdir == 'asc') ? 'desc' : 'asc' %}
-                            <th>
-                                <a class="sort-link" href="{{ path('marketplace_index', current|merge({'orderby': 'name', 'orderdir': nameDir})) }}">
-                                    Name
-                                    {% if orderby == 'name' %}
-                                        <span class="sort-indicator">{{ orderdir == 'asc' ? '▲' : '▼' }}</span>
-                                    {% endif %}
-                                </a>
-                            </th>
-                            <th>Type</th>
-                            {% set downloadsDir = (orderby == 'downloads' and orderdir == 'asc') ? 'desc' : 'asc' %}
-                            <th>
-                                <a class="sort-link" href="{{ path('marketplace_index', current|merge({'orderby': 'downloads', 'orderdir': downloadsDir})) }}">
-                                    Downloads
-                                    {% if orderby == 'downloads' %}
-                                        <span class="sort-indicator">{{ orderdir == 'asc' ? '▲' : '▼' }}</span>
-                                    {% endif %}
-                                </a>
-                            </th>
-                            {% set ratingDir = (orderby == 'rating' and orderdir == 'asc') ? 'desc' : 'asc' %}
-                            <th>
-                                <a class="sort-link" href="{{ path('marketplace_index', current|merge({'orderby': 'rating', 'orderdir': ratingDir})) }}">
-                                    Rating
-                                    {% if orderby == 'rating' %}
-                                        <span class="sort-indicator">{{ orderdir == 'asc' ? '▲' : '▼' }}</span>
-                                    {% endif %}
-                                </a>
-                            </th>
-                            <th>Reviews</th>
-                            <th>Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in result.items %}
-                            <tr>
-                                <td>
-                                    <div>
-                                        <a href="{{ path('marketplace_detail', { package: item.name }) }}">
-                                            {{ item.displayName ?: item.name }}
-                                        </a>
-                                    </div>
-                                    {% if item.description %}
-                                        <div class="muted">{{ item.description }}</div>
-                                    {% endif %}
-                                </td>
-                                <td>{{ item.type ?? '—' }}</td>
-                                <td>{{ item.downloadsTotal is not null ? item.downloadsTotal|number_format(0, '.', ',') : 0 }}</td>
-                                <td>{{ item.averageRating is not null ? item.averageRating|number_format(1) : '—' }}</td>
-                                <td>{{ item.totalReviews ?? 0 }}</td>
-                                <td>
-                                    {% if item.updatedAt %}
-                                        {{ item.updatedAt|date('Y-m-d') }}
-                                    {% else %}
-                                        —
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    {% set cards = [] %}
+    {% for item in result.items %}
+        {% set typeLabel = item.type == 'mautic-theme'
+            ? 'marketplace.package.type.theme'
+            : (item.type == 'mautic-resource' ? 'marketplace.package.type.resource' : 'marketplace.package.type.plugin')
+        %}
+        {% set ratingSummary = item.averageRating is not null
+            ? item.averageRating|number_format(1)
+            : 'marketplace.package.rating.none'
+        %}
+        {% set reviewCount = item.totalReviews ?? 0 %}
+        {% set downloadsTotal = item.downloadsTotal is not null ? item.downloadsTotal|number_format(0, '.', ',') : '0' %}
+        {% set reviewsTooltipKey = reviewCount == 1
+            ? 'marketplace.package.review.tooltip'
+            : 'marketplace.package.reviews.tooltip'
+        %}
+        {% set card = {
+            heading: item.displayName ?: item.name,
+            copy: item.description ?: 'marketplace.package.description.none',
+            eyebrow: typeLabel,
+            href: path('marketplace_detail', { package: item.name }),
+            tags: [
+                { label: downloadsTotal, icon: 'ri-download-line', color: 'brand', attributes: { title: 'marketplace.package.downloads.tooltip'|trans({'%count%': downloadsTotal}), 'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top' } },
+                { label: ratingSummary, icon: 'ri-star-line', color: 'brand', attributes: { title: reviewsTooltipKey|trans({'%count%': reviewCount}), 'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top' } }
+            ]
+        } %}
+        {% set cards = cards|merge([card]) %}
+    {% endfor %}
+    
+    {% include 'components/card-group.html.twig' with {
+        cards: cards,
+        type: 'default',
+        cardsPerRow: 4,
+        gridMode: 'narrow'
+    } only %}
         {% if result.total is not null %}
             {% set totalPages = (result.total / result.limit)|round(0, 'ceil') %}
             {% if totalPages > 1 %}
@@ -119,17 +144,17 @@
                     {% set nextOffset = result.offset + result.limit %}
                     <div class="pagination__controls">
                         {% if prevOffset >= 0 %}
-                            <a class="bx--btn bx--btn--tertiary bx--btn--sm"
+                            <a class="btn btn-default"
                                href="{{ path('marketplace_index', current|merge({'offset': prevOffset})) }}">Previous</a>
                         {% else %}
-                            <span class="bx--btn bx--btn--tertiary bx--btn--sm bx--btn--disabled">Previous</span>
+                            <span class="btn btn-default disabled">Previous</span>
                         {% endif %}
 
                         {% if nextOffset < result.total %}
-                            <a class="bx--btn bx--btn--tertiary bx--btn--sm"
+                            <a class="btn btn-default"
                                href="{{ path('marketplace_index', current|merge({'offset': nextOffset})) }}">Next</a>
                         {% else %}
-                            <span class="bx--btn bx--btn--tertiary bx--btn--sm bx--btn--disabled">Next</span>
+                            <span class="btn btn-default disabled">Next</span>
                         {% endif %}
                     </div>
                     <div class="pagination__meta muted">
@@ -139,6 +164,10 @@
             {% endif %}
         {% endif %}
     {% else %}
-        <div class="empty-state muted">No packages found.</div>
+            <div class="empty-state muted">No packages found.</div>
     {% endif %}
+            </div>
+        </div>
+    </form>
+
 {% endblock %}

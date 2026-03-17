@@ -1,7 +1,5 @@
--- Drop old get_view overloads to prevent PostgREST conflict
-DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT) CASCADE;
-DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
-DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
+-- Drop the old 7-parameter version to avoid PostgREST overload conflict
+DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION get_view(
     _limit INT,
