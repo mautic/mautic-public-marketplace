@@ -3,12 +3,17 @@
 {% block title %}Mautic Marketplace{% endblock %}
 
 {% block body %}
-    {# Homepage content — Anderson will design this #}
-    <div class="homepage">
-        <section class="homepage__hero">
-            <h1>Mautic Marketplace</h1>
-            <p>Discover plugins, themes, and campaign templates built by the Mautic community.</p>
-            <a href="{{ path('marketplace_index') }}" class="btn btn-primary">Browse Packages</a>
-        </section>
-    </div>
+
+{% include 'components/lead-space.html.twig' with {
+    variant: 'medium',
+    heading: 'mautic.marketplace.leadspace.heading',
+    description: 'mautic.marketplace.leadspace.description',
+    gradientStyleScheme: 'with-gradient',
+    gradientStyleSchemeColor: '#f1edea',
+    media: {
+        src: 'assets/images/google-deepmind-4sRFTaQSM8Q-unsplash.jpg',
+        alt: 'mautic.marketplace.leadspace.image_alt'
+    }
+} %}
+
 {% endblock %}
