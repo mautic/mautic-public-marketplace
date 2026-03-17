@@ -22,6 +22,11 @@ final class MarketplaceController extends AbstractController
     ) {
     }
 
+    public function homepage(): Response
+    {
+        return $this->render('marketplace/homepage.html.twig');
+    }
+
     public function index(Request $request): Response
     {
         $limit = $this->toInt($request->query->get('limit'), 10);

@@ -14,16 +14,23 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Marketplace');
+        self::assertSelectorTextContains('h1', 'Mautic Marketplace');
+    }
+
+    public function testBrowsePageLoads(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
     }
 
     public function testFilteringByTypeAndMauticVersion(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?type=mautic-theme&mautic=^4.4');
+        $client->request('GET', '/browse?type=mautic-theme&mautic=^4.4');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Marketplace');
         self::assertSelectorTextContains('table', 'Zebra Theme');
         self::assertSelectorTextNotContains('table', 'Beta Resource');
         self::assertSelectorTextNotContains('table', 'Alpha Plugin');
@@ -32,7 +39,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testSortingByNameAsc(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?orderby=name&orderdir=asc');
+        $client->request('GET', '/browse?orderby=name&orderdir=asc');
 
         self::assertResponseIsSuccessful();
         $rows = $client->getCrawler()->filter('tbody tr td:first-child a');
@@ -43,7 +50,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testSortingByDownloadsDesc(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?orderby=downloads&orderdir=desc');
+        $client->request('GET', '/browse?orderby=downloads&orderdir=desc');
 
         self::assertResponseIsSuccessful();
         $rows = $client->getCrawler()->filter('tbody tr');
@@ -54,7 +61,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testFilteringByResourceType(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?type=mautic-resource');
+        $client->request('GET', '/browse?type=mautic-resource');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('table', 'Beta Resource');
