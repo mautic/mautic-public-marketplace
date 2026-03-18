@@ -10,29 +10,42 @@ async function fetchPackagistData(packageName: string) {
   return data;
 }
 
-function validateMauticResource(packageData: any): string | null {
+function validatePackage(packageData: any): string | null {
   const versions = packageData.package?.versions;
   if (!versions) return "No versions found";
 
+  const type = packageData.package?.type;
+  if (type !== 'mautic-resource') return null;
+
+  const mauticVersions = (Object.values(versions) as any[])
+    .filter((v) => v && v.type === 'mautic-resource');
+
+  if (mauticVersions.length === 0) {
+    return "No mautic-resource version found";
+  }
+
+  // Pick the latest version by time
+  mauticVersions.sort((a, b) => {
+    const at = a.time ? Date.parse(a.time) : 0;
+    const bt = b.time ? Date.parse(b.time) : 0;
+    return bt - at;
+  });
+
+  const version = mauticVersions[0];
   const errors: string[] = [];
 
-  for (const [_, version] of Object.entries(versions) as [string, any][]) {
-    if (version.type !== 'mautic-resource') continue;
+  if (!version.description || typeof version.description !== 'string' || version.description.trim() === '') {
+    errors.push("Missing required field: description");
+  } else if (version.description.length > 300) {
+    errors.push("description exceeds 300 characters");
+  }
 
-    if (!version.description || typeof version.description !== 'string' || version.description.trim() === '') {
-      errors.push("Missing required field: description");
-    } else if (version.description.length > 300) {
-      errors.push("description exceeds 300 characters");
-    }
+  if (!version.license) errors.push("Missing required field: license");
 
-    if (!version.license) errors.push("Missing required field: license");
-
-    const extra = version.extra;
-    if (!extra) {
-      errors.push("Missing required extra fields: display_name, detailed_description, expected_outcomes");
-      break;
-    }
-
+  const extra = version.extra;
+  if (!extra) {
+    errors.push("Missing required extra fields: display_name, detailed_description, expected_outcomes");
+  } else {
     if (!extra.display_name || typeof extra.display_name !== 'string' || extra.display_name.trim() === '') {
       errors.push("Missing required field: extra.display_name");
     } else if (extra.display_name.length > 150) {
@@ -54,8 +67,6 @@ function validateMauticResource(packageData: any): string | null {
     if (extra.industry && !Array.isArray(extra.industry)) {
       errors.push("extra.industry must be an array");
     }
-
-    break;
   }
 
   return errors.length > 0 ? errors.join("; ") : null;
@@ -82,8 +93,8 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     return;
   }
 
-  // Validate mautic-resource packages
-  const validationErrors = type === 'mautic-resource' ? validateMauticResource(packageData) : null;
+  // Validate packages
+  const validationErrors = validatePackage(packageData);
 
   // Insert into packages table first
   const { data: packageDataResponse, error: packageError } = await supabaseClient
