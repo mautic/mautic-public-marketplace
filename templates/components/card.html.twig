@@ -129,7 +129,7 @@
     {# === PICTOGRAM TYPE === #}
     {% elseif type == 'pictogram' %}
         {% set cardContent %}
-            <div class="card__wrapper d-flex fd-column">
+            <div class="card__wrapper">
                 <div class="card__content d-flex fd-column fg-1 pb-64">
                     {{ common_heading_content }}
                     {{ common_copy_content }}
@@ -170,6 +170,7 @@
             type: 'clickable',
             content: cardContent,
             className: 'card pa-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
+            icon: ctaIcons[ctaType],
             href: href,
         } %}
 
