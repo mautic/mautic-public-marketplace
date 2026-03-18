@@ -23,7 +23,17 @@
                 HeaderName: {
                     prefix: '',
                     children: 'mautic.marketplace.title',
-                    href: path('marketplace_index')
+                    href: path('marketplace_homepage')
+                },
+                HeaderNavigation: {
+                    children: [
+                        {
+                            HeaderMenuItem: {
+                                href: path('marketplace_index'),
+                                children: 'mautic.marketplace.header.browse_templates'
+                            }
+                        }
+                    ]
                 }
             }
         }
