@@ -93,6 +93,7 @@ BEGIN
                   p.favers,
                   p.type,
                   p.displayname,
+                  p.validation_errors,
                   COALESCE(ROUND(AVG(r.rating), 1), 0) AS average_rating,
                   COALESCE(COUNT(r.review), 0) AS total_review,
                   COALESCE(p.time, p.created_at) AS time
@@ -107,7 +108,7 @@ BEGIN
                         AND v.smv ILIKE ''%%'' || %L || ''%%''
                      ))
                  ' || date_filter || '
-               GROUP BY p.name, p.url, p.repository, p.description, p.downloads, p.favers, p.type, p.displayname, p.time, p.created_at
+               GROUP BY p.name, p.url, p.repository, p.description, p.downloads, p.favers, p.type, p.displayname, p.validation_errors, p.time, p.created_at
                ORDER BY %s %s, p.name ASC
                LIMIT %L OFFSET %L
          ) t', _query, _query, _query, _type, _type, _smv, _smv, _orderby, _orderdir, _limit, _offset);
