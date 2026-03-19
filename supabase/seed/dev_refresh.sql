@@ -1,3 +1,6 @@
+-- Ensure validation_errors column exists (needed for already-initialized databases)
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS validation_errors TEXT DEFAULT NULL;
+
 -- Drop old get_view overloads to prevent PostgREST conflict
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
