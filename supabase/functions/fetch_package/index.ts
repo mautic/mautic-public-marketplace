@@ -10,28 +10,9 @@ async function fetchPackagistData(packageName: string) {
   return data;
 }
 
-function validatePackage(packageData: any): string | null {
-  const versions = packageData.package?.versions;
-  if (!versions) return "No versions found";
+function validateVersion(version: any): string | null {
+  if (!version || version.type !== 'mautic-resource') return null;
 
-  const type = packageData.package?.type;
-  if (type !== 'mautic-resource') return null;
-
-  const mauticVersions = (Object.values(versions) as any[])
-    .filter((v) => v && v.type === 'mautic-resource');
-
-  if (mauticVersions.length === 0) {
-    return "No mautic-resource version found";
-  }
-
-  // Pick the latest version by time
-  mauticVersions.sort((a, b) => {
-    const at = a.time ? Date.parse(a.time) : 0;
-    const bt = b.time ? Date.parse(b.time) : 0;
-    return bt - at;
-  });
-
-  const version = mauticVersions[0];
   const errors: string[] = [];
 
   if (!version.description || typeof version.description !== 'string' || version.description.trim() === '') {
@@ -93,9 +74,6 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     return;
   }
 
-  // Validate packages
-  const validationErrors = validatePackage(packageData);
-
   // Insert into packages table first
   const { data: packageDataResponse, error: packageError } = await supabaseClient
     .from('packages')
@@ -115,7 +93,6 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
       suggesters,
       downloads,
       favers,
-      validation_errors: validationErrors,
     }], { onConflict: 'name' });
 
   if (packageError) {
@@ -123,7 +100,7 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     return;
   }
 
-  // Now insert into versions table
+  // Now insert into versions table with per-version validation
   for (const [versionKey, version] of validVersions) {
     const smv = version.require['mautic/core-lib'];
 
@@ -143,6 +120,9 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     }
 
     const { description, keywords, homepage, version: ver, version_normalized, license, authors, source, dist, type, support, funding, time, extra } = version as any;
+
+    // Validate this specific version
+    const validationErrors = validateVersion(version);
 
     const { data: versionDataResponse, error: versionError } = await supabaseClient
       .from('versions')
@@ -164,7 +144,8 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
         extra,
         require: version.require,
         smv,
-        storedversions
+        storedversions,
+        validation_errors: validationErrors,
       }], { onConflict: ['package_name', 'version'] });
 
     if (versionError) {
@@ -222,4 +203,3 @@ if (import.meta.main) {
 }
 
 export { fetchPackagistData, storeInSupabase };
-

@@ -30,7 +30,6 @@ final class PackageDetail
         public readonly ?string $url,
         public readonly ?bool $isReviewed,
         public readonly ?bool $latestMauticSupport,
-        public readonly ?string $validationErrors,
         public readonly ?array $maintainers,
         public readonly ?string $time,
         public readonly ?array $reviews,

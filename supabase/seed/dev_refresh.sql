@@ -1,5 +1,6 @@
--- Ensure validation_errors column exists (needed for already-initialized databases)
-ALTER TABLE packages ADD COLUMN IF NOT EXISTS validation_errors TEXT DEFAULT NULL;
+-- Move validation_errors from packages to versions table (needed for already-initialized databases)
+ALTER TABLE packages DROP COLUMN IF EXISTS validation_errors;
+ALTER TABLE versions ADD COLUMN IF NOT EXISTS validation_errors TEXT DEFAULT NULL;
 
 -- Drop old get_view overloads to prevent PostgREST conflict
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT) CASCADE;
@@ -96,7 +97,7 @@ BEGIN
                   p.favers,
                   p.type,
                   p.displayname,
-                  p.validation_errors,
+                  (SELECT lv.validation_errors FROM versions lv WHERE lv.package_name = p.name ORDER BY lv.time DESC NULLS LAST LIMIT 1) AS validation_errors,
                   COALESCE(ROUND(AVG(r.rating), 1), 0) AS average_rating,
                   COALESCE(COUNT(r.review), 0) AS total_review,
                   COALESCE(p.time, p.created_at) AS time
@@ -111,7 +112,7 @@ BEGIN
                         AND v.smv ILIKE ''%%'' || %L || ''%%''
                      ))
                  ' || date_filter || '
-               GROUP BY p.name, p.url, p.repository, p.description, p.downloads, p.favers, p.type, p.displayname, p.validation_errors, p.time, p.created_at
+               GROUP BY p.name, p.url, p.repository, p.description, p.downloads, p.favers, p.type, p.displayname, p.time, p.created_at
                ORDER BY %s %s, p.name ASC
                LIMIT %L OFFSET %L
          ) t', _query, _query, _query, _type, _type, _smv, _smv, _orderby, _orderdir, _limit, _offset);
@@ -125,3 +126,75 @@ BEGIN
 END;
 $$
  LANGUAGE plpgsql STABLE;
+
+-- Recreate get_pack with validation_errors per version
+CREATE OR REPLACE FUNCTION get_pack(packag_name TEXT)
+RETURNS JSON AS $$
+DECLARE
+    package_data JSON;
+BEGIN
+    SELECT jsonb_build_object(
+        'package', jsonb_build_object(
+            'name', p.name,
+            'displayname', p.displayname,
+            'description', p.description,
+            'time', p.time,
+            'maintainers', p.maintainers,
+            'versions', (
+                SELECT jsonb_object_agg(
+                    v.version,
+                    jsonb_build_object(
+                        'name', v.package_name,
+                        'description', v.description,
+                        'keywords', v.keywords,
+                        'homepage', v.homepage,
+                        'version', v.version,
+                        'version_normalized', v.version_normalized,
+                        'license', v.license,
+                        'source', v.source,
+                        'dist', v.dist,
+                        'type', v.type,
+                        'authors', v.authors,
+                        'support', v.support,
+                        'funding', v.funding,
+                        'time', v.time,
+                        'extra', v.extra,
+                        'require', v.require,
+                        'smv', v.smv,
+                        'validation_errors', v.validation_errors
+                    )
+                )
+                FROM versions v WHERE v.package_name = p.name
+            ),
+            'reviews', (
+                SELECT COALESCE(jsonb_agg(
+                    jsonb_build_object(
+                        'name', r."user",
+                        'rating', r.rating,
+                        'review', r.review,
+                        'picture', r.picture,
+                        'created_at', r.created_at
+                    )
+                    ORDER BY r.created_at DESC
+                ), '[]'::jsonb)
+                FROM reviews r WHERE r."objectId" = p.name
+            ),
+            'type', p.type,
+            'repository', p.repository,
+            'github_stars', p.github_stars,
+            'github_watchers', p.github_watchers,
+            'github_forks', p.github_forks,
+            'github_open_issues', p.github_open_issues,
+            'language', p.language,
+            'dependents', p.dependents,
+            'suggesters', p.suggesters,
+            'downloads', p.downloads,
+            'favers', p.favers
+        )
+    ) INTO package_data
+    FROM packages p
+    WHERE p.name = packag_name;
+
+    RETURN package_data;
+END;
+$$ LANGUAGE plpgsql STABLE;
