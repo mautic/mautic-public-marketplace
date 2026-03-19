@@ -137,16 +137,49 @@ async function main(req: Request) {
   const token = authHeader.replace('Bearer ', '');
 
   const supabaseClient = getSupabaseClient(token);
-  const urls = [
-    "https://packagist.org/packages/list.json?type=mautic-plugin",
-    "https://packagist.org/packages/list.json?type=mautic-theme",
-    "https://packagist.org/packages/list.json?type=mautic-resource",
-  ];
-  for (const url of urls) {
-    await fetchPackages(url, supabaseClient);
+
+  const validTypes = ["mautic-plugin", "mautic-theme", "mautic-resource"];
+  const requestUrl = new URL(req.url);
+  let typeParam = requestUrl.searchParams.get("type");
+
+  if (!typeParam) {
+    const contentType = req.headers.get("content-type") || "";
+    if (contentType.toLowerCase().startsWith("application/json")) {
+      let body;
+      try {
+        body = await req.json();
+      } catch {
+        return new Response(
+          JSON.stringify({ error: "Malformed JSON body" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      if (body && typeof body.type === "string") {
+        typeParam = body.type;
+      }
+    }
   }
 
-  await updateAllowlist();
+  let types: string[];
+  if (typeParam) {
+    if (!validTypes.includes(typeParam)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid type parameter", allowedTypes: validTypes }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    types = [typeParam];
+  } else {
+    types = validTypes;
+  }
+
+  for (const t of types) {
+    await fetchPackages(`https://packagist.org/packages/list.json?type=${t}`, supabaseClient);
+  }
+
+  if (!typeParam) {
+    await updateAllowlist();
+  }
 
   return new Response('Success', { status: 200 });
 }
