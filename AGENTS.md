@@ -21,3 +21,6 @@ Conventions
 - Prefer small, incremental changes with clear commit boundaries.
 - Keep templates accessible and responsive.
 - Avoid heavy JS frameworks unless necessary.
+
+Commands
+- Execute using ddev exec

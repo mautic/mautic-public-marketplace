@@ -1,11 +1,17 @@
-$font-family-sans-serif: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-$primary: #0f62fe;
-$secondary: #525252;
-$success: #24a148;
-$info: #3ddbd9;
-$warning: #f1c21b;
-$danger: #da1e28;
-$light: #f4f4f4;
-$dark: #161616;
-
+@import url('/assets/icons/remixicon.css');
+@import '../../vendor/twbs/bootstrap/scss/functions';
+@import 'theme';
+@import 'variables';
 @import '../../vendor/twbs/bootstrap/scss/bootstrap';
+@import 'components/mixins';
+@import 'components/buttons';
+@import 'components/labels';
+@import 'components/leadspace';
+@import 'components/accordions';
+@import 'components/tiles';
+@import 'components/uishell';
+@import 'components/type';
+@import 'components/code_snippet';
+@import 'components/form-control';
+@import 'components/tables';
+@import 'components/pictograms';

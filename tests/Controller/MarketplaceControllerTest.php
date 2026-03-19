@@ -8,13 +8,25 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class MarketplaceControllerTest extends WebTestCase
 {
+    private function packageCardsLinks(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client): \Symfony\Component\DomCrawler\Crawler
+    {
+        return $client->getCrawler()->filter('.card-group .card-group__item > a.tile--clickable');
+    }
+
+    private function packageCardTitles(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client): array
+    {
+        return $this->packageCardsLinks($client)
+            ->filter('.card-heading')
+            ->each(static fn ($node): string => trim($node->text()));
+    }
+
     public function testHomepageLoads(): void
     {
         $client = self::createClient();
         $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Marketplace');
+        self::assertSelectorExists('h1');
     }
 
     public function testFilteringByTypeAndMauticVersion(): void
@@ -23,10 +35,8 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?type=mautic-theme&mautic=^4.4');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Marketplace');
-        self::assertSelectorTextContains('table', 'Zebra Theme');
-        self::assertSelectorTextNotContains('table', 'Beta Resource');
-        self::assertSelectorTextNotContains('table', 'Alpha Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
     }
 
     public function testSortingByNameAsc(): void
@@ -35,9 +45,9 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?orderby=name&orderdir=asc');
 
         self::assertResponseIsSuccessful();
-        $rows = $client->getCrawler()->filter('tbody tr td:first-child a');
-        self::assertGreaterThanOrEqual(2, $rows->count());
-        self::assertSame('Alpha Plugin', trim($rows->first()->text()));
+        $titles = $this->packageCardTitles($client);
+        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertSame('Alpha Plugin', $titles[0]);
     }
 
     public function testSortingByDownloadsDesc(): void
@@ -46,20 +56,9 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?orderby=downloads&orderdir=desc');
 
         self::assertResponseIsSuccessful();
-        $rows = $client->getCrawler()->filter('tbody tr');
-        self::assertGreaterThanOrEqual(1, $rows->count());
-        self::assertStringContainsString('Zebra Theme', $rows->first()->text());
-    }
-
-    public function testFilteringByResourceType(): void
-    {
-        $client = self::createClient();
-        $client->request('GET', '/?type=mautic-resource');
-
-        self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('table', 'Beta Resource');
-        self::assertSelectorTextNotContains('table', 'Alpha Plugin');
-        self::assertSelectorTextNotContains('table', 'Zebra Theme');
+        $titles = $this->packageCardTitles($client);
+        self::assertGreaterThanOrEqual(1, count($titles));
+        self::assertSame('Zebra Theme', $titles[0]);
     }
 
     public function testDetailPageLoads(): void
@@ -70,5 +69,148 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Alpha Plugin');
         self::assertSelectorTextContains('body', 'Alpha plugin for sorting.');
+        self::assertSelectorTextContains('time', '2 months ago');
+        self::assertSelectorExists(sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+    }
+
+    public function testFilterByResourceType(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?type=mautic-resource');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+    }
+
+    public function testResourceTypeOptionInDropdown(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/');
+
+        self::assertResponseIsSuccessful();
+        $options = $client->getCrawler()->filter('select[name="type"] option');
+        $values = $options->each(static fn ($node) => $node->attr('value'));
+        self::assertContains('mautic-resource', $values);
+    }
+
+    public function testFilterByPluginTypeExcludesThemesAndResources(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?type=mautic-plugin');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testSearchByMaintainer(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?query=rcheesley');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+    }
+
+    public function testPopularityMostPopular(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?popularity=most_popular');
+
+        self::assertResponseIsSuccessful();
+        $titles = $this->packageCardTitles($client);
+        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertSame('Zebra Theme', $titles[0]);
+    }
+
+    public function testPopularityNewest(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?popularity=newest');
+
+        self::assertResponseIsSuccessful();
+        $titles = $this->packageCardTitles($client);
+        self::assertGreaterThanOrEqual(2, count($titles));
+        // Example Plugin is 5 days old, the most recent
+        self::assertSame('Example Plugin', $titles[0]);
+    }
+
+    public function testDateRangeFilter30Days(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?date_range=30d');
+
+        self::assertResponseIsSuccessful();
+        // Example Plugin (5 days) and Welcome Campaign (10 days) are within 30 days
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        // Alpha Plugin (60 days) and Zebra Theme (200 days) are outside 30 days
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+    }
+
+    public function testDateRangeFilter7Days(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?date_range=7d');
+
+        self::assertResponseIsSuccessful();
+        // Only Example Plugin (5 days old) is within 7 days
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+    }
+
+    public function testSearchQuery(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?query=zebra');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+    }
+
+    public function testPaginationLimitOffset(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?limit=2&offset=0&orderby=name&orderdir=asc');
+
+        self::assertResponseIsSuccessful();
+        $cards = $this->packageCardsLinks($client);
+        self::assertSame(2, $cards->count());
+
+        // Second page
+        $client->request('GET', '/?limit=2&offset=2&orderby=name&orderdir=asc');
+        self::assertResponseIsSuccessful();
+        $cards = $this->packageCardsLinks($client);
+        self::assertGreaterThanOrEqual(1, $cards->count());
+    }
+
+    public function testPaginationShowsControls(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?limit=2');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('.pagination');
+        self::assertSelectorTextContains('.pagination__meta', 'Page 1');
+    }
+
+    public function testCombinedFilters(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?type=mautic-plugin&query=escopecz');
+
+        self::assertResponseIsSuccessful();
+        // escopecz maintains example-plugin (plugin), zebra-theme (theme)
+        // Only the plugin should show with type filter
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 }
