@@ -143,23 +143,43 @@ async function main(req: Request) {
   let typeParam = requestUrl.searchParams.get("type");
 
   if (!typeParam) {
-    try {
-      const body = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+    if (contentType.toLowerCase().startsWith("application/json")) {
+      let body;
+      try {
+        body = await req.json();
+      } catch {
+        return new Response(
+          JSON.stringify({ error: "Malformed JSON body" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
       if (body && typeof body.type === "string") {
         typeParam = body.type;
       }
-    } catch {
-      // No JSON body, use all types
     }
   }
 
-  const types = typeParam && validTypes.includes(typeParam) ? [typeParam] : validTypes;
+  let types: string[];
+  if (typeParam) {
+    if (!validTypes.includes(typeParam)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid type parameter", allowedTypes: validTypes }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    types = [typeParam];
+  } else {
+    types = validTypes;
+  }
 
   for (const t of types) {
     await fetchPackages(`https://packagist.org/packages/list.json?type=${t}`, supabaseClient);
   }
 
-  await updateAllowlist();
+  if (!typeParam) {
+    await updateAllowlist();
+  }
 
   return new Response('Success', { status: 200 });
 }
