@@ -10,6 +10,49 @@ async function fetchPackagistData(packageName: string) {
   return data;
 }
 
+function validateVersion(version: any): string | null {
+  if (!version || version.type !== 'mautic-resource') return null;
+
+  const errors: string[] = [];
+
+  if (!version.description || typeof version.description !== 'string' || version.description.trim() === '') {
+    errors.push("Missing required field: description");
+  } else if (version.description.length > 300) {
+    errors.push("description exceeds 300 characters");
+  }
+
+  if (!version.license) errors.push("Missing required field: license");
+
+  const extra = version.extra;
+  if (!extra) {
+    errors.push("Missing required extra fields: display_name, detailed_description, expected_outcomes");
+  } else {
+    if (!extra.display_name || typeof extra.display_name !== 'string' || extra.display_name.trim() === '') {
+      errors.push("Missing required field: extra.display_name");
+    } else if (extra.display_name.length > 150) {
+      errors.push("extra.display_name exceeds 150 characters");
+    }
+
+    if (!extra.detailed_description || typeof extra.detailed_description !== 'string' || extra.detailed_description.trim() === '') {
+      errors.push("Missing required field: extra.detailed_description");
+    } else if (extra.detailed_description.length > 5000) {
+      errors.push("extra.detailed_description exceeds 5000 characters");
+    }
+
+    if (!extra.expected_outcomes || typeof extra.expected_outcomes !== 'string' || extra.expected_outcomes.trim() === '') {
+      errors.push("Missing required field: extra.expected_outcomes");
+    } else if (extra.expected_outcomes.length > 2000) {
+      errors.push("extra.expected_outcomes exceeds 2000 characters");
+    }
+
+    if (extra.industry && !Array.isArray(extra.industry)) {
+      errors.push("extra.industry must be an array");
+    }
+  }
+
+  return errors.length > 0 ? errors.join("; ") : null;
+}
+
 async function storeInSupabase(supabaseClient: any, packageData: any) {
   if (!packageData || !packageData.package) {
     console.error('Invalid package data structure:', packageData);
@@ -57,7 +100,7 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     return;
   }
 
-  // Now insert into versions table
+  // Now insert into versions table with per-version validation
   for (const [versionKey, version] of validVersions) {
     const smv = version.require['mautic/core-lib'];
 
@@ -77,6 +120,9 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     }
 
     const { description, keywords, homepage, version: ver, version_normalized, license, authors, source, dist, type, support, funding, time, extra } = version as any;
+
+    // Validate this specific version
+    const validationErrors = validateVersion(version);
 
     const { data: versionDataResponse, error: versionError } = await supabaseClient
       .from('versions')
@@ -98,7 +144,8 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
         extra,
         require: version.require,
         smv,
-        storedversions
+        storedversions,
+        validation_errors: validationErrors,
       }], { onConflict: ['package_name', 'version'] });
 
     if (versionError) {
@@ -189,4 +236,3 @@ if (import.meta.main) {
 }
 
 export { fetchPackagistData, storeInSupabase };
-

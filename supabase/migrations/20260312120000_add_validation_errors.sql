@@ -1,12 +1,11 @@
--- Move validation_errors from packages to versions table (needed for already-initialized databases)
+-- Move validation_errors from packages to versions table (per-version validation)
 ALTER TABLE packages DROP COLUMN IF EXISTS validation_errors;
 ALTER TABLE versions ADD COLUMN IF NOT EXISTS validation_errors TEXT DEFAULT NULL;
 
--- Drop old get_view overloads to prevent PostgREST conflict
-DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT) CASCADE;
-DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
-DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
+-- Drop the old get_view to avoid PostgREST overload conflict
+DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
 
+-- Recreate get_view with validation_errors from latest version
 CREATE OR REPLACE FUNCTION get_view(
     _limit INT,
     _offset INT,
@@ -124,10 +123,9 @@ BEGIN
         'total', total
     );
 END;
-$$
- LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql STABLE;
 
--- Recreate get_pack with validation_errors per version
+-- Update get_pack to include validation_errors per version
 CREATE OR REPLACE FUNCTION get_pack(packag_name TEXT)
 RETURNS JSON AS $$
 DECLARE

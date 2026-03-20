@@ -91,7 +91,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $options = $client->getCrawler()->filter('select[name="type"] option');
-        $values = $options->each(static fn ($node) => $node->attr('value'));
+        $values = $options->each(static fn ($node): ?string => $node->attr('value'));
         self::assertContains('mautic-resource', $values);
     }
 

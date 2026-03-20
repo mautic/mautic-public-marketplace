@@ -95,6 +95,7 @@ final class MarketplaceApiClient
                 $this->toFloat($row['average_rating'] ?? null),
                 $this->toInt($row['total_review'] ?? null),
                 $this->toBool($row['latest_mautic_support'] ?? null),
+                $row['validation_errors'] ?? null,
                 $this->toDateTime($row['time'] ?? null),
             );
         }
