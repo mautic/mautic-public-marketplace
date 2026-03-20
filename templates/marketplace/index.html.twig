@@ -18,7 +18,7 @@
         <p class="muted">{{ error }}</p>
     {% endif %}
 
-    <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true">
+    <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true" data-turbo-frame="package-results">
         <div class="row">
             <div class="col-xs-12">
                 <div class="form-group mb-16">
@@ -98,7 +98,7 @@
                 <input type="hidden" name="orderdir" value="{{ orderdir }}">
                 <input type="hidden" name="limit" value="{{ filters.limit }}">
             </div>
-            <div class="col-xs-12 col-lg-9">
+            <turbo-frame id="package-results" class="col-xs-12 col-lg-9" data-turbo-action="advance">
     {% if result and result.items is not empty %}
     {% set cards = [] %}
     {% for item in result.items %}
@@ -166,7 +166,7 @@
     {% else %}
             <div class="empty-state muted">No packages found.</div>
     {% endif %}
-            </div>
+            </turbo-frame>
         </div>
     </form>
 
