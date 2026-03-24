@@ -154,20 +154,14 @@
             {% set marketplace_list_page = result.limit > 0 ? (result.offset / result.limit)|round(0, 'floor') + 1 : 1 %}
             {% set marketplace_prev_offset = result.offset - result.limit %}
             {% set marketplace_next_offset = result.offset + result.limit %}
-            {% include 'components/pagination.html.twig' with {
-                id: 'marketplace-pagination',
-                itemRangeText: 'mautic.marketplace.pagination.item_range'|trans({
-                    '%start%': (marketplace_list_page - 1) * result.limit + 1,
-                    '%end%': min(marketplace_list_page * result.limit, result.total),
-                    '%total%': result.total
-                }),
-                itemText: '',
+            <hr>
+            {% include 'components/pagination-nav.html.twig' with {
+                id: 'marketplace-nav-pagination',
                 page: marketplace_list_page,
-                pageRangeText: 'mautic.marketplace.pagination.of_pages'|trans({'%pages%': result.limit > 0 ? max(1, (result.total / result.limit)|round(0, 'ceil')) : 1 }),
-                backwardHref: marketplace_prev_offset >= 0 ? path('marketplace_index', current|merge({'offset': marketplace_prev_offset})) : '',
-                forwardHref: marketplace_next_offset < result.total ? path('marketplace_index', current|merge({'offset': marketplace_next_offset})) : '',
                 pageSize: result.limit,
-                pagesUnknown: false,
+                route: 'marketplace_index',
+                leadingPages: 3,
+                routeQuery: current,
                 size: 'sm',
                 totalItems: result.total
             } only %}
