@@ -140,6 +140,7 @@
             copy: item.description ?: 'marketplace.package.description.none',
             eyebrow: typeLabel,
             href: path('marketplace_detail', { package: item.name }),
+            attributes: {'data-turbo-frame': '_top'},
             tags: [
                 { label: downloadsTotal, icon: 'ri-download-line', color: 'brand', attributes: { title: 'marketplace.package.downloads.tooltip'|trans({'%count%': downloadsTotal}), 'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top' } },
                 { label: ratingSummary, icon: 'ri-star-line', color: 'brand', attributes: { title: reviewsTooltipKey|trans({'%count%': reviewCount}), 'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top' } }
