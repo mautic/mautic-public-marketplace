@@ -1,13 +1,11 @@
-{% set backwardText = backwardText|default('marketplace.index.pagination.previous') %}
-{% set forwardText = forwardText|default('marketplace.index.pagination.next') %}
+{% set paginationLoop = (loop is defined and (loop is same as(true) or loop is same as(false))) ? loop : false %}
 {% set disableOverflow = disableOverflow|default(false) %}
 {% set itemsShown = itemsShown|default(10) %}
-{% set allowLoop = allowLoop|default(false) %}
-{% set id = id|default('nav-pagination') %}
 {% set page = page|default(1) %}
 {% set size = size|default('lg') %}
+{% set tooltipAlignment = tooltipAlignment|default('center') %}
 {% set tooltipPosition = tooltipPosition|default('top') %}
-{% set totalPages = max(1, totalPages|default(totalItems|default(1))) %}
+{% set totalPages = max(1, totalItems|default(1)) %}
 {% set page = min(max(1, page), totalPages) %}
 {% set effectiveShown = totalPages < 4 ? totalPages : max(4, itemsShown) %}
 {% set showOverflow = not disableOverflow and totalPages > effectiveShown %}
@@ -20,19 +18,19 @@
     {% set leftCount = totalPages %}
     {% set hasMiddleSelect = false %}
 {% endif %}
-{% set prevDisabled = totalPages <= 1 or (not allowLoop and page <= 1) %}
-{% set nextDisabled = totalPages <= 1 or (not allowLoop and page >= totalPages) %}
+{% set prevDisabled = totalPages <= 1 or (not paginationLoop and page <= 1) %}
+{% set nextDisabled = totalPages <= 1 or (not paginationLoop and page >= totalPages) %}
 {% set pageInMiddle = showOverflow and hasMiddleSelect and page >= middleLow and page <= middleHigh %}
 {% set middleOptions = hasMiddleSelect ? range(middleLow, middleHigh)|map(n => ({ value: n, label: n })) : [] %}
 
-<nav class="pagination-nav pagination-nav--{{ size }}" aria-label="{{ 'marketplace.index.nav_pagination.aria'|trans }}">
+<nav class="pagination-nav pagination-nav--{{ size }}" aria-label="{{ 'marketplace.index.nav_pagination.aria'|trans }}" data-tooltip-alignment="{{ tooltipAlignment }}">
     <ul class="pagination-nav__list">
         <li class="pagination-nav__list-item">
             <div class="tooltip-trigger__wrapper">
                 {% include 'components/button.html.twig' with {
                     buttons: [
                         ({
-                            label: backwardText,
+                            label: 'marketplace.index.pagination.previous',
                             variant: 'ghost',
                             icon_only: true,
                             icon: 'ri-arrow-left-s-fill ri-lg',
@@ -43,9 +41,9 @@
                                 class: 'pagination-nav__edge-btn',
                                 'data-bs-toggle': 'tooltip',
                                 'data-bs-placement': tooltipPosition,
-                                'data-bs-title': backwardText|trans,
-                                'data-page': allowLoop and page <= 1 ? totalPages : page - 1,
-                            })|merge({ id: id ~ '-backward', type: 'button' }),
+                                'data-bs-title': 'marketplace.index.pagination.previous'|trans,
+                                'data-page': paginationLoop and page <= 1 ? totalPages : page - 1,
+                            })|merge({ id: 'nav-pagination-backward', type: 'button' }),
                         }),
                     ]
                 } only %}
@@ -71,8 +69,8 @@
         <li class="pagination-nav__list-item">
             <div class="pagination-nav__select">
                 {% include 'components/select.html.twig' with {
-                    id: id ~ '-overflow',
-                    name: id ~ '-overflow',
+                    id: 'nav-pagination-overflow',
+                    name: 'nav-pagination-overflow',
                     label: null,
                     options: middleOptions,
                     value: pageInMiddle ? page : null,
@@ -102,7 +100,7 @@
                 {% include 'components/button.html.twig' with {
                     buttons: [
                         ({
-                            label: forwardText,
+                            label: 'marketplace.index.pagination.next',
                             variant: 'ghost',
                             icon_only: true,
                             icon: 'ri-arrow-right-s-fill ri-lg',
@@ -113,9 +111,9 @@
                                 class: 'pagination-nav__edge-btn',
                                 'data-bs-toggle': 'tooltip',
                                 'data-bs-placement': tooltipPosition,
-                                'data-bs-title': forwardText|trans,
-                                'data-page': allowLoop and page >= totalPages ? 1 : page + 1,
-                            })|merge({ id: id ~ '-forward', type: 'button' }),
+                                'data-bs-title': 'marketplace.index.pagination.next'|trans,
+                                'data-page': paginationLoop and page >= totalPages ? 1 : page + 1,
+                            })|merge({ id: 'nav-pagination-forward', type: 'button' }),
                         }),
                     ]
                 } only %}
