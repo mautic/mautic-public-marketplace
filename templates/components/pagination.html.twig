@@ -1,5 +1,4 @@
-{% set backwardText = backwardText|default('marketplace.index.pagination.previous') %}
-{% set forwardText = forwardText|default('marketplace.index.pagination.next') %}
+
 {% set backwardHref = backwardHref|default('') %}
 {% set forwardHref = forwardHref|default('') %}
 {% set disabled = disabled|default(false) %}
@@ -80,7 +79,7 @@
                     {% include 'components/button.html.twig' with {
                         buttons: [
                             ({
-                                label: backwardText,
+                                label: 'marketplace.index.pagination.previous',
                                 variant: 'ghost',
                                 icon_only: true,
                                 icon: 'ri-arrow-left-s-fill ri-lg',
@@ -91,7 +90,7 @@
                                     class: 'pagination__button pagination__button--backward',
                                     'data-bs-toggle': 'tooltip',
                                     'data-bs-placement': 'top',
-                                    'data-bs-title': backwardText|trans,
+                                    'data-bs-title': 'marketplace.index.pagination.previous'|trans,
                                 })|merge({ id: id ~ '-backward' })|merge(page > 1 and not disabled and backwardHref != '' ? {} : { type: 'button' }),
                             })|merge(page > 1 and not disabled and backwardHref != '' ? { href: backwardHref } : {}),
                         ]
@@ -101,7 +100,7 @@
                     {% include 'components/button.html.twig' with {
                         buttons: [
                             ({
-                                label: forwardText,
+                                label: 'marketplace.index.pagination.next',
                                 variant: 'ghost',
                                 icon_only: true,
                                 icon: 'ri-arrow-right-s-fill ri-lg',
@@ -112,7 +111,7 @@
                                     class: 'pagination__button pagination__button--forward',
                                     'data-bs-toggle': 'tooltip',
                                     'data-bs-placement': 'top',
-                                    'data-bs-title': forwardText|trans,
+                                    'data-bs-title': 'marketplace.index.pagination.next'|trans,
                                 })|merge({ id: id ~ '-forward' })|merge(page < totalPages and not disabled and forwardHref != '' ? {} : { type: 'button' }),
                             })|merge(page < totalPages and not disabled and forwardHref != '' ? { href: forwardHref } : {}),
                         ]
