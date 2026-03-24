@@ -11,7 +11,7 @@
         <p class="muted pt-16">
             <a href="{{ path('marketplace_index') }}">&larr; {{ 'mautic.marketplace.detail.back'|trans }}</a>
         </p>
-        {% if package.bannerURL %}
+        {% if package.bannerURL is defined and package.bannerURL is not empty %}
             {% set color = '#000000' %}
         {% else %}
             {% set color = (
@@ -32,15 +32,19 @@
         {% if latest_mautic_version %}
             {% set leadspace_tags = leadspace_tags|merge([{ label: 'mautic.marketplace.detail.latest_mautic_supported'|trans({ '%version%': latest_mautic_version }), color: 'blue' }]) %}
         {% endif %}
+        {% set leadspace_media = (package.bannerURL is defined and package.bannerURL is not empty) 
+            ? { src: package.bannerURL, alt: 'mautic.marketplace.leadspace.image_alt' } 
+            : null 
+        %}
         {% include 'components/lead-space.html.twig' with {
             variant: 'short',
             heading: package.displayName ?: package.name,
             description: package.description,
-            gradientStyleScheme: package.bannerURL ? 'with-gradient' : 'without-gradient',
+            gradientStyleScheme: package.bannerURL is defined and package.bannerURL is not empty ? 'with-gradient' : 'without-gradient',
             gradientStyleSchemeColor: color,
-            tags: leadspace_tags,
-            media: { src: package.bannerURL, alt: 'mautic.marketplace.leadspace.image_alt' }
-        } %}
+            tags: leadspace_tags
+        }
+        |merge(leadspace_media ? { media: leadspace_media } : {}) %}
         <section class="detail-header mt-48">
             {% set contentBlockChild %}
             <div class="row justify-content-between">
