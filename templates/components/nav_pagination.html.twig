@@ -1,0 +1,126 @@
+{% set backwardText = backwardText|default('marketplace.index.pagination.previous') %}
+{% set forwardText = forwardText|default('marketplace.index.pagination.next') %}
+{% set disableOverflow = disableOverflow|default(false) %}
+{% set itemsShown = itemsShown|default(10) %}
+{% set allowLoop = allowLoop|default(false) %}
+{% set id = id|default('nav-pagination') %}
+{% set page = page|default(1) %}
+{% set size = size|default('lg') %}
+{% set tooltipPosition = tooltipPosition|default('top') %}
+{% set totalPages = max(1, totalPages|default(totalItems|default(1))) %}
+{% set page = min(max(1, page), totalPages) %}
+{% set effectiveShown = totalPages < 4 ? totalPages : max(4, itemsShown) %}
+{% set showOverflow = not disableOverflow and totalPages > effectiveShown %}
+{% if showOverflow %}
+    {% set leftCount = min(8, totalPages - 1) %}
+    {% set middleLow = leftCount + 1 %}
+    {% set middleHigh = totalPages - 1 %}
+    {% set hasMiddleSelect = middleHigh >= middleLow %}
+{% else %}
+    {% set leftCount = totalPages %}
+    {% set hasMiddleSelect = false %}
+{% endif %}
+{% set prevDisabled = totalPages <= 1 or (not allowLoop and page <= 1) %}
+{% set nextDisabled = totalPages <= 1 or (not allowLoop and page >= totalPages) %}
+{% set pageInMiddle = showOverflow and hasMiddleSelect and page >= middleLow and page <= middleHigh %}
+{% set middleOptions = hasMiddleSelect ? range(middleLow, middleHigh)|map(n => ({ value: n, label: n })) : [] %}
+
+<nav class="pagination-nav pagination-nav--{{ size }}" aria-label="{{ 'marketplace.index.nav_pagination.aria'|trans }}">
+    <ul class="pagination-nav__list">
+        <li class="pagination-nav__list-item">
+            <div class="tooltip-trigger__wrapper">
+                {% include 'components/button.html.twig' with {
+                    buttons: [
+                        ({
+                            label: backwardText,
+                            variant: 'ghost',
+                            icon_only: true,
+                            icon: 'ri-arrow-left-s-fill ri-lg',
+                            attributes: (prevDisabled ? {
+                                class: 'pagination-nav__edge-btn btn--disabled',
+                                disabled: 'disabled',
+                            } : {
+                                class: 'pagination-nav__edge-btn',
+                                'data-bs-toggle': 'tooltip',
+                                'data-bs-placement': tooltipPosition,
+                                'data-bs-title': backwardText|trans,
+                                'data-page': allowLoop and page <= 1 ? totalPages : page - 1,
+                            })|merge({ id: id ~ '-backward', type: 'button' }),
+                        }),
+                    ]
+                } only %}
+            </div>
+        </li>
+        {% if not showOverflow %}
+            {% for p in 1..totalPages %}
+        <li class="pagination-nav__list-item">
+            <button type="button" class="pagination-nav__page{% if page == p %} pagination-nav__page--active{% endif %}" data-page="{{ p }}"{% if page == p %} aria-current="page"{% endif %}>
+                {% if page == p %}<span class="pagination-nav__accessibility-label">{{ 'mautic.marketplace.nav_pagination.active_page'|trans }}</span>{% else %}<span class="pagination-nav__accessibility-label">{{ 'mautic.marketplace.nav_pagination.page'|trans }}</span>{% endif %}{{ p }}
+            </button>
+        </li>
+            {% endfor %}
+        {% else %}
+            {% for p in 1..leftCount %}
+        <li class="pagination-nav__list-item">
+            <button type="button" class="pagination-nav__page{% if page == p %} pagination-nav__page--active{% endif %}" data-page="{{ p }}"{% if page == p %} aria-current="page"{% endif %}>
+                {% if page == p %}<span class="pagination-nav__accessibility-label">{{ 'mautic.marketplace.nav_pagination.active_page'|trans }}</span>{% else %}<span class="pagination-nav__accessibility-label">{{ 'mautic.marketplace.nav_pagination.page'|trans }}</span>{% endif %}{{ p }}
+            </button>
+        </li>
+            {% endfor %}
+            {% if hasMiddleSelect %}
+        <li class="pagination-nav__list-item">
+            <div class="pagination-nav__select">
+                {% include 'components/select.html.twig' with {
+                    id: id ~ '-overflow',
+                    name: id ~ '-overflow',
+                    label: null,
+                    options: middleOptions,
+                    value: pageInMiddle ? page : null,
+                    placeholder: '',
+                    wrapper_class: '',
+                    attributes: {
+                        class: 'pagination-nav__page pagination-nav__page--select',
+                        'aria-label': 'mautic.marketplace.nav_pagination.select_page'|trans,
+                    }
+                } only %}
+                <div class="pagination-nav__select-icon-wrapper{% if pageInMiddle %} pagination-nav__page--active{% endif %}">
+                    <svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" class="pagination-nav__select-icon" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="16" r="2"></circle><circle cx="16" cy="16" r="2"></circle><circle cx="24" cy="16" r="2"></circle></svg>
+                </div>
+            </div>
+        </li>
+            {% endif %}
+            {% if totalPages > leftCount %}
+        <li class="pagination-nav__list-item">
+            <button type="button" class="pagination-nav__page{% if page == totalPages %} pagination-nav__page--active{% endif %}" data-page="{{ totalPages }}"{% if page == totalPages %} aria-current="page"{% endif %}>
+                {% if page == totalPages %}<span class="pagination-nav__accessibility-label">{{ 'mautic.marketplace.nav_pagination.active_page'|trans }}</span>{% else %}<span class="pagination-nav__accessibility-label">{{ 'mautic.marketplace.nav_pagination.page'|trans }}</span>{% endif %}{{ totalPages }}
+            </button>
+        </li>
+            {% endif %}
+        {% endif %}
+        <li class="pagination-nav__list-item">
+            <div class="tooltip-trigger__wrapper">
+                {% include 'components/button.html.twig' with {
+                    buttons: [
+                        ({
+                            label: forwardText,
+                            variant: 'ghost',
+                            icon_only: true,
+                            icon: 'ri-arrow-right-s-fill ri-lg',
+                            attributes: (nextDisabled ? {
+                                class: 'pagination-nav__edge-btn btn--disabled',
+                                disabled: 'disabled',
+                            } : {
+                                class: 'pagination-nav__edge-btn',
+                                'data-bs-toggle': 'tooltip',
+                                'data-bs-placement': tooltipPosition,
+                                'data-bs-title': forwardText|trans,
+                                'data-page': allowLoop and page >= totalPages ? 1 : page + 1,
+                            })|merge({ id: id ~ '-forward', type: 'button' }),
+                        }),
+                    ]
+                } only %}
+            </div>
+        </li>
+    </ul>
+    <div aria-live="polite" aria-atomic="true" class="pagination-nav__status">{{ 'mautic.marketplace.nav_pagination.status_page_of'|trans({'%page%': page, '%pages%': totalPages}) }}</div>
+</nav>
