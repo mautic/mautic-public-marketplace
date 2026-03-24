@@ -1,27 +1,15 @@
-**backwardText** — Translation key for the previous control. Default: `marketplace.index.pagination.previous`.
+**disableOverflow** — When `true`, the '...' pagination overflow (range collapse) does not render page links between the first and last candidates. Set to `true` if you expect performance issues with large page counts.
 
-**backwardHref** — URL for the previous page. When empty and **route** is set, it is set to `path(route, routeQuery|merge({offset: (page - 2) * pageSize}))` when `page > 1`. After that, if there is no previous page or the control is disabled, it is cleared and the control is a `button` with `type="button"` (same rules as `pagination.html.twig`). When non-empty, a non-empty value from the caller is kept.
+**itemsShown** — Number of page number links to show (minimum 4 unless total pages is less than 4). Default: `10`.
 
-**disabled** — When `true`, disables prev/next and the overflow select. Default: `false`.
+**loop** — Allows user to loop from first to last page (and vice versa) using navigation controls. Default: `false`.
 
-**forwardText** — Translation key for the next control. Default: `marketplace.index.pagination.next`.
+**page** — Current page index (1-based). Default: `1`.
 
-**forwardHref** — URL for the next page. When empty and **route** is set, it is set to `path(route, routeQuery|merge({offset: page * pageSize}))` when `page < totalPages`. Then cleared when there is no next page or the control is disabled; otherwise same rules as **backwardHref**.
+**size** — Visual size token for the navigation. Possible values: `sm`, `md`, `lg`. Default: `lg`.
 
-**id** — Prefix for `id` attributes (e.g. overflow select). Default: `pagination-nav`.
+**tooltipAlignment** — Alignment for the tooltip on icon-only prev/next buttons. One of: `start`, `center`, `end`. Default: (varies by usage, commonly `center`).
 
-**page** — Current page (1-based). Default: `1`.
+**tooltipPosition** — Position for the tooltip on icon-only prev/next buttons. One of: `top`, `right`, `bottom`, `left`. Default: `top`.
 
-**pageSize** — Items per page; used with `offset` in `path(route, routeQuery|merge({offset: …}))` for page links. Default: `10`.
-
-**route** — Optional route name for page-number links and the overflow `<select>`. When `null`, page controls are `<button type="button" data-page="…">`. Default: `null`.
-
-**routeQuery** — Query parameters merged with `offset` for each page when **route** is set. Default: `{}`.
-
-**size** — `sm`, `md`, or `lg`. Default: `md`.
-
-**totalItems** — Total item count; used with **pageSize** to compute **totalPages** when **totalPages** is not provided. Default: `null`.
-
-**totalPages** — Optional override for the number of pages. If omitted, computed like `pagination.html.twig`: `ceil(totalItems / pageSize)` with a minimum of `1`. Pass only when the computed value would be wrong for your data source.
-
-Overflow (middle range as a `<select>`) uses a fixed window internally (Carbon-style); there are no extra props for that.
+**totalItems** — (Optional) Total number of items in the full set. Used for page count calculations. Default: not set. Example: `25`.
