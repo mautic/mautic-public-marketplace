@@ -45,8 +45,11 @@
     min-width: 13px;
     order: 2;
     line-height: inherit;
-    font-size: calc(1em - 1px);
     vertical-align: -.05em;
+  }
+
+  i:not([class*="ri-"]) {
+    font-size: calc(1em - 1px);
   }
 
   // caret

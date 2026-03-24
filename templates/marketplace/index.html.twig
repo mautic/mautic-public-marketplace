@@ -6,6 +6,10 @@
     {% set current = app.request.query.all %}
     {% set orderby = filters.orderby %}
     {% set orderdir = filters.orderdir %}
+    {% set marketplace_total_pages = 1 %}
+    {% if result and result.total is not null and result.limit > 0 %}
+        {% set marketplace_total_pages = max(1, (result.total / result.limit)|round(0, 'ceil')) %}
+    {% endif %}
 
     {% include 'components/lead-space.html.twig' with {
         variant: 'short',
@@ -19,7 +23,7 @@
     {% endif %}
 
     <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true" data-turbo-frame="package-results">
-        <div class="row mt-12">
+        <div class="row mt-12 mb-32">
             <div class="col-12 col-lg-3 order-2 order-lg-1 mt-24 mt-lg-0">
                 <div class="type-heading-01 my-16 px-16">{{ 'marketplace.index.filters.heading'|trans }}</div>
                 {% set typeAccordionContent %}
@@ -80,7 +84,10 @@
                 </div>
                 <input type="hidden" name="orderby" value="{{ orderby }}">
                 <input type="hidden" name="orderdir" value="{{ orderdir }}">
+                {% if marketplace_total_pages <= 1 %}
                 <input type="hidden" name="limit" value="{{ filters.limit }}">
+                <input type="hidden" name="offset" value="{{ filters.offset }}">
+                {% endif %}
             </div>
             <div class="col-12 col-lg-9 order-1 order-lg-2">
                 <div class="row justify-content-end">
@@ -110,7 +117,7 @@
                     </div>
                 </div>
 
-            <turbo-frame id="package-results" data-turbo-action="advance">
+                <turbo-frame id="package-results" data-turbo-action="advance">
     {% if result and result.items is not empty %}
     {% set cards = [] %}
     {% for item in result.items %}
@@ -133,6 +140,7 @@
             copy: item.description ?: 'marketplace.package.description.none',
             eyebrow: typeLabel,
             href: path('marketplace_detail', { package: item.name }),
+            attributes: {'data-turbo-frame': '_top'},
             tags: [
                 { label: downloadsTotal, icon: 'ri-download-line', color: 'brand', attributes: { title: 'marketplace.package.downloads.tooltip'|trans({'%count%': downloadsTotal}), 'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top' } },
                 { label: ratingSummary, icon: 'ri-star-line', color: 'brand', attributes: { title: reviewsTooltipKey|trans({'%count%': reviewCount}), 'data-bs-toggle': 'tooltip', 'data-bs-placement': 'top' } }
@@ -140,7 +148,7 @@
         } %}
         {% set cards = cards|merge([card]) %}
     {% endfor %}
-    
+
     {% include 'components/card-group.html.twig' with {
         cards: cards,
         type: 'default',
@@ -148,37 +156,25 @@
         gridMode: 'narrow'
     } only %}
         {% if result.total is not null %}
-            {% set totalPages = (result.total / result.limit)|round(0, 'ceil') %}
-            {% if totalPages > 1 %}
-                {% set currentPage = (result.offset / result.limit)|round(0, 'floor') + 1 %}
-                <nav class="pagination" aria-label="{{ 'marketplace.index.pagination.aria'|trans }}">
-                    {% set prevOffset = result.offset - result.limit %}
-                    {% set nextOffset = result.offset + result.limit %}
-                    <div class="pagination__controls">
-                        {% if prevOffset >= 0 %}
-                            <a class="btn btn-default"
-                               href="{{ path('marketplace_index', current|merge({'offset': prevOffset})) }}">{{ 'marketplace.index.pagination.previous'|trans }}</a>
-                        {% else %}
-                            <span class="btn btn-default disabled">{{ 'marketplace.index.pagination.previous'|trans }}</span>
-                        {% endif %}
-
-                        {% if nextOffset < result.total %}
-                            <a class="btn btn-default"
-                               href="{{ path('marketplace_index', current|merge({'offset': nextOffset})) }}">{{ 'marketplace.index.pagination.next'|trans }}</a>
-                        {% else %}
-                            <span class="btn btn-default disabled">{{ 'marketplace.index.pagination.next'|trans }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="pagination__meta muted">
-                        {{ 'marketplace.index.pagination.meta'|trans({'%page%': currentPage, '%pages%': totalPages, '%results%': result.total}) }}
-                    </div>
-                </nav>
-            {% endif %}
+            {% set marketplace_list_page = result.limit > 0 ? (result.offset / result.limit)|round(0, 'floor') + 1 : 1 %}
+            {% set marketplace_prev_offset = result.offset - result.limit %}
+            {% set marketplace_next_offset = result.offset + result.limit %}
+            <hr>
+            {% include 'components/pagination-nav.html.twig' with {
+                id: 'marketplace-nav-pagination',
+                page: marketplace_list_page,
+                pageSize: result.limit,
+                route: 'marketplace_index',
+                leadingPages: 3,
+                routeParameters: current,
+                size: 'sm',
+                totalItems: result.total
+            } only %}
         {% endif %}
     {% else %}
             <div class="empty-state muted">{{ 'marketplace.index.empty'|trans }}</div>
     {% endif %}
-            </turbo-frame>
+                </turbo-frame>
             </div>
         </div>
     </form>
