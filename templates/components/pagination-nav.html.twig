@@ -70,7 +70,8 @@
 {% set itemsShown = max(4, itemsShown|default(10)) %}
 {% set disableOverflow = disableOverflow|default(false) %}
 
-{% set totalPages = max(1, totalItems|default(1)) %}
+{% set totalItemCount = totalItems|default(0) %}
+{% set totalPages = pageSize > 0 ? max(1, (totalItemCount / pageSize)|round(0, 'ceil')) : 1 %}
 {% set page = min(max(1, page|default(1)), totalPages) %}
 
 {% set overflowThreshold = (totalPages < 4) ? totalPages : itemsShown %}
