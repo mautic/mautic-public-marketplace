@@ -19,7 +19,7 @@
     } %}
 
     <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true">
-        <div class="row mt-12">
+        <div class="row mt-12 mb-32">
             <div class="col-12 col-lg-3 order-2 order-lg-1 mt-24 mt-lg-0">
                 <div class="type-heading-01 my-16 px-16">{{ 'marketplace.index.filters.heading'|trans }}</div>
                 {% set typeAccordionContent %}
@@ -168,6 +168,16 @@
                 forwardHref: marketplace_next_offset < result.total ? path('marketplace_index', current|merge({'offset': marketplace_next_offset})) : '',
                 pageSize: result.limit,
                 pagesUnknown: false,
+                size: 'sm',
+                totalItems: result.total
+            } only %}
+
+            {% include 'components/nav_pagination.html.twig' with {
+                id: 'marketplace-nav-pagination',
+                page: marketplace_list_page,
+                pageSize: result.limit,
+                route: 'marketplace_index',
+                routeQuery: current,
                 size: 'sm',
                 totalItems: result.total
             } only %}
