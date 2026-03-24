@@ -171,16 +171,6 @@
                 size: 'sm',
                 totalItems: result.total
             } only %}
-
-            {% include 'components/nav_pagination.html.twig' with {
-                id: 'marketplace-nav-pagination',
-                page: marketplace_list_page,
-                pageSize: result.limit,
-                route: 'marketplace_index',
-                routeQuery: current,
-                size: 'sm',
-                totalItems: result.total
-            } only %}
         {% endif %}
     {% else %}
             <div class="empty-state muted">{{ 'marketplace.index.empty'|trans }}</div>
