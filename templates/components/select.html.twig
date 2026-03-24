@@ -4,7 +4,6 @@
 {% set label_position = label_position|default('top') %}
 {% set options = options|default([]) %}
 {% set value = value|default(null) %}
-{% set placeholder = placeholder|default(null) %}
 {% set help_text = help_text|default(null) %}
 {% set size = size|default(null) %}
 {% set disabled = disabled|default(false) %}
@@ -59,8 +58,12 @@
             {% endif %}
         {% endfor %}
     >
-        {% if placeholder is not null %}
+        {% if placeholder is defined %}
+            {% if placeholder is same as(null) %}
+            <option value="" hidden {% if value is same as(null) or value == '' %}selected{% endif %}></option>
+            {% else %}
             <option value="" {% if value is same as(null) or value == '' %}selected{% endif %}>{{ placeholder|trans }}</option>
+            {% endif %}
         {% endif %}
         {% for option in options %}
             {% set option_value = option.value|default('') %}
