@@ -374,7 +374,6 @@
         }
     }
     
-
     .card-group__item {
         display: contents;
     }
@@ -424,7 +423,6 @@
         --card-group--row-gap: 32px;
         gap: 0px 32px;
         padding-block-start: 16px;
-        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -439,8 +437,6 @@
         --card-group--row-gap: 16px;
         gap: 0px 16px;
         padding-block-start: 16px;
-        grid-template-columns: repeat(2, 1fr);
-
     }
 }
 
@@ -450,7 +446,29 @@
     padding-block-start: 8px;
 }
 
+@media (min-width: breakpoint-min(md)) {
+    .card-group,
+    .card-group[grid-mode="default"],
+    .card-group[grid-mode="narrow"],
+    .card-group[grid-mode="condensed"] {
+        grid-template-columns: repeat(
+            min(var(--card-group--cards-in-row), 2), 1fr
+        );
+    }
+}
+
 @media (min-width: breakpoint-min(lg)) {
+    .card-group,
+    .card-group[grid-mode="default"],
+    .card-group[grid-mode="narrow"],
+    .card-group[grid-mode="condensed"] {
+        grid-template-columns: repeat(
+            min(var(--card-group--cards-in-row), 3), 1fr
+        );
+    }
+}
+
+@media (min-width: breakpoint-min(xl)) {
     .card-group,
     .card-group[grid-mode="default"],
     .card-group[grid-mode="narrow"],

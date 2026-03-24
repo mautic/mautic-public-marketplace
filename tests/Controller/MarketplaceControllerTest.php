@@ -84,15 +84,35 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 
-    public function testResourceTypeOptionInDropdown(): void
+    public function testTypeFilterRendersRadioOptions(): void
     {
         $client = self::createClient();
         $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        $options = $client->getCrawler()->filter('select[name="type"] option');
-        $values = $options->each(static fn ($node): ?string => $node->attr('value'));
-        self::assertContains('mautic-resource', $values);
+        $labels = $client->getCrawler()->filter('input[name="type"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+        $allTypesValue = $client->getCrawler()->filter('input[name="type"]')->first()->attr('value');
+
+        self::assertContains('Campaign (1)', $labels);
+        self::assertContains('Plugin (2)', $labels);
+        self::assertContains('Theme (1)', $labels);
+        self::assertSame('', $allTypesValue);
+    }
+
+    public function testTypeCountsAreCustomizedBySearch(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/?query=alpha');
+
+        self::assertResponseIsSuccessful();
+        $labels = $client->getCrawler()->filter('input[name="type"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertContains('All types (1)', $labels);
+        self::assertContains('Plugin (1)', $labels);
+        self::assertContains('Theme (0)', $labels);
+        self::assertContains('Campaign (0)', $labels);
     }
 
     public function testFilterByPluginTypeExcludesThemesAndResources(): void

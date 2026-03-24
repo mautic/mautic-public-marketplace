@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Marketplace{% endblock %}
+{% block title %}{{ 'mautic.marketplace.title'|trans }}{% endblock %}
 
 {% block body %}
     {% set current = app.request.query.all %}
@@ -19,86 +19,98 @@
     {% endif %}
 
     <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true" data-turbo-frame="package-results">
-        <div class="row">
-            <div class="col-xs-12">
-                <div class="form-group mb-16">
-                    <input class="form-control" id="query" name="query" type="text" value="{{ filters.query ?? '' }}" placeholder="Search packages or maintainers">
-                </div>
-            </div>
-        </div>
         <div class="row mt-12">
-            <div class="col-xs-12 col-lg-3">
+            <div class="col-12 col-lg-3 order-2 order-lg-1 mt-24 mt-lg-0">
+                <div class="type-heading-01 my-16 px-16">{{ 'marketplace.index.filters.heading'|trans }}</div>
                 {% set typeAccordionContent %}
-                    <div class="form-group">
-                        <select class="form-control" id="type" name="type">
-                            <option value="">All types</option>
-                            <option value="mautic-plugin" {% if filters.type == 'mautic-plugin' %}selected{% endif %}>Plugin</option>
-                            <option value="mautic-theme" {% if filters.type == 'mautic-theme' %}selected{% endif %}>Theme</option>
-                            <option value="mautic-resource" {% if filters.type == 'mautic-resource' %}selected{% endif %}>Resource</option>
-                        </select>
-                    </div>
+                    {% set allTypesCount = (type_counts['mautic-plugin'] ?? 0) + (type_counts['mautic-theme'] ?? 0) + (type_counts['mautic-resource'] ?? 0) %}
+                    {% include 'components/radio.html.twig' with {
+                        name: 'type',
+                        items: [
+                            { value: '', label: 'marketplace.index.filters.type.all_count'|trans({'%count%': allTypesCount}), checked: (filters.type ?? '') == '' },
+                            { value: 'mautic-plugin', label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-plugin' },
+                            { value: 'mautic-theme', label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-theme' },
+                            { value: 'mautic-resource', label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-resource' }
+                        ]
+                    } only %}
                 {% endset %}
                 {% set mauticAccordionContent %}
                     <div class="form-group">
-                        <input class="form-control" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="e.g. ^5.0">
+                        <input class="form-control" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="{{ 'marketplace.index.filters.mautic.placeholder'|trans }}">
                     </div>
                 {% endset %}
-                {% set popularityAccordionContent %}
-                    <div class="form-group">
-                        <select class="form-control" id="popularity" name="popularity">
-                            <option value="">Default</option>
-                            <option value="most_popular" {% if filters.popularity == 'most_popular' %}selected{% endif %}>Most popular</option>
-                            <option value="top_rated" {% if filters.popularity == 'top_rated' %}selected{% endif %}>Top rated</option>
-                            <option value="newest" {% if filters.popularity == 'newest' %}selected{% endif %}>Newest</option>
-                            <option value="rising" {% if filters.popularity == 'rising' %}selected{% endif %}>Rising</option>
-                        </select>
-                    </div>
-                {% endset %}
+
                 {% set dateRangeAccordionContent %}
-                    <div class="form-group">
-                        <select class="form-control" id="date_range" name="date_range">
-                            <option value="">All time</option>
-                            <option value="7d" {% if filters.date_range == '7d' %}selected{% endif %}>Last 7 days</option>
-                            <option value="30d" {% if filters.date_range == '30d' %}selected{% endif %}>Last 30 days</option>
-                            <option value="90d" {% if filters.date_range == '90d' %}selected{% endif %}>Last 90 days</option>
-                            <option value="365d" {% if filters.date_range == '365d' %}selected{% endif %}>Last year</option>
-                        </select>
-                    </div>
+                    {% include 'components/select.html.twig' with {
+                        id: 'date_range',
+                        name: 'date_range',
+                        value: filters.date_range ?? '',
+                        placeholder: 'marketplace.index.filters.date_range.all',
+                        options: [
+                            { value: '7d', label: 'marketplace.index.filters.date_range.7d' },
+                            { value: '30d', label: 'marketplace.index.filters.date_range.30d' },
+                            { value: '90d', label: 'marketplace.index.filters.date_range.90d' },
+                            { value: '365d', label: 'marketplace.index.filters.date_range.365d' }
+                        ]
+                    } only %}
                 {% endset %}
-                <div class="type-heading-01 mb-16 px-16">Filters</div>
-                {% include 'components/accordion.html.twig' with {
-                    items: [
-                        {
-                            id: 'marketplace_filter_type',
-                            title: 'Type',
-                            content: typeAccordionContent,
-                            padding_inline: false
-                        },
-                        {
-                            id: 'marketplace_filter_mautic',
-                            title: 'Mautic version',
-                            content: mauticAccordionContent,
-                            padding_inline: false
-                        },
-                        {
-                            id: 'marketplace_filter_popularity',
-                            title: 'Popularity',
-                            content: popularityAccordionContent,
-                            padding_inline: false
-                        },
-                        {
-                            id: 'marketplace_filter_date_range',
-                            title: 'Upload date',
-                            content: dateRangeAccordionContent,
-                            padding_inline: false
-                        }
-                    ]
-                } only %}
+                <div class="mb-16">
+                    {% include 'components/accordion.html.twig' with {
+                        items: [
+                            {
+                                id: 'marketplace_filter_type',
+                                title: 'marketplace.index.filters.type.label',
+                                content: typeAccordionContent,
+                                padding_inline: false
+                            },
+                            {
+                                id: 'marketplace_filter_mautic',
+                                title: 'marketplace.index.filters.mautic.label',
+                                content: mauticAccordionContent,
+                                padding_inline: false
+                            },
+                            {
+                                id: 'marketplace_filter_date_range',
+                                title: 'marketplace.index.filters.date_range.label',
+                                content: dateRangeAccordionContent,
+                                padding_inline: false
+                            }
+                        ]
+                    } only %}
+                </div>
                 <input type="hidden" name="orderby" value="{{ orderby }}">
                 <input type="hidden" name="orderdir" value="{{ orderdir }}">
                 <input type="hidden" name="limit" value="{{ filters.limit }}">
             </div>
-            <turbo-frame id="package-results" class="col-xs-12 col-lg-9" data-turbo-action="advance">
+            <div class="col-12 col-lg-9 order-1 order-lg-2">
+                <div class="row justify-content-end">
+                    <div class="col-md-9">
+                        {% include 'components/floating-label.html.twig' with {
+                            id: 'query',
+                            name: 'query',
+                            value: filters.query ?? '',
+                            label: 'marketplace.index.filters.search.placeholder',
+                            wrapper_class: 'mb-16',
+                            icon: 'ri-search-line ri-lg'
+                        } only %}
+                    </div>
+                    <div class="col-md-3">
+                        {% include 'components/floating-label.html.twig' with {
+                            component: 'select',
+                            name: 'popularity',
+                            value: filters.popularity ?? '',
+                            label: 'marketplace.index.filters.popularity.placeholder',
+                            options: [
+                                { value: 'most_popular', label: 'marketplace.index.filters.popularity.most_popular' },
+                                { value: 'top_rated', label: 'marketplace.index.filters.popularity.top_rated' },
+                                { value: 'newest', label: 'marketplace.index.filters.popularity.newest' },
+                                { value: 'rising', label: 'marketplace.index.filters.popularity.rising' }
+                            ]
+                        } only %}
+                    </div>
+                </div>
+
+            <turbo-frame id="package-results" data-turbo-action="advance">
     {% if result and result.items is not empty %}
     {% set cards = [] %}
     {% for item in result.items %}
@@ -139,34 +151,35 @@
             {% set totalPages = (result.total / result.limit)|round(0, 'ceil') %}
             {% if totalPages > 1 %}
                 {% set currentPage = (result.offset / result.limit)|round(0, 'floor') + 1 %}
-                <nav class="pagination" aria-label="Pagination">
+                <nav class="pagination" aria-label="{{ 'marketplace.index.pagination.aria'|trans }}">
                     {% set prevOffset = result.offset - result.limit %}
                     {% set nextOffset = result.offset + result.limit %}
                     <div class="pagination__controls">
                         {% if prevOffset >= 0 %}
                             <a class="btn btn-default"
-                               href="{{ path('marketplace_index', current|merge({'offset': prevOffset})) }}">Previous</a>
+                               href="{{ path('marketplace_index', current|merge({'offset': prevOffset})) }}">{{ 'marketplace.index.pagination.previous'|trans }}</a>
                         {% else %}
-                            <span class="btn btn-default disabled">Previous</span>
+                            <span class="btn btn-default disabled">{{ 'marketplace.index.pagination.previous'|trans }}</span>
                         {% endif %}
 
                         {% if nextOffset < result.total %}
                             <a class="btn btn-default"
-                               href="{{ path('marketplace_index', current|merge({'offset': nextOffset})) }}">Next</a>
+                               href="{{ path('marketplace_index', current|merge({'offset': nextOffset})) }}">{{ 'marketplace.index.pagination.next'|trans }}</a>
                         {% else %}
-                            <span class="btn btn-default disabled">Next</span>
+                            <span class="btn btn-default disabled">{{ 'marketplace.index.pagination.next'|trans }}</span>
                         {% endif %}
                     </div>
                     <div class="pagination__meta muted">
-                        Page {{ currentPage }} of {{ totalPages }} • {{ result.total }} results
+                        {{ 'marketplace.index.pagination.meta'|trans({'%page%': currentPage, '%pages%': totalPages, '%results%': result.total}) }}
                     </div>
                 </nav>
             {% endif %}
         {% endif %}
     {% else %}
-            <div class="empty-state muted">No packages found.</div>
+            <div class="empty-state muted">{{ 'marketplace.index.empty'|trans }}</div>
     {% endif %}
             </turbo-frame>
+            </div>
         </div>
     </form>
 
