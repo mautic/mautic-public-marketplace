@@ -97,20 +97,20 @@ final class SupabaseMockHttpClient extends MockHttpClient
         // Filter by type
         if (isset($params['_type']) && '' !== $params['_type']) {
             $type = $params['_type'];
-            $rows = array_values(array_filter($rows, static fn (array $r) => ($r['type'] ?? '') === $type));
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['type'] ?? '') === $type));
         }
 
         // Filter by query (searches both name and maintainers)
         if (isset($params['_query']) && '' !== $params['_query']) {
             $q = strtolower($params['_query']);
-            $rows = array_values(array_filter($rows, static fn (array $r) => str_contains(strtolower($r['name']), $q)
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => str_contains(strtolower($r['name']), $q)
                 || str_contains(strtolower($r['maintainers'] ?? ''), $q)));
         }
 
         // Filter by SMV
         if (isset($params['_smv']) && '' !== $params['_smv']) {
             $smv = $params['_smv'];
-            $rows = array_values(array_filter($rows, static fn (array $r) => str_contains($r['smv'] ?? '', $smv)));
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => str_contains($r['smv'] ?? '', $smv)));
         }
 
         // Filter by date range
@@ -215,7 +215,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
 
         $cutoff = (new \DateTimeImmutable("-{$days} days"))->getTimestamp();
 
-        return array_values(array_filter($rows, static fn (array $r) => strtotime($r['time'] ?? '0') >= $cutoff));
+        return array_values(array_filter($rows, static fn (array $r): bool => strtotime($r['time'] ?? '0') >= $cutoff));
     }
 
     /**

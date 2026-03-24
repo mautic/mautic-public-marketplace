@@ -18,7 +18,11 @@
         gradientStyleSchemeColor: '#f1edea',
     } %}
 
-    <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true">
+    {% if error %}
+        <p class="muted">{{ error }}</p>
+    {% endif %}
+
+    <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true" data-turbo-frame="package-results">
         <div class="row mt-12 mb-32">
             <div class="col-12 col-lg-3 order-2 order-lg-1 mt-24 mt-lg-0">
                 <div class="type-heading-01 my-16 px-16">{{ 'marketplace.index.filters.heading'|trans }}</div>
@@ -110,10 +114,10 @@
                                 { value: 'rising', label: 'marketplace.index.filters.popularity.rising' }
                             ]
                         } only %}
-                        
                     </div>
                 </div>
 
+                <turbo-frame id="package-results" data-turbo-action="advance">
     {% if result and result.items is not empty %}
     {% set cards = [] %}
     {% for item in result.items %}
@@ -143,7 +147,7 @@
         } %}
         {% set cards = cards|merge([card]) %}
     {% endfor %}
-    
+
     {% include 'components/card-group.html.twig' with {
         cards: cards,
         type: 'default',
@@ -161,7 +165,7 @@
                 pageSize: result.limit,
                 route: 'marketplace_index',
                 leadingPages: 3,
-                routeQuery: current,
+                routeParameters: current,
                 size: 'sm',
                 totalItems: result.total
             } only %}
@@ -169,9 +173,7 @@
     {% else %}
             <div class="empty-state muted">{{ 'marketplace.index.empty'|trans }}</div>
     {% endif %}
-    {% if error %}
-        <p class="muted">{{ error }}</p>
-    {% endif %}
+                </turbo-frame>
             </div>
         </div>
     </form>

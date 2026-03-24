@@ -218,8 +218,8 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/?limit=2');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorExists('.pagination');
-        self::assertSelectorTextContains('.pagination__meta', 'Page 1');
+        self::assertSelectorExists('.pagination-nav');
+        self::assertSelectorTextContains('.pagination-nav__status', 'Page 1');
     }
 
     public function testCombinedFilters(): void

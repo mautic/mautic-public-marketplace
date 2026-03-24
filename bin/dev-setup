@@ -51,6 +51,9 @@ if [ -f "$ROOT_DIR/supabase/seed/dev_refresh.sql" ]; then
   docker exec -i "$SUPABASE_DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "$ROOT_DIR/supabase/seed/dev_refresh.sql"
 fi
 
+# Reload PostgREST schema cache so new columns are visible via the REST API
+docker exec "$SUPABASE_DB_CONTAINER" psql -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';"
+
 # Seed minimal data for local development
 if [ -f "$ROOT_DIR/supabase/seed/dev_seed.sql" ]; then
   docker exec -i "$SUPABASE_DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "$ROOT_DIR/supabase/seed/dev_seed.sql"
