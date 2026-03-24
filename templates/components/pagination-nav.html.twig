@@ -1,0 +1,253 @@
+{% import _self as np %}
+
+{% macro page_li(pageNumber, currentPage, useLinks, routeName, routeParams, offsetParam, pageSize) %}
+    {% set isActive = (currentPage == pageNumber) %}
+    {% set cssClass = isActive ? 'pagination-nav__page pagination-nav__page--active' : 'pagination-nav__page' %}
+    {% set ariaLabel = isActive ? 'mautic.marketplace.nav_pagination.active_page'|trans : 'mautic.marketplace.nav_pagination.page'|trans %}
+
+    <li class="pagination-nav__list-item">
+        {% if useLinks %}
+            {% set offsetValue = (pageNumber - 1) * pageSize %}
+            {% set pageUrl = path(routeName, routeParams|merge({ (offsetParam): offsetValue })) %}
+            <a href="{{ pageUrl }}" class="{{ cssClass }}" {% if isActive %}aria-current="page"{% endif %}>
+                <span class="pagination-nav__accessibility-label">{{ ariaLabel }}</span>{{ pageNumber }}
+            </a>
+        {% else %}
+            <button type="button" class="{{ cssClass }}" data-page="{{ pageNumber }}" {% if isActive %}aria-current="page"{% endif %}>
+                <span class="pagination-nav__accessibility-label">{{ ariaLabel }}</span>{{ pageNumber }}
+            </button>
+        {% endif %}
+    </li>
+{% endmacro %}
+
+{% macro overflow_select(selectId, options, selectedValue, useLinks, isActive) %}
+    <li class="pagination-nav__list-item">
+        <div class="pagination-nav__select">
+            
+            {% set selectAttributes = {
+                class: 'pagination-nav__page pagination-nav__page--select',
+                'aria-label': 'mautic.marketplace.nav_pagination.select_page'|trans
+            } %}
+            
+            {% if useLinks %}
+                {% set selectAttributes = selectAttributes|merge({ onchange: 'if(this.value)window.location.href=this.value' }) %}
+            {% endif %}
+
+            {% include 'components/select.html.twig' with {
+                id: selectId, 
+                name: selectId, 
+                options: options, 
+                value: selectedValue,
+                label: null, 
+                placeholder: null, 
+                wrapper_class: '', 
+                attributes: selectAttributes
+            } only %}
+            
+            <div class="pagination-nav__select-icon-wrapper {% if isActive %}pagination-nav__page--active{% endif %}">
+                <svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" class="pagination-nav__select-icon" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="16" r="2"></circle>
+                    <circle cx="16" cy="16" r="2"></circle>
+                    <circle cx="24" cy="16" r="2"></circle>
+                </svg>
+            </div>
+        </div>
+    </li>
+{% endmacro %}
+
+{% set route = route|default('') %}
+{% set useLinks = route is not empty %}
+{% set routeParams = routeParameters|default({}) %}
+{% set offsetParam = offsetParameter|default('offset') %}
+{% set pageSize = max(1, pageSize|default(10)) %}
+{% set size = size|default('lg') %}
+{% set id = id|default('nav-pagination') %}
+{% set tooltipPos = tooltipPosition|default('top') %}
+{% set paginationLoop = loop|default(false) %}
+
+{% set neighborRadius = max(0, neighborRadius|default(1)) %}
+{% set leadingPages = max(1, leadingPages|default(8)) %}
+{% set itemsShown = max(4, itemsShown|default(10)) %}
+{% set disableOverflow = disableOverflow|default(false) %}
+
+{% set totalPages = max(1, totalItems|default(1)) %}
+{% set page = min(max(1, page|default(1)), totalPages) %}
+
+{% set overflowThreshold = (totalPages < 4) ? totalPages : itemsShown %}
+{% set showOverflow = not disableOverflow and (totalPages > overflowThreshold) %}
+
+{% set stripSize = showOverflow ? min(leadingPages, totalPages - 1) : 0 %}
+{% set endMin = (showOverflow and stripSize > 0) ? (totalPages - stripSize + 1) : (totalPages + 1) %}
+
+{% set mode = 'full' %}
+{% if showOverflow %}
+    {% if page <= stripSize %}
+        {% set mode = 'start' %}
+    {% elseif page >= endMin %}
+        {% set mode = 'end' %}
+    {% elseif stripSize > 0 %}
+        {% set mode = 'middle' %}
+    {% endif %}
+{% endif %}
+
+{% set prevTarget = (paginationLoop and page <= 1) ? totalPages : (page - 1) %}
+{% set nextTarget = (paginationLoop and page >= totalPages) ? 1 : (page + 1) %}
+{% set prevDisabled = (totalPages <= 1) or (not paginationLoop and page <= 1) %}
+{% set nextDisabled = (totalPages <= 1) or (not paginationLoop and page >= totalPages) %}
+
+{% set prevAttrs = {
+    id: id ~ '-backward',
+    type: 'button',
+    class: 'pagination-nav__edge-btn' ~ (prevDisabled ? ' btn--disabled' : ''),
+    'data-bs-toggle': 'tooltip',
+    'data-bs-placement': tooltipPos,
+    'data-bs-title': 'marketplace.index.pagination.previous'|trans
+} %}
+{% set prevAttrs = prevDisabled ? prevAttrs|merge({ disabled: 'disabled' }) : prevAttrs %}
+{% set prevAttrs = useLinks ? prevAttrs : prevAttrs|merge({ 'data-page': prevTarget }) %}
+
+{% set prevBtn = {
+    label: 'marketplace.index.pagination.previous',
+    variant: 'ghost',
+    icon_only: true,
+    icon: 'ri-arrow-left-s-fill ri-lg',
+    attributes: prevAttrs
+} %}
+{% set prevBtn = (useLinks and not prevDisabled) ? prevBtn|merge({ href: path(route, routeParams|merge({(offsetParam): (prevTarget - 1) * pageSize})) }) : prevBtn %}
+
+{% set nextAttrs = {
+    id: id ~ '-forward',
+    type: 'button',
+    class: 'pagination-nav__edge-btn' ~ (nextDisabled ? ' btn--disabled' : ''),
+    'data-bs-toggle': 'tooltip',
+    'data-bs-placement': tooltipPos,
+    'data-bs-title': 'marketplace.index.pagination.next'|trans
+} %}
+{% set nextAttrs = nextDisabled ? nextAttrs|merge({ disabled: 'disabled' }) : nextAttrs %}
+{% set nextAttrs = useLinks ? nextAttrs : nextAttrs|merge({ 'data-page': nextTarget }) %}
+
+{% set nextBtn = {
+    label: 'marketplace.index.pagination.next',
+    variant: 'ghost',
+    icon_only: true,
+    icon: 'ri-arrow-right-s-fill ri-lg',
+    attributes: nextAttrs
+} %}
+{% set nextBtn = (useLinks and not nextDisabled) ? nextBtn|merge({ href: path(route, routeParams|merge({(offsetParam): (nextTarget - 1) * pageSize})) }) : nextBtn %}
+
+<nav class="pagination-nav pagination-nav--{{ size }}" aria-label="{{ 'marketplace.index.nav_pagination.aria'|trans }}">
+    <ul class="pagination-nav__list">
+        
+        <li class="pagination-nav__list-item">
+            <div class="tooltip-trigger__wrapper">
+                {% include 'components/button.html.twig' with { buttons: [prevBtn] } only %}
+            </div>
+        </li>
+
+        {% if mode == 'full' %}
+            {% for pageNumber in 1..totalPages %}
+                {{ np.page_li(pageNumber, page, useLinks, route, routeParams, offsetParam, pageSize) }}
+            {% endfor %}
+
+        {% elseif mode == 'middle' %}
+            
+            {% set windowStart = max(2, page - neighborRadius) %}
+            {% set windowEnd = min(totalPages - 1, page + neighborRadius) %}
+            
+            {% if windowStart > windowEnd %}
+                {% set windowStart = min(max(2, page), totalPages - 1) %}
+                {% set windowEnd = max(windowStart, min(page, totalPages - 1)) %}
+            {% endif %}
+
+            {{ np.page_li(1, page, useLinks, route, routeParams, offsetParam, pageSize) }}
+            
+            {% set leftGapStart = 2 %}
+            {% set leftGapEnd = windowStart - 1 %}
+            
+            {% if leftGapStart <= leftGapEnd %}
+                {% set leftOptions = range(leftGapStart, leftGapEnd)|map(n => ({ 
+                    value: useLinks ? path(route, routeParams|merge({(offsetParam): (n - 1) * pageSize})) : n, 
+                    label: '' ~ n 
+                })) %}
+                {% set isPageInLeftGap = (page >= leftGapStart and page <= leftGapEnd) %}
+                {% set leftVal = isPageInLeftGap ? (useLinks ? path(route, routeParams|merge({(offsetParam): (page - 1) * pageSize})) : page) : null %}
+                
+                {{ np.overflow_select(id ~ '-overflow-pre', leftOptions, leftVal, useLinks, isPageInLeftGap) }}
+            {% endif %}
+
+            {% for pageNumber in windowStart..windowEnd %}
+                {{ np.page_li(pageNumber, page, useLinks, route, routeParams, offsetParam, pageSize) }}
+            {% endfor %}
+
+            {% set rightGapStart = windowEnd + 1 %}
+            {% set rightGapEnd = totalPages - 1 %}
+            
+            {% if rightGapStart <= rightGapEnd %}
+                {% set rightOptions = range(rightGapStart, rightGapEnd)|map(n => ({ 
+                    value: useLinks ? path(route, routeParams|merge({(offsetParam): (n - 1) * pageSize})) : n, 
+                    label: '' ~ n 
+                })) %}
+                {% set isPageInRightGap = (page >= rightGapStart and page <= rightGapEnd) %}
+                {% set rightVal = isPageInRightGap ? (useLinks ? path(route, routeParams|merge({(offsetParam): (page - 1) * pageSize})) : page) : null %}
+                
+                {{ np.overflow_select(id ~ '-overflow-post', rightOptions, rightVal, useLinks, isPageInRightGap) }}
+            {% endif %}
+
+            {{ np.page_li(totalPages, page, useLinks, route, routeParams, offsetParam, pageSize) }}
+
+        {% elseif mode == 'end' %}
+            
+            {{ np.page_li(1, page, useLinks, route, routeParams, offsetParam, pageSize) }}
+            
+            {% if endMin > 2 %}
+                {% set gapOptions = range(2, endMin - 1)|map(n => ({ 
+                    value: useLinks ? path(route, routeParams|merge({(offsetParam): (n - 1) * pageSize})) : n, 
+                    label: '' ~ n 
+                })) %}
+                {% set isPageInGap = (page >= 2 and page < endMin) %}
+                {% set gapVal = isPageInGap ? (useLinks ? path(route, routeParams|merge({(offsetParam): (page - 1) * pageSize})) : page) : null %}
+                
+                {{ np.overflow_select(id ~ '-overflow-pre', gapOptions, gapVal, useLinks, isPageInGap) }}
+            {% endif %}
+            
+            {% for pageNumber in endMin..totalPages %}
+                {{ np.page_li(pageNumber, page, useLinks, route, routeParams, offsetParam, pageSize) }}
+            {% endfor %}
+
+        {% else %}
+            
+            {% for pageNumber in 1..stripSize %}
+                {{ np.page_li(pageNumber, page, useLinks, route, routeParams, offsetParam, pageSize) }}
+            {% endfor %}
+            
+            {% set gapStart = stripSize + 1 %}
+            {% set gapEnd = totalPages - 1 %}
+            
+            {% if gapStart <= gapEnd %}
+                {% set gapOptions = range(gapStart, gapEnd)|map(n => ({ 
+                    value: useLinks ? path(route, routeParams|merge({(offsetParam): (n - 1) * pageSize})) : n, 
+                    label: '' ~ n 
+                })) %}
+                {% set isPageInGap = (page >= gapStart and page <= gapEnd) %}
+                {% set gapVal = isPageInGap ? (useLinks ? path(route, routeParams|merge({(offsetParam): (page - 1) * pageSize})) : page) : null %}
+                
+                {{ np.overflow_select(id ~ '-overflow', gapOptions, gapVal, useLinks, isPageInGap) }}
+            {% endif %}
+            
+            {% if totalPages > stripSize %}
+                {{ np.page_li(totalPages, page, useLinks, route, routeParams, offsetParam, pageSize) }}
+            {% endif %}
+
+        {% endif %}
+
+        <li class="pagination-nav__list-item">
+            <div class="tooltip-trigger__wrapper">
+                {% include 'components/button.html.twig' with { buttons: [nextBtn] } only %}
+            </div>
+        </li>
+    </ul>
+
+    <div aria-live="polite" aria-atomic="true" class="pagination-nav__status">
+        {{ 'mautic.marketplace.nav_pagination.status_page_of'|trans({'%page%': page, '%pages%': totalPages}) }}
+    </div>
+</nav>
