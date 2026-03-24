@@ -1,5 +1,5 @@
 {% set name = name|default('select') %}
-{% set id = name|replace({'[': '-', ']': '', ' ': '-', '.': '-'}) %}
+{% set id = id|default(name|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
 {% set label = label|default(null) %}
 {% set label_position = label_position|default('top') %}
 {% set options = options|default([]) %}
@@ -13,6 +13,7 @@
 {% set wrapper_class = wrapper_class|default('') %}
 {% set describedby = describedby|default([]) %}
 {% set attributes = attributes|default({}) %}
+{% set icon = icon|default(null) %}
 {% set select_class = 'form-select' %}
 {% set common_label_html %}
     {% if label %}
