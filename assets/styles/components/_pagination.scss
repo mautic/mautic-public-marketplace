@@ -299,17 +299,6 @@ span.pagination__text.pagination__items-count {
     color: var(--text-primary, #161616)
 }
 
-.pagination-nav__page:focus {
-    outline: 2px solid var(--focus, #0f62fe);
-    outline-offset: -2px
-}
-
-@media screen and (prefers-contrast) {
-    .pagination-nav__page:focus {
-        outline-style: dotted
-    }
-}
-
 .pagination-nav__page:disabled,.pagination-nav__page.pagination-nav__page--disabled {
     background: none;
     color: var(--text-secondary, #525252);
