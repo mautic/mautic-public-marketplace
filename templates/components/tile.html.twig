@@ -43,22 +43,22 @@
 {# === EXPANDABLE TYPE === #}
 {% elseif type == 'expandable' %}
     {% set randomId = random() %}
-    <button type="button"
-            class="tile tile--expandable collapsed {{ className|default('') }}"
-            data-toggle="collapse"
-            data-target="#collapse-{{ randomId }}"
-            aria-expanded="false"
-            aria-controls="collapse-{{ randomId }}"
-            title="{{ 'mautic.core.interact_to_expand_tile'|trans }}"
-            id="expandable-tile-{{ randomId }}"
-            tabindex="0">
+        <button type="button"
+        class="tile tile--expandable collapsed {{ className|default('') }}"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse-{{ randomId }}"
+        aria-expanded="false"
+        aria-controls="collapse-{{ randomId }}"
+        title="{{ 'mautic.marketplace.detail.interact_to_expand_tile'|trans }}"
+        id="expandable-tile-{{ randomId }}"
+        tabindex="0">
         <div>
             <div class="tile-content">
                 <div class="tile-content__above-the-fold">
                     {{ aboveFoldContent|raw }}
                 </div>
             </div>
-            <div class="tile__chevron">
+            <div class="tile__chevron" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ 'mautic.marketplace.detail.interact_to_expand_tile'|trans }}">
                 <i class="ri-arrow-down-s-line"></i>
             </div>
             <div class="collapse" id="collapse-{{ randomId }}">
@@ -81,15 +81,17 @@
                     {{ aboveFoldContent|raw }}
                 </div>
             </div>
+            <span class="tile__chevron" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ 'mautic.marketplace.detail.interact_to_expand_tile'|trans }}">
             <button type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#collapse-{{ randomId }}"
                     aria-expanded="false"
                     aria-controls="collapse-{{ randomId }}"
-                    aria-label="{{ 'mautic.core.interact_to_expand_tile'|trans }}"
-                    class="tile__chevron tile__chevron--interactive collapsed">
-                <i class="ri-arrow-down-s-line"></i>
-            </button>
+                    aria-label="{{ 'mautic.marketplace.detail.interact_to_expand_tile'|trans }}"
+                    class="tile__chevron--interactive collapsed">
+                    <i class="ri-arrow-down-s-line"></i>
+                </button>
+            </span>
             <div class="collapse" id="collapse-{{ randomId }}">
                 <div class="tile-content" id="expandable-tile-interactive-{{ randomId }}">
                     <div class="tile-content__below-the-fold">
