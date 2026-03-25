@@ -10,6 +10,25 @@
                 childContainer: contentBlockChild,
                 hasBorder: true
             } %}
+
+            {% set statCards = [
+                { eyebrow: 'mautic.marketplace.detail.stats.downloads', heading: package.downloads.total ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.favers', heading: package.favers ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.stars', heading: package.githubStars ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.forks', heading: package.githubForks ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.open_issues', heading: package.githubOpenIssues ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.dependents', heading: package.dependents ?? 0 }
+            ] %}
+    
+            <section>
+                {% include 'components/card-group.html.twig' with {
+                    type: 'static',
+                    gridMode: 'condensed',
+                    cardsPerRow: 3,
+                    cards: statCards
+                } %}
+            </section>
+
         </div>
         <div class="col-xs-12 col-md-4">
             <div class="tile">

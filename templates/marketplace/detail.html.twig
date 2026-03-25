@@ -39,29 +39,6 @@
 
             {% include 'marketplace/detail/section--description.html.twig' %}
 
-            <div class="row justify-content-between">
-                <div class="col-xs-12 col-sm-12 col-md-7">
-                    {% set statCards = [
-                        { eyebrow: 'mautic.marketplace.detail.stats.downloads', heading: package.downloads.total ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.favers', heading: package.favers ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.stars', heading: package.githubStars ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.forks', heading: package.githubForks ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.open_issues', heading: package.githubOpenIssues ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.dependents', heading: package.dependents ?? 0 }
-                    ] %}
-            
-                    <section>
-                        {% include 'components/card-group.html.twig' with {
-                            type: 'static',
-                            gridMode: 'condensed',
-                            cardsPerRow: 3,
-                            cards: statCards
-                        } %}
-                    </section>
-                </div>
-            </div>
-
-
         <section class="section">
             <h2>{{ 'mautic.marketplace.detail.versions.heading'|trans }}</h2>
             {% if package.versions %}
