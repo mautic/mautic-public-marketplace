@@ -36,8 +36,9 @@
             gradientStyleSchemeColor: color,
             tags: leadspace_tags,
         } %}
-        <section class="detail-header mt-48">
-            {% set contentBlockChild %}
+
+            {% include 'marketplace/detail/section--description.html.twig' %}
+
             <div class="row justify-content-between">
                 <div class="col-xs-12 col-sm-12 col-md-7">
                     {% set statCards = [
@@ -58,80 +59,8 @@
                         } %}
                     </section>
                 </div>
-                <div class="col-xs-12 col-md-4">
-                    <div class="d-flex justify-content-between ai-center">
-                        <span class="type-heading-02 ellipsis mb-12">{{ 'mautic.marketplace.detail.technical_details'|trans }}</span>
-                        <i class="ri-box-2-line" aria-hidden="true"></i>
-                    </div>
-                    <hr class="mt-0 mb-24">
-                    <!-- Last updated -->
-                    <dt class="type-heading-01">{{ 'mautic.marketplace.detail.last_updated'|trans }}</dt>
-                    {% if package.time %}
-                    {% set updated_at = date(package.time) %}
-                    <dd>
-                        <time datetime="{{ updated_at|date('c') }}">{{ updated_at|relative_time_ago }}</time>
-                        <i class="ri-information-2-line" aria-hidden="true" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ updated_at|date('Y-m-d') }}"></i>
-                    </dd>
-                    {% else %}
-                    <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
-                    {% endif %}
-
-                    <!-- Language -->
-                    <div class="mt-24">
-                        <dt class="type-heading-01">{{ 'mautic.marketplace.detail.language'|trans }}</dt>
-                        {% if package.language %}
-                        <dd>{{ package.language }}</dd>
-                        {% else %}
-                        <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
-                        {% endif %}
-
-                    <!-- Maintainers -->
-                    {% if package.maintainers %}
-                    <dt class="type-heading-01 mt-24 mb-4">{{ 'mautic.marketplace.detail.maintainers'|trans }}</dt>
-                    <dd>
-                        {% set maintainer_tags = package.maintainers|map(m => ({ label: m.name ?? m, color: 'blue' })) %}
-                        {% include 'components/tags.html.twig' with { tags: maintainer_tags } %}
-                    </dd>
-                    {% endif %}
-                    </div>
-                    
-                    <!-- Repository -->
-                    <dt class="type-heading-01 mt-24 mb-8">{{ 'mautic.marketplace.detail.repository'|trans }}</dt>
-                    {% if package.repository or package.url %}
-                        {% if package.repository %}
-                        <dd>
-                            <i class="ri-github-fill ri-lg" aria-hidden="true"></i>
-                            <a href="{{ package.repository }}" target="_blank" rel="noopener">
-                                {% set repoParts = package.repository|split('/') %}
-                                {{ 'mautic.marketplace.detail.repository.github'|trans({
-                                    '%repository%': repoParts[repoParts|length-2] ~ '/' ~ repoParts[repoParts|length-1]
-                                }) }}
-                            </a>
-                        </dd>
-                        {% endif %}
-                        {% if package.url %}
-                        <dd>
-                            <i class="ri-box-2-fill ri-lg" aria-hidden="true"></i>
-                                {% set pkgParts = package.url|split('/') %}
-                                <a href="{{ package.url }}" target="_blank" rel="noopener">
-                                    {{ 'mautic.marketplace.detail.repository.packagist'|trans({
-                                        '%package%': pkgParts[pkgParts|length-2] ~ '/' ~ pkgParts[pkgParts|length-1]
-                                    }) }}
-                                </a>
-                        </dd>
-                        {% endif %}
-
-                    {% else %}
-                    <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
-                    {% endif %}
-                </div>
             </div>
-            {% endset %}
-            {% include 'components/content-block.html.twig' with {
-                subheading: package.description ? package.description : null,
-                childContainer: contentBlockChild
-            } %}
-        </section>
+
 
         <section class="section">
             <h2>{{ 'mautic.marketplace.detail.versions.heading'|trans }}</h2>
