@@ -80,53 +80,50 @@
             <section class="section mt-12">
                 {% set versionKeys = package.versions ? (package.versions|keys|sort|reverse) : [] %}
                 {% set versionTags = versionKeys|map(version => ({ label: version, color: 'gray' })) %}
-    
-                {% if versionKeys is empty %}
-                    {% include 'components/tile.html.twig' with {
-                        type: 'base',
-                        content: '<p class="muted mb-0">{{ 'mautic.marketplace.detail.versions.empty'|trans }}</p>',
-                    } %}
-                {% elseif versionKeys|length <= 5 %}
-                    {% set smvList = [] %}
+
+                {% set smvList = [] %}
+                {% if package.versions %}
                     {% for version, data in package.versions %}
                         {% if data.smv is defined and data.smv is not empty and (data.smv not in smvList) %}
                             {% set smvList = smvList|merge([data.smv]) %}
                         {% endif %}
                     {% endfor %}
-    
+                {% endif %}
+
+                {% if versionKeys is empty %}
+                    {% include 'components/tile.html.twig' with {
+                        type: 'base',
+                        content: '<p class="muted mb-0">{{ "mautic.marketplace.detail.versions.empty"|trans }}</p>',
+                    } %}
+                {% elseif versionKeys|length <= 5 %}
                     {% set versionsContent %}
-                    <div class="type-heading-01 mb-4">{{ 'mautic.marketplace.detail.versions.heading'|trans }} ({{ versionKeys|length }})</div>
+                        <div class="type-heading-01 mb-16">{{ 'mautic.marketplace.detail.versions.heading'|trans }} ({{ versionKeys|length }})</div>
+                        <div class="d-flex flex-wrap gap-4">
                         {% include 'components/tags.html.twig' with { tags: versionTags } %}
+                        </div>
                     {% endset %}
-    
+
                     {% include 'components/tile.html.twig' with {
                         type: 'base',
                         content: versionsContent,
                     } %}
                 {% else %}
-                    {% set smvList = [] %}
-                    {% for version, data in package.versions %}
-                        {% if data.smv is defined and data.smv is not empty and (data.smv not in smvList) %}
-                            {% set smvList = smvList|merge([data.smv]) %}
-                        {% endif %}
-                    {% endfor %}
-    
                     {% set aboveFoldTags = versionTags|slice(0, 5) %}
                     {% set belowFoldTags = versionTags|slice(5) %}
-    
+
                     {% set aboveFoldContent %}
-                    <div class="type-heading-01 mb-16">{{ 'mautic.marketplace.detail.versions.heading'|trans }} ({{ versionKeys|length }})</div>
-                    <div class="d-flex flex-wrap gap-4">
-                        {% include 'components/tags.html.twig' with { tags: aboveFoldTags } %}
-                    </div>
+                        <div class="type-heading-01 mb-16">{{ 'mautic.marketplace.detail.versions.heading'|trans }} ({{ versionKeys|length }})</div>
+                        <div class="d-flex flex-wrap gap-4">
+                            {% include 'components/tags.html.twig' with { tags: aboveFoldTags } %}
+                        </div>
                     {% endset %}
-    
+
                     {% set belowFoldContent %}
-                    <div class="d-flex flex-wrap gap-4 mt-4">
-                        {% include 'components/tags.html.twig' with { tags: belowFoldTags } %}
-                    </div>
+                        <div class="d-flex flex-wrap gap-4 mt-4">
+                            {% include 'components/tags.html.twig' with { tags: belowFoldTags } %}
+                        </div>
                     {% endset %}
-    
+
                     {% include 'components/tile.html.twig' with {
                         type: 'expandable-interactive',
                         className: 'mb-0',
