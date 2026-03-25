@@ -38,30 +38,7 @@
         } %}
 
             {% include 'marketplace/detail/section--description.html.twig' %}
-
-        <section class="section">
-            <h2>{{ 'mautic.marketplace.detail.versions.heading'|trans }}</h2>
-            {% if package.versions %}
-                {% set versionKeys = package.versions|keys|sort|reverse %}
-                {% set smvList = [] %}
-                {% for version, data in package.versions %}
-                    {% if data.smv is defined and data.smv is not empty and (data.smv not in smvList) %}
-                        {% set smvList = smvList|merge([data.smv]) %}
-                    {% endif %}
-                {% endfor %}
-                {% if smvList is not empty %}
-                    <p class="muted">{{ 'mautic.marketplace.detail.versions.supported_mautic'|trans({ '%versions%': smvList|join(', ') }) }}</p>
-                {% endif %}
-                <div class="chip-list">
-                    {% for version in versionKeys %}
-                        <span class="chip">{{ version }}</span>
-                    {% endfor %}
-                </div>
-                <p class="muted">{{ 'mautic.marketplace.detail.versions.count'|trans({ '%count%': versionKeys|length }) }}</p>
-            {% else %}
-                <p class="muted">{{ 'mautic.marketplace.detail.versions.empty'|trans }}</p>
-            {% endif %}
-        </section>
+            {% include 'marketplace/detail/section--gallery.html.twig' %}
 
         <section class="section">
             <h2>{{ 'mautic.marketplace.detail.reviews.heading'|trans }}</h2>
