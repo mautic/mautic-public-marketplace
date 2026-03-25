@@ -84,7 +84,7 @@
                 {% if versionKeys is empty %}
                     {% include 'components/tile.html.twig' with {
                         type: 'base',
-                        content: '<p class="muted mb-0">No versions indicated</p>',
+                        content: '<p class="muted mb-0">{{ 'mautic.marketplace.detail.versions.empty'|trans }}</p>',
                     } %}
                 {% elseif versionKeys|length <= 5 %}
                     {% set smvList = [] %}
