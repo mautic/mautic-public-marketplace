@@ -28,6 +28,7 @@
         {% if latest_mautic_version %}
             {% set leadspace_tags = leadspace_tags|merge([{ label: 'mautic.marketplace.detail.latest_mautic_supported'|trans({ '%version%': latest_mautic_version }), color: 'blue' }]) %}
         {% endif %}
+        <div class="mx-n16 mx-lg-n32">
         {% include 'components/lead-space.html.twig' with {
             variant: 'short',
             heading: package.displayName ?: package.name,
@@ -36,9 +37,11 @@
             gradientStyleSchemeColor: color,
             tags: leadspace_tags,
         } %}
+        </div>
 
             {% include 'marketplace/detail/section--description.html.twig' %}
             {% include 'marketplace/detail/section--gallery.html.twig' %}
+            {% include 'marketplace/detail/section--install-instructions.html.twig' %}
 
         <section class="section">
             <h2>{{ 'mautic.marketplace.detail.reviews.heading'|trans }}</h2>
