@@ -11,12 +11,16 @@
         <p class="muted pt-16">
             <a href="{{ path('marketplace_index') }}">&larr; {{ 'mautic.marketplace.detail.back'|trans }}</a>
         </p>
-        {% set color = (
-            package.type == 'mautic-plugin' ? '#4e5e9e' :
-            package.type == 'mautic-theme' ? '#00b49d' :
-            package.type == 'mautic-resource' ? '#fdb933' :
-            '#ad9bd3'
-        ) %}
+        {% if package.bannerURL is defined and package.bannerURL is not empty %}
+            {% set color = '#000000' %}
+        {% else %}
+            {% set color = (
+                package.type == 'mautic-plugin' ? '#4e5e9e' :
+                package.type == 'mautic-theme' ? '#00b49d' :
+                package.type == 'mautic-resource' ? '#fdb933' :
+                '#ad9bd3'
+            ) %}
+        {% endif %}
         {% set type_label = package.type == 'mautic-plugin' ? 'mautic.marketplace.detail.type.plugin' :
             package.type == 'mautic-theme' ? 'mautic.marketplace.detail.type.theme' :
             package.type == 'mautic-resource' ? 'mautic.marketplace.detail.type.resource' :
@@ -29,14 +33,19 @@
             {% set leadspace_tags = leadspace_tags|merge([{ label: 'mautic.marketplace.detail.latest_mautic_supported'|trans({ '%version%': latest_mautic_version }), color: 'blue' }]) %}
         {% endif %}
         <div class="mx-n16 mx-lg-n32">
+        {% set leadspace_media = (package.bannerURL is defined and package.bannerURL is not empty) 
+            ? { src: package.bannerURL, alt: 'mautic.marketplace.leadspace.image_alt' } 
+            : null 
+        %}
         {% include 'components/lead-space.html.twig' with {
             variant: 'short',
             heading: package.displayName ?: package.name,
             description: package.description,
-            gradientStyleScheme: 'without-gradient',
+            gradientStyleScheme: package.bannerURL is defined and package.bannerURL is not empty ? 'with-gradient' : 'without-gradient',
             gradientStyleSchemeColor: color,
-            tags: leadspace_tags,
-        } %}
+            tags: leadspace_tags
+        }
+        |merge(leadspace_media ? { media: leadspace_media } : {}) %}
         </div>
 
             {% include 'marketplace/detail/section--description.html.twig' %}
