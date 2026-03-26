@@ -82,21 +82,16 @@
       }
 
       &:hover {
-        background-color: transparent;
         color: var(--text-primary);
 
         &::after {
           background-color: var(--layer-accent-hover);
         }
       }
+    }
 
-      &.active {
-        background-color: transparent;
-
-        &::after {
-          background-color: var(--border-interactive);
-        }
-      }
+    .nav-link.active::after {
+      background-color: var(--border-interactive);
     }
 
     &.nav-tabs--icon-only {
@@ -138,18 +133,14 @@
       }
     }
 
-    .nav-item {
-      .nav-link {
-        &,
-        &:hover {
-          border-right-color: var(--border-strong);
-        }
-      }
+    .nav-item .nav-link,
+    .nav-item .nav-link:hover {
+      border-right-color: var(--border-strong);
+    }
 
-      &:last-child .nav-link,
-      .nav-link.active {
-        border-right-color: transparent;
-      }
+    .nav-item:last-child .nav-link,
+    .nav-item .nav-link.active {
+      border-right-color: transparent;
     }
   }
 
@@ -233,10 +224,6 @@
         &:hover {
           background-color: var(--layer-hover);
           border-color: var(--border-subtle);
-
-          &::after {
-            background-color: var(--border-strong);
-          }
         }
 
         &::after {
@@ -245,30 +232,30 @@
           background-color: var(--layer-accent);
         }
 
+        &:hover::after {
+          background-color: var(--border-strong);
+        }
+
         &.active {
           z-index: 3;
+          background-color: var(--layer);
+          border-bottom-color: var(--border-subtle);
+          border-right-color: transparent;
+        }
 
-          &,
-          &:hover {
-            background-color: var(--layer);
-            border-bottom-color: var(--border-subtle);
-            border-right-color: transparent;
+        &.active::after {
+          background-color: var(--border-interactive);
+        }
 
-            &::after {
-              background-color: var(--border-interactive);
-            }
-          }
-
-          &::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: -1px;
-            bottom: 0;
-            width: 1px;
-            background-color: var(--layer);
-            z-index: 1;
-          }
+        &.active::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          right: -1px;
+          bottom: 0;
+          width: 1px;
+          background-color: var(--layer);
+          z-index: 1;
         }
       }
     }
