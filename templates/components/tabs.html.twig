@@ -16,7 +16,7 @@
 
 {% macro iconContent(tab, variant, isDismissable) %}
     {% if tab.renderIcon is defined and tab.renderIcon %}
-        <i class="tabs__nav-item-icon{% if variant == 'line' and isDismissable %} me-2{% elseif variant == 'line' %} ms-2{% elseif variant == 'contained' %} ms-3{% endif %} {{ tab.renderIcon }}"
+        <i class="tabs__nav-item-icon{% if variant == 'line' %} me-4{% elseif variant in ['contained', 'vertical'] %} ms-3{% endif %} {{ tab.renderIcon }}"
            aria-hidden="true"
            focusable="false"></i>
     {% endif %}
@@ -33,8 +33,9 @@
 
 {% macro secondaryLabel(tab) %}
     {% if tab.secondaryLabel is defined and tab.secondaryLabel %}
-        <div class="tabs__nav-item-secondary-label type-label-01" title="{{ tab.secondaryLabel }}">
-            {{ tab.secondaryLabel }}
+        {% set secondaryLabel = tab.secondaryLabel|trans %}
+        <div class="tabs__nav-item-secondary-label type-label-01 text-start" title="{{ secondaryLabel }}">
+            {{ secondaryLabel }}
         </div>
     {% endif %}
 {% endmacro %}
@@ -74,9 +75,11 @@
                             {% endif %}
                         </div>
                     {% elseif variant == 'vertical' %}
-                        <div class="tabs__nav-item-label-wrapper">
+                        <div class="tabs__nav-item-label-wrapper justify-content-between">
                             <span class="tabs__nav-item-label">{{ tabLabel|trans }}</span>
+                            {{ _self.iconContent(tab, variant, false) }}
                         </div>
+                        {{ _self.secondaryLabel(tab) }}
                     {% else %}
                         <div class="tabs__nav-item-label-wrapper">
                             {% if isDismissable %}
@@ -87,11 +90,20 @@
                                 {% endif %}
                                 <span class="tabs__nav-item-label">{{ tabLabel|trans }}</span>
                             {% else %}
-                                <span class="tabs__nav-item-label">{{ tabLabel|trans }}</span>
-                                {% if tab.renderTag is defined and tab.renderTag %}
-                                    {{ _self.tagContent(tab, variant, isDismissable) }}
+                                {% if variant == 'line' %}
+                                    {% if tab.renderTag is defined and tab.renderTag %}
+                                        {{ _self.tagContent(tab, variant, isDismissable) }}
+                                    {% else %}
+                                        {{ _self.iconContent(tab, variant, isDismissable) }}
+                                    {% endif %}
+                                    <span class="tabs__nav-item-label">{{ tabLabel|trans }}</span>
                                 {% else %}
-                                    {{ _self.iconContent(tab, variant, isDismissable) }}
+                                    <span class="tabs__nav-item-label">{{ tabLabel|trans }}</span>
+                                    {% if tab.renderTag is defined and tab.renderTag %}
+                                        {{ _self.tagContent(tab, variant, isDismissable) }}
+                                    {% else %}
+                                        {{ _self.iconContent(tab, variant, isDismissable) }}
+                                    {% endif %}
                                 {% endif %}
                             {% endif %}
                         </div>

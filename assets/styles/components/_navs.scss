@@ -70,7 +70,7 @@
   &.nav-tabs--default {
     .nav-link {
       background-color: transparent;
-      padding: 6px 16px;
+      padding: 10px 16px;
       margin-right: -2px;
       border-radius: 0;
 
@@ -142,7 +142,7 @@
       .nav-link {
         &,
         &:hover {
-          border-right: 1px solid var(--border-strong);
+          border-right-color: var(--border-strong);
         }
       }
 
@@ -162,7 +162,9 @@
 
 .tabs__nav-item-label-wrapper {
   display: flex;
+  width: 100%;
   align-items: center;
+  justify-content: center;
   gap: 4px;
 }
 
@@ -186,8 +188,8 @@
 
 @media (min-width: breakpoint-min(lg)) {
   .tabs-container.tabs-container--vertical {
-    display: grid;
-    grid-template-columns: 235px minmax(0, 1fr);
+    display: flex;
+    flex-direction: row;
     width: 100%;
     min-inline-size: 0;
   }
@@ -202,7 +204,6 @@
     position: relative;
     background-color: var(--layer);
     min-inline-size: 235px;
-    width: 235px;
 
     &::before {
       content: '';
