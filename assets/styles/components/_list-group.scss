@@ -42,8 +42,15 @@
     --bs-list-group-item-padding-y: 1rem;
     --list-marker-size: 20px;
     --bs-list-group-bg: transparent;
+    p {margin-bottom: unset;}
 }
 
-.list-group-numbered > .list-group-item::before {
-    content: counters(section, ".");
+.list-group-numbered {
+    > .list-group-item::before {
+        content: counters(section, ".");
+        flex-shrink: 0;
+    }
+    > .list-group-item {
+        display: flex;
+    }
 }
