@@ -199,10 +199,9 @@
         {% include 'components/tile.html.twig' with {
             type: 'clickable',
             content: cardContent,
-
             className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
             href: href,
-        } only %}
+        } %}
 
     {# === FEATURE TYPE === #}
     {% elseif type == 'feature' %}
