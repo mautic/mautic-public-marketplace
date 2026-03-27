@@ -1,6 +1,8 @@
 // Base light theme
 
 $primary-color: #4e5e9e;
+$secondary-color: #00b49d;
+$tertiary-color: #fdb933;
 $layer-01: #f4f4f4;
 $border-subtle-01: #e0e0e0;
 $border-subtle-02: #c6c6c6;
@@ -34,6 +36,26 @@ $transition-all-productive: all 150ms cubic-bezier(0.2, 0, 0.38, 0.9);
   --primary-80: #{darken($primary-color, 20%)};
   --primary-90: #{darken($primary-color, 30%)};
   --primary-100: #{darken($primary-color, 40%)};
+
+  --secondary-20: #{lighten($secondary-color, 60%)};
+  --secondary-30: #{lighten($secondary-color, 30%)};
+  --secondary-40: #{lighten($secondary-color, 20%)};
+  --secondary-50: #{lighten($secondary-color, 10%)};
+  --secondary-60: #{$secondary-color};
+  --secondary-70: #{darken($secondary-color, 10%)};
+  --secondary-80: #{darken($secondary-color, 20%)};
+  --secondary-90: #{darken($secondary-color, 30%)};
+  --secondary-100: #{darken($secondary-color, 40%)};
+
+  --tertiary-20: #{lighten($tertiary-color, 35%)};
+  --tertiary-30: #{lighten($tertiary-color, 30%)};
+  --tertiary-40: #{lighten($tertiary-color, 20%)};
+  --tertiary-50: #{lighten($tertiary-color, 10%)};
+  --tertiary-60: #{$tertiary-color};
+  --tertiary-70: #{darken($tertiary-color, 10%)};
+  --tertiary-80: #{darken($tertiary-color, 20%)};
+  --tertiary-90: #{darken($tertiary-color, 30%)};
+  --tertiary-100: #{darken($tertiary-color, 40%)};
 
   --background: #ffffff;
   --background-hover: #f1f1f1;
@@ -195,14 +217,18 @@ $transition-all-productive: all 150ms cubic-bezier(0.2, 0, 0.38, 0.9);
   --label-color-green: #0e6027;
   --label-background-hover-green: #74e792;
   --label-border-green: #42be65;
-  --label-background-brand: var(--primary-20);
-  --label-color-brand: var(--primary-60);
-  --label-background-hover-brand: var(--primary-30);
-  --label-border-brand: var(--primary-40);
-  --label-background-primary: var(--primary-60);
-  --label-color-primary: var(--text-on-color);
-  --label-background-hover-primary: var(--primary-70);
-  --label-border-primary: var(--primary-80);
+  --label-background-primary: var(--primary-20);
+  --label-color-primary: var(--primary-60);
+  --label-background-hover-primary: var(--primary-30);
+  --label-border-primary: var(--primary-40);
+  --label-background-secondary: var(--secondary-20);
+  --label-color-secondary: var(--secondary-70);
+  --label-background-hover-secondary: var(--secondary-30);
+  --label-border-secondary: var(--secondary-40);
+  --label-background-tertiary: var(--tertiary-20);
+  --label-color-tertiary: var(--tertiary-80);
+  --label-background-hover-tertiary: var(--tertiary-30);
+  --label-border-tertiary: var(--tertiary-40);
 
   --duration-productive: 150ms;
   --duration-expressive: 300ms;
