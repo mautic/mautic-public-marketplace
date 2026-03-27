@@ -1,0 +1,58 @@
+<!-- 
+copy (required) -> character limit 260
+markType (optional) -> double-curved (default), double-angled, single-curved, single-angled
+sourceHeading (optional)
+sourceCopy (optional)
+SourceBottomCopy (optional)
+colorScheme
+cta (optional) -> link with icon
+-->
+
+<div mark-type="double-curved" appearance="legacy" color-scheme="regular" data-autoid="c4d--callout-quote" lang="en"><template shadowrootmode="open"><!---->
+    <div class="cds--callout__column">
+      <div class="cds--callout__content">
+        <div class="cds--quote__container">
+          <div class="cds--quote__wrapper">
+          <span class="cds--quote__mark">
+            “
+          </span>
+          <div class="cds--quote__copy type-fluid-quotation-01 text-break type-fluid-quotation-02">
+            {{ copy }}
+        </div>
+        <span class="cds--quote__mark-closing">
+          ”
+        </span>
+    <div class="cds--quote__source">
+      <slot name="source-heading"></slot>
+      <slot name="source-copy"></slot>
+      <slot name="source-bottom-copy"></slot>
+    </div>
+    <div class="cds--quote__footer">
+      <c4d-hr part="hr" role="separator" data-autoid="c4d--hr" type="solid" size="fluid" contrast="strong" weight="thin"><template shadowrootmode="open"><!----></template></c4d-hr>
+      <slot name="footer"></slot>
+    </div>
+  
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+    <!--?lit$07422488$-->Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus est purus, posuere at est vitae, ornare rhoncus sem. Suspendisse vitae tellus fermentum, hendrerit augue eu, placerat magna.
+    <c4d-quote-source-heading slot="source-heading"><template shadowrootmode="open"><!----> <slot></slot> </template> <!--?lit$07422488$-->Lorem ipsum dolor sit amet </c4d-quote-source-heading>
+    <c4d-quote-source-copy slot="source-copy"><template shadowrootmode="open"><!----> <slot></slot> </template> <!--?lit$07422488$-->consectetur adipiscing elit </c4d-quote-source-copy>
+    <c4d-quote-source-bottom-copy slot="source-bottom-copy"><template shadowrootmode="open"><!----> <slot></slot> </template>
+      <!--?lit$07422488$-->IBM Cloud
+    </c4d-quote-source-bottom-copy>
+    <c4d-callout-link-with-icon slot="footer" href="https://example.com" cta-type="local" data-autoid="c4d--callout-link-with-icon" icon-placement="right" color-scheme="regular"><template shadowrootmode="open" shadowrootdelegatesfocus=""><!---->
+    <a tabindex="0" id="link" part="link" class="cds--link cds--link--lg cds--link-with-icon cds--link-with-icon__icon-right cds--link-with-icon--inline-icon" href="https://example.com">
+      <!--?lit$07422488$--> <!--?lit$07422488$--><span part="span"><slot></slot></span><!--?lit$07422488$-->
+      <slot name="icon">
+        <span part="icon-visually-hidden" class="cds--visually-hidden"><!--?lit$07422488$--></span>
+        <!--?lit$07422488$--><svg focusable="false" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" class="c4d--card__cta c4d-ce--cta__icon"><!--?lit$07422488$--><path d="M11.8 2.8L10.8 3.8 16.2 9.3 1 9.3 1 10.7 16.2 10.7 10.8 16.2 11.8 17.2 19 10z"></path></svg>
+      </slot>
+     
+    </a>
+  </template>
+      Link with icon
+    </c4d-callout-link-with-icon>
+  </div>
