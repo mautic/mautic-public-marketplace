@@ -50,78 +50,9 @@
 
             {% include 'marketplace/detail/section--description.html.twig' %}
             {% include 'marketplace/detail/section--gallery.html.twig' %}
+            {% include 'marketplace/detail/section--reviews.html.twig' %}
             {% include 'marketplace/detail/section--install-instructions.html.twig' %}
             {% include 'marketplace/detail/section--similar-templates.html.twig' %}
 
-        <section class="section">
-            <h2>{{ 'mautic.marketplace.detail.reviews.heading'|trans }}</h2>
-            {% if package.reviews %}
-                {% set hasReview = false %}
-                {% for key, review in package.reviews %}
-                    {% if review.rating is not null or review.review is not null %}
-                        {% set hasReview = true %}
-                        <div class="review-card">
-                            <div><strong>{{ review.name ?? key }}</strong></div>
-                            {% if review.rating is not null %}
-                                <div class="review-card__meta">{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': review.rating }) }}</div>
-                            {% endif %}
-                            {% if review.review %}
-                                <div>{{ review.review }}</div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                {% endfor %}
-                {% if not hasReview %}
-                    <p class="muted">{{ 'mautic.marketplace.detail.reviews.empty'|trans }}</p>
-                {% endif %}
-            {% else %}
-                <p class="muted">{{ 'mautic.marketplace.detail.reviews.empty'|trans }}</p>
-            {% endif %}
-        </section>
-
-        <section class="section" id="marketplace-review-container"
-            data-auth0-domain="{{ auth0_domain }}"
-            data-auth0-client-id="{{ auth0_client_id }}"
-            data-api-url="{{ path('review_api_submit', {package: name}) }}"
-            data-package-name="{{ name }}">
-            <h2>{{ 'mautic.marketplace.detail.review_form.heading'|trans }}</h2>
-
-            <div id="auth-loading">
-                <p class="muted">{{ 'mautic.marketplace.detail.review_form.loading_authentication'|trans }}</p>
-            </div>
-
-            <div id="auth-login" style="display:none">
-                <button type="button" id="auth0-login-btn" class="bx--btn bx--btn--primary">
-                    {{ 'mautic.marketplace.detail.review_form.login'|trans }}
-                </button>
-            </div>
-
-            <div id="auth-form" style="display:none">
-                <p class="muted">{{ 'mautic.marketplace.detail.review_form.logged_in_as'|trans }} <strong id="auth-user-name"></strong>
-                    (<a href="#" id="auth0-logout-btn">{{ 'mautic.marketplace.detail.review_form.logout'|trans }}</a>)
-                </p>
-                <form id="review-form" class="review-form">
-                    <div class="review-form__stars">
-                        <label>{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
-                        <div id="rating-stars" class="star-rating">
-                            <span class="star-icon" data-rating="1">&#9733;</span>
-                            <span class="star-icon" data-rating="2">&#9733;</span>
-                            <span class="star-icon" data-rating="3">&#9733;</span>
-                            <span class="star-icon" data-rating="4">&#9733;</span>
-                            <span class="star-icon" data-rating="5">&#9733;</span>
-                        </div>
-                        <input type="hidden" id="rating" name="rating" value="0">
-                    </div>
-                    <div class="review-form__text">
-                        <label for="review">{{ 'mautic.marketplace.detail.review_form.review'|trans }}</label>
-                        <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="{{ 'mautic.marketplace.detail.review_form.review_placeholder'|trans }}"></textarea>
-                    </div>
-                    <button type="submit" id="submit-btn" class="bx--btn bx--btn--primary">{{ 'mautic.marketplace.detail.review_form.submit'|trans }}</button>
-                </form>
-            </div>
-
-            <div id="review-error" class="alert alert--error" style="display:none"></div>
-            <div id="review-success" class="alert alert--success" style="display:none"></div>
-        </section>
     {% endif %}
 {% endblock %}

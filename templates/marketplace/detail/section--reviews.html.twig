@@ -1,0 +1,129 @@
+{% set reviews = package.reviews ?? [] %}
+{% set featuredReview = null %}
+
+{% for review in reviews %}
+    {% if featuredReview is null and review.review is defined and review.review is not empty %}
+        {% set featuredReview = review %}
+    {% endif %}
+{% endfor %}
+
+{% if featuredReview %}
+    <section class="my-64">
+        {% include 'components/callout-quote.html.twig' with {
+            copy: featuredReview.review,
+            sourceHeading: featuredReview.user ?? featuredReview.name ?? 'mautic.marketplace.detail.reviews.heading'|trans,
+            sourceCopy: featuredReview.rating is defined and featuredReview.rating is not null
+                ? 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': featuredReview.rating })
+                : null
+        } only %}
+    </section>
+{% endif %}
+
+{% set contentBlockChild %}
+    {% if reviews is not empty %}
+        {% set hasVisibleReviews = false %}
+
+        <div class="d-grid gap-8">
+            {% for review in reviews %}
+                {% set reviewText = review.review ?? null %}
+                {% set reviewAuthor = review.user ?? review.name ?? null %}
+
+                {% if review.rating is not null or reviewText %}
+                    {% set hasVisibleReviews = true %}
+                    {% set initials = (reviewAuthor ?: name)|split(' ')|map(part => part|slice(0, 1)|upper)|join('')|slice(0, 2) %}
+                    {% set reviewContent %}
+                        <article class="review-card">
+                            <div class="d-flex gap-16">
+                                <div aria-hidden="true">
+                                    <div class="d-inline-flex p-12 rounded-circle" style="background-color: #4e5e9e; color: var(--text-on-color);">{{ initials }}</div>
+                                </div>
+                                <div>
+                                    {% if reviewText %}
+                                        <div class="type-heading-03 mb-12"><em>{{ reviewText }}</em></div>
+                                    {% endif %}
+
+                                    {% if reviewAuthor %}
+                                        <div><strong>{{ reviewAuthor }}</strong></div>
+                                    {% endif %}
+
+                                    {% if review.rating is not null %}
+                                        <div class="review-card__meta" aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': review.rating }) }}">
+                                            {% for i in 1..5 %}
+                                                <i class="ri-star-fill {{ i <= review.rating ? 'text-warning' : 'text-disabled' }}" aria-hidden="true"></i>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </article>
+                    {% endset %}
+
+                    {% include 'components/tile.html.twig' with {
+                        type: 'base',
+                        content: reviewContent,
+                        className: 'mb-0'
+                    } only %}
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if not hasVisibleReviews %}
+            <p class="muted">{{ 'mautic.marketplace.detail.reviews.empty'|trans }}</p>
+        {% endif %}
+    {% else %}
+        <p class="muted">{{ 'mautic.marketplace.detail.reviews.empty'|trans }}</p>
+    {% endif %}
+
+    <section class="section mt-32" id="marketplace-review-container"
+        data-auth0-domain="{{ auth0_domain }}"
+        data-auth0-client-id="{{ auth0_client_id }}"
+        data-api-url="{{ path('review_api_submit', {package: name}) }}"
+        data-package-name="{{ name }}">
+        <h2 class="type-heading-03 mb-16">{{ 'mautic.marketplace.detail.review_form.heading'|trans }}</h2>
+
+        <div id="auth-loading">
+            <p class="muted">{{ 'mautic.marketplace.detail.review_form.loading_authentication'|trans }}</p>
+        </div>
+
+        <div id="auth-login" style="display:none">
+            <button type="button" id="auth0-login-btn" class="bx--btn bx--btn--primary">
+                {{ 'mautic.marketplace.detail.review_form.login'|trans }}
+            </button>
+        </div>
+
+        <div id="auth-form" style="display:none">
+            <p class="muted">{{ 'mautic.marketplace.detail.review_form.logged_in_as'|trans }} <strong id="auth-user-name"></strong>
+                (<a href="#" id="auth0-logout-btn">{{ 'mautic.marketplace.detail.review_form.logout'|trans }}</a>)
+            </p>
+            <form id="review-form" class="review-form">
+                <div class="review-form__stars">
+                    <label>{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
+                    <div id="rating-stars" class="star-rating">
+                        <span class="star-icon" data-rating="1">&#9733;</span>
+                        <span class="star-icon" data-rating="2">&#9733;</span>
+                        <span class="star-icon" data-rating="3">&#9733;</span>
+                        <span class="star-icon" data-rating="4">&#9733;</span>
+                        <span class="star-icon" data-rating="5">&#9733;</span>
+                    </div>
+                    <input type="hidden" id="rating" name="rating" value="0">
+                </div>
+                <div class="review-form__text">
+                    <label for="review">{{ 'mautic.marketplace.detail.review_form.review'|trans }}</label>
+                    <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="{{ 'mautic.marketplace.detail.review_form.review_placeholder'|trans }}"></textarea>
+                </div>
+                <button type="submit" id="submit-btn" class="bx--btn bx--btn--primary">{{ 'mautic.marketplace.detail.review_form.submit'|trans }}</button>
+            </form>
+        </div>
+
+        <div id="review-error" class="alert alert--error" style="display:none"></div>
+        <div id="review-success" class="alert alert--success" style="display:none"></div>
+    </section>
+{% endset %}
+
+<section class="section my-64">
+    {% include 'components/content-block.html.twig' with {
+        heading: 'mautic.marketplace.detail.reviews.heading',
+        childContainer: contentBlockChild,
+        hasBorder: true
+    } only %}
+</section>
