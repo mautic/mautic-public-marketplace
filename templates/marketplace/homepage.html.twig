@@ -104,54 +104,62 @@
     ]
 } %}
 
-<div class="my-64">
-    {% include 'components/content-block.html.twig' with {
+{% set childContainerTypes %}
+    {{ include('components/card-group.html.twig', {
+        cards: packageTypeCards,
+        type: 'pictogram',
+        cardsPerRow: 3,
+        gridMode: 'narrow'
+    }, with_context = false) }}
+
+    <div class="my-64">
+        {{ include('components/content-block.html.twig', {
+            heading: 'mautic.marketplace.homepage.categories.heading',
+            childContainer: include('components/card-group.html.twig', {
+                cards: browseBySignalCards,
+                type: 'pictogram',
+                cardsPerRow: 4,
+                gridMode: 'narrow'
+            }, with_context = false)
+        }, with_context = false) }}
+    </div>
+{% endset %}
+
+<div class="mt-64">
+    {{ include('components/content-block.html.twig', {
         heading: 'mautic.marketplace.homepage.package_types.heading',
-        childContainer: include('components/card-group.html.twig', {
-            cards: packageTypeCards,
-            type: 'pictogram',
-            cardsPerRow: 3,
-            gridMode: 'narrow'
-        }, with_context = false)
-    } %}
+
+        childContainer: childContainerTypes
+    }, with_context = false) }}
 </div>
 
-<div class="my-64">
-    {% include 'components/content-block.html.twig' with {
-        heading: 'mautic.marketplace.homepage.categories.heading',
-        childContainer: include('components/card-group.html.twig', {
-            cards: browseBySignalCards,
-            type: 'pictogram',
-            cardsPerRow: 4,
-            gridMode: 'narrow'
-        }, with_context = false)
-    } %}
-</div>
+{% set childContainerCuratedJourneyCards %}
+    {{ include('components/card-group.html.twig', {
+        cards: curatedJourneyCards,
+        type: 'card-in-card',
+        cardsPerRow: 3,
+        gridMode: 'condensed'
+    }, with_context = false) }}
+    <div class="mb-64">
+        {{ include('components/content-item-row.html.twig', {
+            type: 'default',
+            eyebrow: 'mautic.marketplace.homepage.why.eyebrow',
+            heading: 'mautic.marketplace.homepage.why.heading',
+            copy: 'mautic.marketplace.homepage.why.copy',
+            cta: {
+                label: 'mautic.marketplace.homepage.why.cta',
+                link: path('marketplace_index')
+            }
+        }, with_context = false) }}
+    </div>
+{% endset %}
 
-<div class="my-64">
-    {% include 'components/content-block.html.twig' with {
+<div class="mb-64">
+    {{ include('components/content-block.html.twig', {
         heading: 'mautic.marketplace.homepage.journeys.section_heading',
         copy: 'mautic.marketplace.homepage.journeys.section_copy',
-        childContainer: include('components/card-group.html.twig', {
-            cards: curatedJourneyCards,
-            type: 'card-in-card',
-            cardsPerRow: 3,
-            gridMode: 'condensed'
-        }, with_context = false)
-    } %}
-</div>
-
-<div class="my-64">
-    {% include 'components/content-item-row.html.twig' with {
-        type: 'default',
-        eyebrow: 'mautic.marketplace.homepage.why.eyebrow',
-        heading: 'mautic.marketplace.homepage.why.heading',
-        copy: 'mautic.marketplace.homepage.why.copy',
-        cta: {
-            label: 'mautic.marketplace.homepage.why.cta',
-            link: path('marketplace_index')
-        }
-    } only %}
+        childContainer: childContainerCuratedJourneyCards
+    }, with_context = false) }}
 </div>
 
 {% endblock %}
