@@ -178,6 +178,7 @@ BEGIN
                 FROM reviews r WHERE r."objectId" = p.name
             ),
             'type', p.type,
+            'url', p.url,
             'repository', p.repository,
             'github_stars', p.github_stars,
             'github_watchers', p.github_watchers,
