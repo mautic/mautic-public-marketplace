@@ -56,7 +56,7 @@
                 <!-- Maintainers -->
                 {% if package.maintainers %}
                 <dt class="type-heading-01 mt-24 mb-4">{{ 'mautic.marketplace.detail.maintainers'|trans }}</dt>
-                <dd>
+                <dd class="d-flex flex-wrap gap-4">
                     {% set maintainer_tags = package.maintainers|map(m => ({ label: m.name ?? m, color: 'blue' })) %}
                     {% include 'components/tags.html.twig' with { tags: maintainer_tags } %}
                 </dd>
