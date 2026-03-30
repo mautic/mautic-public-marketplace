@@ -1,0 +1,56 @@
+.list-group-marker {
+    --list-marker-size: 16px;
+
+    > .list-group-item::before {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      width: var(--list-marker-size);
+      height: var(--list-marker-size);
+      text-align: center;
+      line-height: var(--list-marker-size);
+      font-size: calc(var(--list-marker-size) - 10px);
+      font-weight: bold;
+      transition: var(--transition-all-productive);
+      margin-right: var(--spacing-04);
+    }
+}
+
+.list-group-marker--neutral {
+    > .list-group-item::before {
+        background: var(--layer);
+        color: var(--icon-secondary);
+    }
+}
+
+.list-group-marker--inverse {
+    > .list-group-item::before {
+        background: var(--background-inverse);
+        color: var(--icon-on-color);
+    }
+}
+
+.list-group-marker--primary {
+    > .list-group-item::before {
+        background: var(--primary-60);
+        color: var(--text-on-color);
+    }
+}
+
+.install-instructions__steps {
+    --bs-list-group-item-padding-y: 1rem;
+    --list-marker-size: 20px;
+    --bs-list-group-bg: transparent;
+    p {margin-bottom: unset;}
+}
+
+.list-group-numbered {
+    > .list-group-item::before {
+        content: counters(section, ".");
+        flex-shrink: 0;
+    }
+    > .list-group-item {
+        display: flex;
+    }
+}

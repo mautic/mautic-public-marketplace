@@ -32,6 +32,7 @@
         {% if latest_mautic_version %}
             {% set leadspace_tags = leadspace_tags|merge([{ label: 'mautic.marketplace.detail.latest_mautic_supported'|trans({ '%version%': latest_mautic_version }), color: 'blue' }]) %}
         {% endif %}
+        <div class="mx-n16 mx-lg-n32">
         {% set leadspace_media = (package.bannerURL is defined and package.bannerURL is not empty) 
             ? { src: package.bannerURL, alt: 'mautic.marketplace.leadspace.image_alt' } 
             : null 
@@ -45,9 +46,11 @@
             tags: leadspace_tags
         }
         |merge(leadspace_media ? { media: leadspace_media } : {}) %}
+        </div>
 
             {% include 'marketplace/detail/section--description.html.twig' %}
             {% include 'marketplace/detail/section--gallery.html.twig' %}
+            {% include 'marketplace/detail/section--install-instructions.html.twig' %}
             {% include 'marketplace/detail/section--similar-templates.html.twig' %}
 
         <section class="section">

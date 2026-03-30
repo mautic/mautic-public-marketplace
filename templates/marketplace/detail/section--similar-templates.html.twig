@@ -1,50 +1,52 @@
-<section class="mt-80">
-    {% set similarTemplatesContent %}
-    {% set cards = [] %}
-    {% for item in similar_packages.items %}
-        {% set ratingSummary = item.averageRating is not null
-            ? item.averageRating|number_format(1)
-            : 'marketplace.package.rating.none'
-        %}
-        {% set downloadsTotal = item.downloadsTotal is not null ? item.downloadsTotal|number_format(0, '.', ',') : '0' %}
+{% if similar_packages is defined and similar_packages.items is defined and similar_packages.items is not empty %}
+    <section class="mt-80">
+        {% set similarTemplatesContent %}
+        {% set cards = [] %}
+        {% for item in similar_packages.items %}
+            {% set ratingSummary = item.averageRating is not null
+                ? item.averageRating|number_format(1)
+                : 'marketplace.package.rating.none'
+            %}
+            {% set downloadsTotal = item.downloadsTotal is not null ? item.downloadsTotal|number_format(0, '.', ',') : '0' %}
 
-        {% set customContent %}
-        <div class="d-flex flex-wrap mt-16 gap-16">
-            <div>
-                <i class="ri-star-line" aria-hidden="true"></i>
-                {{ ratingSummary }}
+            {% set customContent %}
+            <div class="d-flex flex-wrap mt-16 gap-16">
+                <div>
+                    <i class="ri-star-line" aria-hidden="true"></i>
+                    {{ ratingSummary }}
+                </div>
+                <div>
+                    <i class="ri-download-line" aria-hidden="true"></i>
+                    {{ downloadsTotal }}
+                </div>
             </div>
-            <div>
-                <i class="ri-download-line" aria-hidden="true"></i>
-                {{ downloadsTotal }}
-            </div>
-        </div>
+            {% endset %}
+            {% set card = {
+                heading: item.displayName ?: item.name,
+                copy: item.description ?: 'marketplace.package.description.none',
+                image: item.bannerURL is not null ? { src: item.bannerURL, alt: item.displayName ?: item.name } : null,
+                href: path('marketplace_detail', { package: item.name }),
+                customContent: customContent,
+                tags: [
+                    {
+                        label: item.type == 'mautic-plugin' ? 'marketplace.package.type.plugin' : item.type == 'mautic-theme' ? 'marketplace.package.type.theme' : 'marketplace.package.type.resource',
+                        color: item.type == 'mautic-plugin' ? 'primary' : item.type == 'mautic-theme' ? 'secondary' : 'tertiary' }
+                ]
+            } %}
+            {% set cards = cards|merge([card]) %}
+        {% endfor %}
+
+        {% include 'components/card-group.html.twig' with {
+            cards: cards,
+            type: 'default',
+            cardsPerRow: 3,
+            gridMode: 'condensed'
+        } only %}
         {% endset %}
-        {% set card = {
-            heading: item.displayName ?: item.name,
-            copy: item.description ?: 'marketplace.package.description.none',
-            image: item.bannerURL is not null ? { src: item.bannerURL, alt: item.displayName ?: item.name } : null,
-            href: path('marketplace_detail', { package: item.name }),
-            customContent: customContent,
-            tags: [
-                { 
-                    label: item.type == 'mautic-plugin' ? 'marketplace.package.type.plugin' : item.type == 'mautic-theme' ? 'marketplace.package.type.theme' : 'marketplace.package.type.resource', 
-                    color: item.type == 'mautic-plugin' ? 'primary' : item.type == 'mautic-theme' ? 'secondary' : 'tertiary' }
-            ]
+
+        {% include 'components/content-block.html.twig' with {
+            heading: package.type == 'mautic-plugin' ? 'mautic.marketplace.detail.similar_templates.heading.plugin' : package.type == 'mautic-theme' ? 'mautic.marketplace.detail.similar_templates.heading.theme' : 'mautic.marketplace.detail.similar_templates.heading.resource',
+            childContainer: similarTemplatesContent
         } %}
-        {% set cards = cards|merge([card]) %}
-    {% endfor %}
-
-    {% include 'components/card-group.html.twig' with {
-        cards: cards,
-        type: 'default',
-        cardsPerRow: 3,
-        gridMode: 'condensed'
-    } only %}
-    {% endset %}
-
-    {% include 'components/content-block.html.twig' with {
-        heading: package.type == 'mautic-plugin' ? 'mautic.marketplace.detail.similar_templates.heading.plugin' : package.type == 'mautic-theme' ? 'mautic.marketplace.detail.similar_templates.heading.theme' : 'mautic.marketplace.detail.similar_templates.heading.resource',
-        childContainer: similarTemplatesContent
-    } %}
-</section>
+    </section>
+{% endif %}

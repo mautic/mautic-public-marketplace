@@ -291,6 +291,7 @@ code {
   padding: var(--spacing-01) var(--spacing-03);
   overflow: hidden;
   border-radius: clamp(4px, var(--border-radius-sm), 6px);
+  background-color: var(--layer);
 }
 
 pre {
