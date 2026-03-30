@@ -31,7 +31,6 @@
                     label: item.type == 'mautic-plugin' ? 'marketplace.package.type.plugin' : item.type == 'mautic-theme' ? 'marketplace.package.type.theme' : 'marketplace.package.type.resource', 
                     color: item.type == 'mautic-plugin' ? 'primary' : item.type == 'mautic-theme' ? 'secondary' : 'tertiary' }
             ]
-
         } %}
         {% set cards = cards|merge([card]) %}
     {% endfor %}
