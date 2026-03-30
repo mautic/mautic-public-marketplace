@@ -293,6 +293,12 @@
     inset-inline-start: 16px;
 }
 
+.card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .card__footer-wrapper {
         -webkit-margin-before: auto;
     margin-block-start: auto;
@@ -301,7 +307,6 @@
 .card__image-wrapper {
     .image__img {
         width: 100%;
-        height: auto;
         object-fit: cover;
     }
 }
@@ -372,6 +377,7 @@
             grid-row: span 10;
             grid-template-columns: subgrid;
             grid-template-rows: subgrid;
+            padding: var(--layout-density-padding-inline-local);
         }
     }
     
