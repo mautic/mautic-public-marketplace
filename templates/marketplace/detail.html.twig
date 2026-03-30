@@ -47,6 +47,7 @@
         }
         |merge(leadspace_media ? { media: leadspace_media } : {}) %}
         </div>
+        {% set reviewsModalId = 'reviews-modal-' ~ name|replace({'/': '-', '.': '-', '_': '-'}) %}
 
             {% include 'marketplace/detail/section--description.html.twig' %}
             {% include 'marketplace/detail/section--gallery.html.twig' %}

@@ -1,0 +1,79 @@
+{% set reviews = package.reviews ?? [] %}
+{% set displayReviews = [] %}
+{% set totalRating = 0 %}
+{% set ratingCount = 0 %}
+
+{% for review in reviews %}
+    {% set reviewRating = review.rating is defined ? review.rating : null %}
+    {% if reviewRating is not null %}
+        {% set totalRating = totalRating + reviewRating %}
+        {% set ratingCount = ratingCount + 1 %}
+    {% endif %}
+{% endfor %}
+
+{% set averageRating = ratingCount > 0 ? totalRating / ratingCount : null %}
+{% set ratingSummary = averageRating is not null
+    ? averageRating|number_format(1, '.', '')
+    : 'marketplace.package.rating.none'|trans
+%}
+
+<div class="row">
+    <div class="col-6 col-md-12">
+        <div class="row gx-16 flex-column justify-content-center align-items-start align-items-md-center flex-md-row rating-summary">
+            <div class="col-auto">
+                <span class="type-heading-06 text-primary fw-semibold">{{ ratingSummary }}</span>
+            </div>
+            <div class="col">
+                <div class="rating-summary__stars fs-5" aria-hidden="true">
+                    {% for star in 1..5 %}
+                        {% set starIcon = averageRating is not null
+                            ? (
+                                averageRating >= star ? 'ri-star-fill' :
+                                averageRating >= (star - 0.5) ? 'ri-star-half-fill' :
+                                'ri-star-line'
+                            )
+                            : 'ri-star-line'
+                        %}
+                        <i class="{{ starIcon }} text-primary"></i>
+                    {% endfor %}
+                </div>
+                <div id="total-reviews" class="type-body-compact-01 text-placeholder">
+                    {{ 'mautic.marketplace.detail.reviews.count'|trans({'%value%': ratingCount}) }}
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-6 col-md-12">
+        
+        <div id="bars" class="rating-distribution mt-16">
+            {% for star in 5..1 %}
+                {% set reviewCount = reviews|filter(review => (review.rating ?? null) == star)|length %}
+                {% set percentage = ratingCount > 0 ? ((reviewCount / ratingCount) * 100)|round(0, 'floor') : 0 %}
+                <div class="rating-distribution__row">
+                    <input
+                        type="range"
+                        class="form-range rating-distribution__range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="{{ percentage }}"
+                        style="--rating-fill: {{ percentage }}%;"
+                        disabled
+                        readonly
+                        aria-label="{{ 'mautic.marketplace.detail.reviews.distribution_label'|trans({
+                            '%stars%': star,
+                            '%count%': reviewCount,
+                            '%total%': ratingCount
+                        }) }}"
+                    >
+    
+                    <div class="rating-distribution__stars type-legal-01 text-disabled" aria-hidden="true">
+                        <span>{{ star }}</span>
+                        <i class="ri-star-s-fill"></i>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

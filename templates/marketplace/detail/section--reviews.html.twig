@@ -1,77 +1,80 @@
 {% set reviews = package.reviews ?? [] %}
-{% set featuredReview = null %}
+{% set displayReviews = [] %}
+{% set totalRating = 0 %}
+{% set ratingCount = 0 %}
 
 {% for review in reviews %}
-    {% if featuredReview is null and review.review is defined and review.review is not empty %}
-        {% set featuredReview = review %}
+    {% set reviewRating = review.rating is defined ? review.rating : null %}
+    {% if reviewRating is not null %}
+        {% set totalRating = totalRating + reviewRating %}
+        {% set ratingCount = ratingCount + 1 %}
     {% endif %}
 {% endfor %}
 
-{% if featuredReview %}
-    <section class="my-64">
-        {% include 'components/callout-quote.html.twig' with {
-            copy: featuredReview.review,
-            sourceHeading: featuredReview.user ?? featuredReview.name ?? 'mautic.marketplace.detail.reviews.heading'|trans,
-            sourceCopy: featuredReview.rating is defined and featuredReview.rating is not null
-                ? 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': featuredReview.rating })
-                : null
-        } only %}
-    </section>
-{% endif %}
+{% set averageRating = ratingCount > 0 ? totalRating / ratingCount : null %}
+{% set ratingSummary = averageRating is not null
+    ? averageRating|number_format(1, '.', '')
+    : 'marketplace.package.rating.none'|trans
+%}
+
+{% for review in reviews %}
+    {% set reviewText = review.review ?? null %}
+    {% set reviewAuthor = review.user ?? review.name ?? null %}
+    {% set reviewRating = review.rating is defined ? review.rating : null %}
+
+    {% if reviewRating is not null or reviewText %}
+        {% set displayReviews = displayReviews|merge([{
+            text: reviewText,
+            author: reviewAuthor,
+            rating: reviewRating,
+        }]) %}
+    {% endif %}
+{% endfor %}
+
+{% set visibleReviews = displayReviews|slice(0, 3) %}
+{% set hasMoreReviews = displayReviews|length > 3 %}
 
 {% set contentBlockChild %}
-    {% if reviews is not empty %}
-        {% set hasVisibleReviews = false %}
-
+<hr class="mb-48 mx-md-n32">
+    {% if displayReviews is not empty %}
         <div class="d-grid gap-8">
-            {% for review in reviews %}
-                {% set reviewText = review.review ?? null %}
-                {% set reviewAuthor = review.user ?? review.name ?? null %}
-
-                {% if review.rating is not null or reviewText %}
-                    {% set hasVisibleReviews = true %}
-                    {% set initials = (reviewAuthor ?: name)|split(' ')|map(part => part|slice(0, 1)|upper)|join('')|slice(0, 2) %}
-                    {% set reviewContent %}
-                        <article class="review-card">
-                            <div class="d-flex gap-16">
-                                <div aria-hidden="true">
-                                    <div class="d-inline-flex p-12 rounded-circle" style="background-color: #4e5e9e; color: var(--text-on-color);">{{ initials }}</div>
-                                </div>
-                                <div>
-                                    {% if reviewText %}
-                                        <div class="type-heading-03 mb-12"><em>{{ reviewText }}</em></div>
-                                    {% endif %}
-
-                                    {% if reviewAuthor %}
-                                        <div><strong>{{ reviewAuthor }}</strong></div>
-                                    {% endif %}
-
-                                    {% if review.rating is not null %}
-                                        <div class="review-card__meta" aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': review.rating }) }}">
-                                            {% for i in 1..5 %}
-                                                <i class="ri-star-fill {{ i <= review.rating ? 'text-warning' : 'text-disabled' }}" aria-hidden="true"></i>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </article>
-                    {% endset %}
-
-                    {% include 'components/tile.html.twig' with {
-                        type: 'base',
-                        content: reviewContent,
-                        className: 'mb-0'
-                    } only %}
-                {% endif %}
+            {% for reviewData in visibleReviews %}
+                {% set customContent %}
+                    {% if reviewData.rating is not null %}
+                        <div class="review-card__meta" aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': reviewData.rating }) }}">
+                            {% for i in 1..5 %}
+                                <i class="ri-star-fill {{ i <= reviewData.rating ? 'text-primary' : 'text-disabled' }}" aria-hidden="true"></i>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endset %}
+                <div {% if not loop.last %} class="mb-48"{% endif %}>
+                {% include 'components/callout-quote.html.twig' with {
+                    copy: reviewData.text|u.truncate(200, '…'),
+                    sourceHeading: reviewData.author,
+                    customContent: customContent,
+                    hasBorder: (not loop.last) ? true : false,
+                } only %}
+                </div>
             {% endfor %}
-        </div>
 
-        {% if not hasVisibleReviews %}
-            <p class="muted">{{ 'mautic.marketplace.detail.reviews.empty'|trans }}</p>
-        {% endif %}
+            {% if hasMoreReviews %}
+                {% include 'components/button.html.twig' with {
+                    buttons: [{
+                        label: 'mautic.marketplace.detail.reviews.show_all',
+                        variant: 'link',
+                        icon: 'ri-rectangle-line',
+                        attributes: {
+                            'data-bs-toggle': 'modal',
+                            'data-bs-target': '#' ~ reviewsModalId,
+                            'class': 'justify-content-start p-0'
+                        }
+                    }]
+                } only %}
+            {% endif %}
+        </div>
     {% else %}
-        <p class="muted">{{ 'mautic.marketplace.detail.reviews.empty'|trans }}</p>
+        <p class="text-placeholder">{{ 'mautic.marketplace.detail.reviews.empty'|trans }}</p>
     {% endif %}
 
     <section class="section mt-32" id="marketplace-review-container"
@@ -119,6 +122,46 @@
         <div id="review-success" class="alert alert--success" style="display:none"></div>
     </section>
 {% endset %}
+
+{% if hasMoreReviews %}
+    {% set reviewsModalBody %}
+        <div class="row justify-content-center gap-32 my-24">
+            <div class="col-12 col-md-3">
+                {% include 'marketplace/detail/module--review-summary.html.twig' %}
+            </div>
+            <div class="col-12 col-md-6">
+            {% for reviewData in displayReviews %}
+                  <div class="review__wrapper">
+                      <div class="d-flex justify-content-between align-items-center pb-8">
+                          {% if reviewData.rating is not null %}
+                          <div class="review-card__meta" aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': reviewData.rating }) }}">
+                              {% for i in 1..5 %}
+                              <i class="ri-star-fill {{ i <= reviewData.rating ? 'text-primary' : 'text-disabled' }}" aria-hidden="true"></i>
+                              {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if reviewData.author is not empty %}
+                              <div class="type-legal-01 text-disabled">{{ reviewData.author }}</div>
+                            {% endif %}
+                      </div>
+
+                    <div class="review__copy pb-8 mb-48 type-body-compact-02 text-break">{{ reviewData.text }}</div>
+                  </div>
+        {% endfor %}
+    </div>
+        </div>
+    {% endset %}
+
+    {% include 'components/modal.html.twig' with {
+        id: reviewsModalId,
+        title: 'mautic.marketplace.detail.reviews.heading'|trans,
+        centered: true,
+        fullscreen: true,
+        scrollable: true,
+        size: 'lg',
+        body: reviewsModalBody
+    } only %}
+{% endif %}
 
 <section class="section my-64">
     {% include 'components/content-block.html.twig' with {
