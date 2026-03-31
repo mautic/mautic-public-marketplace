@@ -165,9 +165,14 @@
   color: var(--label-color-primary);
 }
 
-.label-brand {
-  background-color: var(--label-background-brand);
-  color: var(--label-color-brand);
+.label-secondary {
+  background-color: var(--label-background-secondary);
+  color: var(--label-color-secondary);
+}
+
+.label-tertiary {
+  background-color: var(--label-background-tertiary);
+  color: var(--label-color-tertiary);
 }
 
 .label-outline,
@@ -275,11 +280,18 @@
       background-color: var(--label-background-hover-primary);
     }
   }
-  &.label-brand {
-    border: 1px solid var(--label-border-brand);
-    color: var(--label-color-brand);
+  &.label-secondary {
+    border: 1px solid var(--label-border-secondary);
+    color: var(--label-color-secondary);
     &:hover {
-      background-color: var(--label-background-hover-brand);
+      background-color: var(--label-background-hover-secondary);
+    }
+  }
+  &.label-tertiary {
+    border: 1px solid var(--label-border-tertiary);
+    color: var(--label-color-tertiary);
+    &:hover {
+      background-color: var(--label-background-hover-tertiary);
     }
   }
 }

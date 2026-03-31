@@ -22,6 +22,7 @@
         font-weight: 400;
         line-height: 1.28572;
         cursor: pointer;
+        width: 100%;
         transition: background-color var(--duration-productive) var(--easing-standard-productive), outline-color var(--duration-productive) var(--easing-standard-productive);
         text-align: unset;
         
@@ -292,6 +293,12 @@
     inset-inline-start: 16px;
 }
 
+.card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .card__footer-wrapper {
         -webkit-margin-before: auto;
     margin-block-start: auto;
@@ -300,7 +307,6 @@
 .card__image-wrapper {
     .image__img {
         width: 100%;
-        height: auto;
         object-fit: cover;
     }
 }
@@ -371,10 +377,10 @@
             grid-row: span 10;
             grid-template-columns: subgrid;
             grid-template-rows: subgrid;
+            padding: var(--layout-density-padding-inline-local);
         }
     }
     
-
     .card-group__item {
         display: contents;
     }
@@ -424,7 +430,6 @@
         --card-group--row-gap: 32px;
         gap: 0px 32px;
         padding-block-start: 16px;
-        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -439,8 +444,6 @@
         --card-group--row-gap: 16px;
         gap: 0px 16px;
         padding-block-start: 16px;
-        grid-template-columns: repeat(2, 1fr);
-
     }
 }
 
@@ -450,7 +453,29 @@
     padding-block-start: 8px;
 }
 
+@media (min-width: breakpoint-min(md)) {
+    .card-group,
+    .card-group[grid-mode="default"],
+    .card-group[grid-mode="narrow"],
+    .card-group[grid-mode="condensed"] {
+        grid-template-columns: repeat(
+            min(var(--card-group--cards-in-row), 2), 1fr
+        );
+    }
+}
+
 @media (min-width: breakpoint-min(lg)) {
+    .card-group,
+    .card-group[grid-mode="default"],
+    .card-group[grid-mode="narrow"],
+    .card-group[grid-mode="condensed"] {
+        grid-template-columns: repeat(
+            min(var(--card-group--cards-in-row), 3), 1fr
+        );
+    }
+}
+
+@media (min-width: breakpoint-min(xl)) {
     .card-group,
     .card-group[grid-mode="default"],
     .card-group[grid-mode="narrow"],

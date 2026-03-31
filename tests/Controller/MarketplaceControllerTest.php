@@ -93,21 +93,41 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 
-    public function testResourceTypeOptionInDropdown(): void
+    public function testTypeFilterRendersRadioOptions(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/');
+        $client->request('GET', '/browse');
 
         self::assertResponseIsSuccessful();
-        $options = $client->getCrawler()->filter('select[name="type"] option');
-        $values = $options->each(static fn ($node) => $node->attr('value'));
-        self::assertContains('mautic-resource', $values);
+        $labels = $client->getCrawler()->filter('input[name="type"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+        $allTypesValue = $client->getCrawler()->filter('input[name="type"]')->first()->attr('value');
+
+        self::assertContains('Campaign (1)', $labels);
+        self::assertContains('Plugin (2)', $labels);
+        self::assertContains('Theme (1)', $labels);
+        self::assertSame('', $allTypesValue);
+    }
+
+    public function testTypeCountsAreCustomizedBySearch(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?query=alpha');
+
+        self::assertResponseIsSuccessful();
+        $labels = $client->getCrawler()->filter('input[name="type"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertContains('All types (1)', $labels);
+        self::assertContains('Plugin (1)', $labels);
+        self::assertContains('Theme (0)', $labels);
+        self::assertContains('Campaign (0)', $labels);
     }
 
     public function testFilterByPluginTypeExcludesThemesAndResources(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?type=mautic-plugin');
+        $client->request('GET', '/browse?type=mautic-plugin');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.card-group', 'Example Plugin');
@@ -118,7 +138,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testSearchByMaintainer(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?query=rcheesley');
+        $client->request('GET', '/browse?query=rcheesley');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
@@ -129,7 +149,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPopularityMostPopular(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?popularity=most_popular');
+        $client->request('GET', '/browse?popularity=most_popular');
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
@@ -140,7 +160,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPopularityNewest(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?popularity=newest');
+        $client->request('GET', '/browse?popularity=newest');
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
@@ -152,7 +172,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testDateRangeFilter30Days(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?date_range=30d');
+        $client->request('GET', '/browse?date_range=30d');
 
         self::assertResponseIsSuccessful();
         // Example Plugin (5 days) and Welcome Campaign (10 days) are within 30 days
@@ -166,7 +186,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testDateRangeFilter7Days(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?date_range=7d');
+        $client->request('GET', '/browse?date_range=7d');
 
         self::assertResponseIsSuccessful();
         // Only Example Plugin (5 days old) is within 7 days
@@ -178,7 +198,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testSearchQuery(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?query=zebra');
+        $client->request('GET', '/browse?query=zebra');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.card-group', 'Zebra Theme');
@@ -188,14 +208,14 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPaginationLimitOffset(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?limit=2&offset=0&orderby=name&orderdir=asc');
+        $client->request('GET', '/browse?limit=2&offset=0&orderby=name&orderdir=asc');
 
         self::assertResponseIsSuccessful();
         $cards = $this->packageCardsLinks($client);
         self::assertSame(2, $cards->count());
 
         // Second page
-        $client->request('GET', '/?limit=2&offset=2&orderby=name&orderdir=asc');
+        $client->request('GET', '/browse?limit=2&offset=2&orderby=name&orderdir=asc');
         self::assertResponseIsSuccessful();
         $cards = $this->packageCardsLinks($client);
         self::assertGreaterThanOrEqual(1, $cards->count());
@@ -204,17 +224,17 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPaginationShowsControls(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?limit=2');
+        $client->request('GET', '/browse?limit=2');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorExists('.pagination');
-        self::assertSelectorTextContains('.pagination__meta', 'Page 1');
+        self::assertSelectorExists('.pagination-nav');
+        self::assertSelectorTextContains('.pagination-nav__status', 'Page 1');
     }
 
     public function testCombinedFilters(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?type=mautic-plugin&query=escopecz');
+        $client->request('GET', '/browse?type=mautic-plugin&query=escopecz');
 
         self::assertResponseIsSuccessful();
         // escopecz maintains example-plugin (plugin), zebra-theme (theme)

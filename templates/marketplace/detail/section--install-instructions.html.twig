@@ -1,0 +1,257 @@
+<section class="mt-80 mb-64">
+
+    {% set contentBlockChild -%}
+
+        {% if package.install_instructions is defined and package.install_instructions is not empty %}
+            <div class="d-flex fd-column row-gap-lg mt-32 mb-48">
+                {% include 'components/pictogram.html.twig' with {
+                    pictogram: 'install',
+                    size: 64,
+                    color: 'var(--icon-primary)'
+                } %}
+            </div>
+        {% endif %}
+
+        {% if package.type == 'mautic-plugin' %}
+
+            {% set marketplaceInstructionsContent -%}
+                <div class="row py-16">
+                    <div class="col-12">
+                        <div class="type-heading-01 p-16">
+                            {{ 'mautic.marketplace.detail.install_instructions.plugin.marketplace.heading'|trans }}
+                        </div>
+                        <ol class="list-group list-group-flush list-group-numbered list-group-marker list-group-marker--inverse install-instructions__steps layer-two">
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.marketplace.step.1'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.marketplace.step.2'|trans({'%command%': 'php bin/console mautic:marketplace:install author/plugin-name-bundle'})|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.marketplace.step.3'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.marketplace.step.4'|trans|markdown_to_html }}
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            {%- endset %}
+
+            {% set composerInstructionsContent -%}
+                <div class="row py-16">
+                    <div class="col-12">
+                        <div class="type-heading-01 p-16">
+                            {{ 'mautic.marketplace.detail.install_instructions.plugin.composer.heading'|trans }}
+                        </div>
+                        <ol class="list-group list-group-flush list-group-numbered list-group-marker list-group-marker--inverse install-instructions__steps layer-two">
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.composer.step.1'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.composer.step.2'|trans({'%command%': 'composer require author/plugin-name-bundle'})|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.composer.step.3'|trans({'%command%': 'php bin/console mautic:plugins:reload'})|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.composer.step.4'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.composer.step.5'|trans|markdown_to_html }}
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            {%- endset %}
+
+            {% set manualUploadInstructionsContent -%}
+                <div class="row py-16">
+                    <div class="col-12">
+                        <div class="type-heading-01 p-16">
+                            {{ 'mautic.marketplace.detail.install_instructions.plugin.manual_upload.heading'|trans }}
+                        </div>
+                        <ol class="list-group list-group-flush list-group-numbered list-group-marker list-group-marker--inverse install-instructions__steps">
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.manual_upload.step.1'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.manual_upload.step.2'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.manual_upload.step.3'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.manual_upload.step.4'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.plugin.manual_upload.step.5'|trans|markdown_to_html }}
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            {%- endset %}
+
+            {% include 'components/tabs.html.twig' with {
+                tabs: [
+                    {
+                        title: 'mautic.marketplace.detail.install_instructions.marketplace',
+                        secondaryLabel: 'mautic.marketplace.detail.install_instructions.recommended',
+                        renderIcon: 'ri-store-line',
+                        content: marketplaceInstructionsContent
+                    }
+                    ,
+                    (package.url is defined and package.url is not empty
+                        ? {
+                            title: 'mautic.marketplace.detail.install_instructions.using_composer',
+                            renderIcon: 'ri-terminal-box-line',
+                            content: composerInstructionsContent
+                        }
+                        : null)
+                    ,
+                    {
+                        title: 'mautic.marketplace.detail.install_instructions.manual_upload',
+                        renderIcon: 'ri-tools-line',
+                        content: manualUploadInstructionsContent
+                    }
+                ]|filter(v => v is not null),
+                variant: 'vertical'
+            } %}
+
+        {% elseif package.type == 'mautic-theme' %}
+
+            {% set standardUploadInstructionsContent -%}
+                <div class="row py-16">
+                    <div class="col-12">
+                        <div class="type-heading-01 p-16">
+                            {{ 'mautic.marketplace.detail.install_instructions.theme.standard_upload.heading'|trans }}
+                        </div>
+                        <ol class="list-group list-group-flush list-group-numbered list-group-marker list-group-marker--inverse install-instructions__steps layer-two">
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.standard_upload.step.1'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.standard_upload.step.2'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.standard_upload.step.3'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.standard_upload.step.4'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.standard_upload.step.5'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.standard_upload.step.6'|trans|markdown_to_html }}
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            {%- endset %}
+
+            {% set manualUploadInstructionsContent -%}
+                <div class="row py-16">
+                    <div class="col-12">
+                        <div class="type-heading-01 p-16">
+                            {{ 'mautic.marketplace.detail.install_instructions.theme.manual_upload.heading'|trans }}
+                        </div>
+                        <ol class="list-group list-group-flush list-group-numbered list-group-marker list-group-marker--inverse install-instructions__steps">
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.manual_upload.step.1'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.manual_upload.step.2'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.manual_upload.step.3'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.manual_upload.step.4'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.theme.manual_upload.step.5'|trans|markdown_to_html }}
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            {%- endset %}
+
+            {% include 'components/tabs.html.twig' with {
+                tabs: [
+                    {
+                        title: 'mautic.marketplace.detail.install_instructions.standard_upload',
+                        secondaryLabel: 'mautic.marketplace.detail.install_instructions.recommended',
+                        renderIcon: 'ri-import-line',
+                        content: standardUploadInstructionsContent
+                    },
+                    {
+                        title: 'mautic.marketplace.detail.install_instructions.manual_upload',
+                        renderIcon: 'ri-tools-line',
+                        content: manualUploadInstructionsContent
+                    }
+                ],
+                variant: 'vertical'
+            } %}
+
+        {% elseif package.type == 'mautic-resource' %}
+
+            {% set importInstructionsContent -%}
+                <div class="row py-16">
+                    <div class="col-12">
+                        <div class="type-heading-01 p-16">
+                            {{ 'mautic.marketplace.detail.install_instructions.resource.import.heading'|trans }}
+                        </div>
+                        <ol class="list-group list-group-flush list-group-numbered list-group-marker list-group-marker--inverse install-instructions__steps layer-two">
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.resource.import.step.1'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.resource.import.step.2'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.resource.import.step.3'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.resource.import.step.4'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.resource.import.step.5'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.resource.import.step.6'|trans|markdown_to_html }}
+                            </li>
+                            <li class="list-group-item">
+                                {{ 'mautic.marketplace.detail.install_instructions.resource.import.step.7'|trans|markdown_to_html }}
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            {%- endset %}
+
+            {% include 'components/tabs.html.twig' with {
+                tabs: [
+                    {
+                        title: 'mautic.marketplace.detail.install_instructions.resource.import.tab',
+                        renderIcon: 'ri-import-line',
+                        content: importInstructionsContent
+                    }
+                ],
+                variant: 'vertical'
+            } %}
+
+        {% endif %}
+
+    {%- endset %}
+
+    {% include 'components/content-block.html.twig' with {
+        heading: 'mautic.marketplace.detail.install_instructions.heading',
+        subheading: (package.install_instructions is defined and package.install_instructions is not empty) ? package.install_instructions : null,
+        cta: {
+            link: 'https://docs.mautic.org',
+            label: 'mautic.marketplace.detail.install_instructions.cta'
+        },
+        childContainer: contentBlockChild
+    } %}
+
+</section>

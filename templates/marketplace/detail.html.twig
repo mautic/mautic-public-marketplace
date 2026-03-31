@@ -11,12 +11,16 @@
         <p class="muted pt-16">
             <a href="{{ path('marketplace_index') }}">&larr; {{ 'mautic.marketplace.detail.back'|trans }}</a>
         </p>
-        {% set color = (
-            package.type == 'mautic-plugin' ? '#4e5e9e' :
-            package.type == 'mautic-theme' ? '#00b49d' :
-            package.type == 'mautic-resource' ? '#fdb933' :
-            '#ad9bd3'
-        ) %}
+        {% if package.bannerURL is defined and package.bannerURL is not empty %}
+            {% set color = '#000000' %}
+        {% else %}
+            {% set color = (
+                package.type == 'mautic-plugin' ? '#4e5e9e' :
+                package.type == 'mautic-theme' ? '#00b49d' :
+                package.type == 'mautic-resource' ? '#fdb933' :
+                '#ad9bd3'
+            ) %}
+        {% endif %}
         {% set type_label = package.type == 'mautic-plugin' ? 'mautic.marketplace.detail.type.plugin' :
             package.type == 'mautic-theme' ? 'mautic.marketplace.detail.type.theme' :
             package.type == 'mautic-resource' ? 'mautic.marketplace.detail.type.resource' :
@@ -28,134 +32,26 @@
         {% if latest_mautic_version %}
             {% set leadspace_tags = leadspace_tags|merge([{ label: 'mautic.marketplace.detail.latest_mautic_supported'|trans({ '%version%': latest_mautic_version }), color: 'blue' }]) %}
         {% endif %}
+        <div class="mx-n16 mx-lg-n32">
+        {% set leadspace_media = (package.bannerURL is defined and package.bannerURL is not empty) 
+            ? { src: package.bannerURL, alt: 'mautic.marketplace.leadspace.image_alt' } 
+            : null 
+        %}
         {% include 'components/lead-space.html.twig' with {
             variant: 'short',
             heading: package.displayName ?: package.name,
             description: package.description,
-            gradientStyleScheme: 'without-gradient',
+            gradientStyleScheme: package.bannerURL is defined and package.bannerURL is not empty ? 'with-gradient' : 'without-gradient',
             gradientStyleSchemeColor: color,
-            tags: leadspace_tags,
-        } %}
-        <section class="detail-header mt-48">
-            {% set contentBlockChild %}
-            <div class="row justify-content-between">
-                <div class="col-xs-12 col-sm-12 col-md-7">
-                    {% set statCards = [
-                        { eyebrow: 'mautic.marketplace.detail.stats.downloads', heading: package.downloads.total ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.favers', heading: package.favers ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.stars', heading: package.githubStars ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.forks', heading: package.githubForks ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.open_issues', heading: package.githubOpenIssues ?? 0 },
-                        { eyebrow: 'mautic.marketplace.detail.stats.dependents', heading: package.dependents ?? 0 }
-                    ] %}
-            
-                    <section>
-                        {% include 'components/card-group.html.twig' with {
-                            type: 'static',
-                            gridMode: 'condensed',
-                            cardsPerRow: 3,
-                            cards: statCards
-                        } %}
-                    </section>
-                </div>
-                <div class="col-xs-12 col-md-4">
-                    <div class="d-flex justify-content-between ai-center">
-                        <span class="type-heading-02 ellipsis mb-12">{{ 'mautic.marketplace.detail.technical_details'|trans }}</span>
-                        <i class="ri-box-2-line" aria-hidden="true"></i>
-                    </div>
-                    <hr class="mt-0 mb-24">
-                    <!-- Last updated -->
-                    <dt class="type-heading-01">{{ 'mautic.marketplace.detail.last_updated'|trans }}</dt>
-                    {% if package.time %}
-                    {% set updated_at = date(package.time) %}
-                    <dd>
-                        <time datetime="{{ updated_at|date('c') }}">{{ updated_at|relative_time_ago }}</time>
-                        <i class="ri-information-2-line" aria-hidden="true" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ updated_at|date('Y-m-d') }}"></i>
-                    </dd>
-                    {% else %}
-                    <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
-                    {% endif %}
+            tags: leadspace_tags
+        }
+        |merge(leadspace_media ? { media: leadspace_media } : {}) %}
+        </div>
 
-                    <!-- Language -->
-                    <div class="mt-24">
-                        <dt class="type-heading-01">{{ 'mautic.marketplace.detail.language'|trans }}</dt>
-                        {% if package.language %}
-                        <dd>{{ package.language }}</dd>
-                        {% else %}
-                        <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
-                        {% endif %}
-
-                    <!-- Maintainers -->
-                    {% if package.maintainers %}
-                    <dt class="type-heading-01 mt-24 mb-4">{{ 'mautic.marketplace.detail.maintainers'|trans }}</dt>
-                    <dd>
-                        {% set maintainer_tags = package.maintainers|map(m => ({ label: m.name ?? m, color: 'blue' })) %}
-                        {% include 'components/tags.html.twig' with { tags: maintainer_tags } %}
-                    </dd>
-                    {% endif %}
-                    </div>
-                    
-                    <!-- Repository -->
-                    <dt class="type-heading-01 mt-24 mb-8">{{ 'mautic.marketplace.detail.repository'|trans }}</dt>
-                    {% if package.repository or package.url %}
-                        {% if package.repository %}
-                        <dd>
-                            <i class="ri-github-fill ri-lg" aria-hidden="true"></i>
-                            <a href="{{ package.repository }}" target="_blank" rel="noopener">
-                                {% set repoParts = package.repository|split('/') %}
-                                {{ 'mautic.marketplace.detail.repository.github'|trans({
-                                    '%repository%': repoParts[repoParts|length-2] ~ '/' ~ repoParts[repoParts|length-1]
-                                }) }}
-                            </a>
-                        </dd>
-                        {% endif %}
-                        {% if package.url %}
-                        <dd>
-                            <i class="ri-box-2-fill ri-lg" aria-hidden="true"></i>
-                                {% set pkgParts = package.url|split('/') %}
-                                <a href="{{ package.url }}" target="_blank" rel="noopener">
-                                    {{ 'mautic.marketplace.detail.repository.packagist'|trans({
-                                        '%package%': pkgParts[pkgParts|length-2] ~ '/' ~ pkgParts[pkgParts|length-1]
-                                    }) }}
-                                </a>
-                        </dd>
-                        {% endif %}
-
-                    {% else %}
-                    <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
-                    {% endif %}
-                </div>
-            </div>
-            {% endset %}
-            {% include 'components/content-block.html.twig' with {
-                subheading: package.description ? package.description : null,
-                childContainer: contentBlockChild
-            } %}
-        </section>
-
-        <section class="section">
-            <h2>{{ 'mautic.marketplace.detail.versions.heading'|trans }}</h2>
-            {% if package.versions %}
-                {% set versionKeys = package.versions|keys|sort|reverse %}
-                {% set smvList = [] %}
-                {% for version, data in package.versions %}
-                    {% if data.smv is defined and data.smv is not empty and (data.smv not in smvList) %}
-                        {% set smvList = smvList|merge([data.smv]) %}
-                    {% endif %}
-                {% endfor %}
-                {% if smvList is not empty %}
-                    <p class="muted">{{ 'mautic.marketplace.detail.versions.supported_mautic'|trans({ '%versions%': smvList|join(', ') }) }}</p>
-                {% endif %}
-                <div class="chip-list">
-                    {% for version in versionKeys %}
-                        <span class="chip">{{ version }}</span>
-                    {% endfor %}
-                </div>
-                <p class="muted">{{ 'mautic.marketplace.detail.versions.count'|trans({ '%count%': versionKeys|length }) }}</p>
-            {% else %}
-                <p class="muted">{{ 'mautic.marketplace.detail.versions.empty'|trans }}</p>
-            {% endif %}
-        </section>
+            {% include 'marketplace/detail/section--description.html.twig' %}
+            {% include 'marketplace/detail/section--gallery.html.twig' %}
+            {% include 'marketplace/detail/section--install-instructions.html.twig' %}
+            {% include 'marketplace/detail/section--similar-templates.html.twig' %}
 
         <section class="section">
             <h2>{{ 'mautic.marketplace.detail.reviews.heading'|trans }}</h2>

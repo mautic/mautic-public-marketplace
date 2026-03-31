@@ -19,9 +19,9 @@
 {% set ctaType = ctaType|default('local') %}
 
 {% set common_image_content %}
-    {% if image is defined %}
+    {% if image is defined and image is not null and image.src is defined and image.src is not empty %}
         <div class="card__image-wrapper d-flex {% if type == 'static' or type == 'default' %}ratio ratio-4x3{% endif %}">
-            <img class="image__img" src="{{ asset(image.src) }}" alt="{{ image.alt|trans }}">
+            <img class="image__img object-fit-cover" src="{{ asset(image.src) }}" alt="{{ image.alt|trans }}">
         </div>
     {% endif %}
 {% endset %}
@@ -46,9 +46,33 @@
     {% endif %}
 {% endset %}
 
+{% set common_custom_content %}
+    {% if customContent is defined %}
+        <div class="card__custom__content">{{ customContent|raw }}</div>
+    {% endif %}
+{% endset %}
+
+{% set common_cta_copy_content %}
+    {% if ctaCopy is defined %}
+        <div class="card__cta__copy link-primary">{{ ctaCopy|trans }}</div>
+    {% endif %}
+{% endset %}
+
+{% set common_footer_copy_content %}
+    {% if footerCopy is defined %}
+        <div class="card__footer__copy">{{ footerCopy|trans }}</div>
+    {% endif %}
+{% endset %}
+
+{% set common_icon_content %}
+    {% if icon is defined %}
+        <i class="{{ ctaIcons[ctaType] }} link-primary ri-lg ms-auto" aria-hidden="true"></i>
+    {% endif %}
+{% endset %}
+
 {% set common_tags_content %}
     {% if tags is defined %}
-        <div class="d-flex flex-wrap mt-16 gap-4">
+        <div class="d-flex flex-wrap mt-12 gap-4">
             {% include 'components/tags.html.twig' with {'tags': tags} %}
         </div>
     {% endif %}
@@ -83,7 +107,7 @@
         {% include 'components/tile.html.twig' with {
             type: 'base',
             content: cardContent,
-            className: 'card pa-0' ~ (disabled is defined ? ' tile--disabled' : ''),
+            className: 'card p-0' ~ (disabled is defined ? ' tile--disabled' : ''),
         } %}
 
     {# === LOGO TYPE === #}
@@ -102,7 +126,7 @@
         {% include 'components/tile.html.twig' with {
             type: 'clickable',
             content: cardContent,
-            className: 'card pa-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
+            className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
             icon: ctaIcons[ctaType],
             href: href,
         } %}
@@ -121,7 +145,7 @@
         {% include 'components/tile.html.twig' with {
             type: 'clickable',
             content: cardContent,
-            className: 'card pa-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
+            className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
             icon: ctaIcons[ctaType],
             href: href,
         } %}
@@ -141,7 +165,7 @@
             {% include 'components/tile.html.twig' with {
                 type: 'clickable',
                 content: cardContent,
-                className: 'card pa-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
+                className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
                 icon: ctaIcons[ctaType],
                 href: href,
             } %}
@@ -149,7 +173,7 @@
             {% include 'components/tile.html.twig' with {
                 type: 'base',
                 content: cardContent,
-                className: 'card pa-0' ~ (disabled is defined ? ' tile--disabled' : ''),
+                className: 'card p-0' ~ (disabled is defined ? ' tile--disabled' : ''),
             } %}
         {% endif %}
 
@@ -157,19 +181,25 @@
     {% elseif type == 'default' %}
         {% set cardContent %}
             {{ common_image_content }}
-            <div class="card__wrapper {{ aspectRatio }}">
+            <div class="card__wrapper aspect-ratio="{{ aspectRatio }}">
                 <div class="card__content">
                     {{ common_eyebrow_content }}
                     {{ common_heading_content }}
                     {{ common_copy_content }}
+                    {{ common_custom_content }}
                     {{ common_tags_content }}
+                </div>
+                <div class="card__footer">
+                    {{ common_cta_copy_content }}
+                    {{ common_footer_copy_content }}
+                    {{ common_icon_content }}
                 </div>
             </div>
         {% endset %}
         {% include 'components/tile.html.twig' with {
             type: 'clickable',
             content: cardContent,
-            className: 'card pa-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
+            className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
             icon: ctaIcons[ctaType],
             href: href,
         } %}
@@ -193,7 +223,7 @@
         {% include 'components/tile.html.twig' with {
             type: 'clickable',
             content: cardContent,
-            className: 'card pa-0 card--link',
+            className: 'card p-0 card--link',
             href: href,
         } %}
 
@@ -218,7 +248,7 @@
         {% include 'components/tile.html.twig' with {
             type: 'clickable',
             content: cardContent,
-            className: 'card pa-0 card--link',
+            className: 'card p-0 card--link',
             href: href,
             icon: ctaIcons[ctaType],
         } %}
