@@ -112,7 +112,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testTypeCountsAreCustomizedBySearch(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/?query=alpha');
+        $client->request('GET', '/browse?query=alpha');
 
         self::assertResponseIsSuccessful();
         $labels = $client->getCrawler()->filter('input[name="type"] + label')
