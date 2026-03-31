@@ -1,0 +1,50 @@
+{% set component = component|default('form-control') %}
+{% set name = name|default('floating-input') %}
+{% set id = id|default(name|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
+{% set label = label|default('') %}
+{% set placeholder = placeholder|default(label) %}
+{% set wrapper_class = wrapper_class|default('') %}
+{% set attributes = attributes|default({}) %}
+{% set icon = icon|default(null) %}
+
+
+<div class="form-floating">
+    {% if component == 'select' %}
+        {% include 'components/select.html.twig' with {
+            id: id,
+            name: name,
+            label: label,
+            label_position: 'bottom',
+            icon: icon,
+            size: size|default(null),
+            options: options|default([]),
+            value: value|default(null),
+            disabled: disabled|default(false),
+            required: required|default(false),
+            multiple: multiple|default(false),
+            help_text: null,
+            wrapper_class: '',
+            attributes: attributes
+        } only %}
+    {% else %}
+        {% include 'components/form-control.html.twig' with {
+            id: id,
+            name: name,
+            type: type|default('text'),
+            label: label,
+            label_position: 'bottom',
+            icon: icon,
+            value: value|default(''),
+            placeholder: placeholder,
+            rows: rows|default(3),
+            size: size|default(null),
+            plaintext: plaintext|default(false),
+            disabled: disabled|default(false),
+            readonly: readonly|default(false),
+            required: required|default(false),
+            help_text: null,
+            wrapper_class: '',
+            attributes: attributes
+        } only %}
+    {% endif %}
+</div>
