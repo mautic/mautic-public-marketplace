@@ -7,6 +7,7 @@ function initMarketplaceForm() {
     const searchInput = form.querySelector('input[name="query"]');
     const mauticInput = form.querySelector('input[name="mautic"]');
     const changeInputs = form.querySelectorAll('select, input[type="radio"], input[type="checkbox"]');
+    const appliedFiltersContainer = form.querySelector('#filters-applied');
     const focusKey = 'marketplace:focus';
     const scrollKey = 'marketplace:scroll';
 
@@ -22,6 +23,69 @@ function initMarketplaceForm() {
             sessionStorage.setItem(scrollKey, String(window.scrollY));
             form.requestSubmit();
         }
+    };
+    const escapeHtml = (value) => value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    const getResetRadio = (input) => {
+        if (!input || input.type !== 'radio') {
+            return null;
+        }
+
+        return form.querySelector(`input[type="radio"][name="${CSS.escape(input.name)}"][value=""]`);
+    };
+    const renderAppliedFilters = () => {
+        if (!appliedFiltersContainer) {
+            return;
+        }
+
+        const tags = [];
+
+        changeInputs.forEach((input) => {
+            if (!input.checked || input.value === '') {
+                return;
+            }
+
+            const label = form.querySelector(`label[for="${CSS.escape(input.id)}"]`);
+            if (!label) {
+                return;
+            }
+
+            tags.push(`
+                <div class="label label-primary" aria-label="${escapeHtml(label.textContent.trim())}" size="md">
+                    <span aria-hidden="true">${escapeHtml(label.textContent.trim())}</span>
+                    <button type="button" class="label-close" aria-label="Dismiss" title="Dismiss" data-filter-dismiss="${escapeHtml(input.id)}">
+                        <i class="ri-close-line" aria-hidden="true" focusable="false"></i>
+                    </button>
+                </div>
+            `);
+        });
+
+        appliedFiltersContainer.hidden = tags.length === 0;
+        appliedFiltersContainer.innerHTML = tags.join('');
+    };
+    const dismissFilter = (inputId) => {
+        const input = form.querySelector(`#${CSS.escape(inputId)}`);
+        if (!input) {
+            return;
+        }
+
+        if (input.type === 'checkbox') {
+            input.checked = false;
+        } else if (input.type === 'radio') {
+            const resetRadio = getResetRadio(input);
+            if (resetRadio) {
+                resetRadio.checked = true;
+            } else {
+                input.checked = false;
+            }
+        }
+
+        renderAppliedFilters();
+        submitForm(input);
     };
 
     if (searchInput) {
@@ -39,8 +103,23 @@ function initMarketplaceForm() {
     }
 
     changeInputs.forEach((input) => {
-        input.addEventListener('change', () => submitForm(input));
+        input.addEventListener('change', () => {
+            renderAppliedFilters();
+            submitForm(input);
+        });
     });
+
+    if (appliedFiltersContainer && !appliedFiltersContainer.dataset.dismissBound) {
+        appliedFiltersContainer.dataset.dismissBound = 'true';
+        appliedFiltersContainer.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-filter-dismiss]');
+            if (!button) {
+                return;
+            }
+
+            dismissFilter(button.dataset.filterDismiss);
+        });
+    }
 
     try {
         const saved = sessionStorage.getItem(focusKey);
@@ -72,6 +151,8 @@ function initMarketplaceForm() {
     } catch (e) {
         sessionStorage.removeItem(scrollKey);
     }
+
+    renderAppliedFilters();
 }
 
 function initTooltips() {

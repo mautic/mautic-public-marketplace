@@ -31,7 +31,6 @@
 {% set filterCutoff = filterCutoff|default(0) %}
 {% set filterGroups = filterGroups|default([]) %}
 {% set accordionItems = [] %}
-{% set appliedTags = [] %}
 
 {% for filterGroup in filterGroups %}
     {% set groupTitle = filterGroup.title|default('') %}
@@ -43,19 +42,6 @@
     {% set visibleItems = filterCutoff > 0 ? filterGroupItems|slice(0, filterCutoff) : filterGroupItems %}
     {% set hiddenItems = filterCutoff > 0 ? filterGroupItems|slice(filterCutoff) : [] %}
     {% set hiddenPanelId = groupId ~ '-all' %}
-
-    {% for item in filterGroupItems %}
-        {% set isApplied = item.checked|default(false) and (item.value is not defined or item.value is not same as('')) %}
-
-        {% if isApplied %}
-            {% set appliedTags = appliedTags|merge([
-                {
-                    label: item.label,
-                    color: 'primary'
-                }
-            ]) %}
-        {% endif %}
-    {% endfor %}
 
     {% set filterGroupContent %}
         {% if filterGroupItemsType == 'select' %}
@@ -115,13 +101,7 @@
 {% endfor %}
 
 {% set tileContent %}
-    {% if appliedTags is not empty %}
-        <div id="filters-applied" class="mb-16 px-16">
-            {% include 'components/tags.html.twig' with {
-                tags: appliedTags
-            } only %}
-        </div>
-    {% endif %}
+    <div id="filters-applied" class="mb-16 px-16" hidden aria-live="polite"></div>
     <div class="type-heading-01 mb-16 px-16">{{ heading|trans }}</div>
     {% if accordionItems is not empty %}
         {% include 'components/accordion.html.twig' with {
