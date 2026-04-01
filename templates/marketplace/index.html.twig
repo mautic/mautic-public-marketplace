@@ -126,18 +126,20 @@
             : 'marketplace.package.rating.none'
         %}
         {% set reviewCount = item.totalReviews ?? 0 %}
-        {% set downloadsTotal = item.downloadsTotal is not null ? item.downloadsTotal|number_format(0, '.', ',') : '0' %}
+        {% set downloadsTotal = item.downloadsTotal >= 1000 
+            ? (item.downloadsTotal / 1000)|round ~ 'k' 
+            : (item.downloadsTotal ?? 0) %}
         {% set reviewsTooltipKey = reviewCount == 1
             ? 'marketplace.package.review.tooltip'
             : 'marketplace.package.reviews.tooltip'
         %}
         {% set customContent %}
         <div class="d-flex flex-wrap mt-16 gap-16">
-            <div>
+            <div class="d-flex align-items-center gap-2">
                 <i class="ri-star-line" aria-hidden="true"></i>
                 {{ ratingSummary }}
             </div>
-            <div>
+            <div class="d-flex align-items-center gap-2">
                 <i class="ri-download-line" aria-hidden="true"></i>
                 {{ downloadsTotal }}
             </div>
@@ -145,7 +147,29 @@
         {% endset %}
         {% set card = {
             heading: item.displayName ?: item.name,
-            copy: item.description ?: 'marketplace.package.description.none',
+            copy: (
+                (item.headline is defined and item.headline is not empty
+                    ? item.headline
+                    : (item.description is defined and item.description is not empty
+                        ? item.description
+                        : null
+                    )
+                ) is not null
+                    ? (
+                        (item.headline is defined and item.headline is not empty
+                            ? item.headline
+                            : item.description
+                        )
+                        |striptags
+                        |replace({
+                            '# ': '', '## ': '', '### ': '', '#### ': '', '##### ': '', '###### ': '',
+                            '*': '', '**': '', '_': '', '__': '', '`': '', '~~': '',
+                            '[': '', ']': '', '(': '', ')': '', '> ': '', '- ': '', '+ ': '', '!': '', '|': '', '>': ''
+                        })
+                        |u.truncate(100, '…')
+                    )
+                    : 'marketplace.package.description.none'
+            ),
             image: item.bannerURL is defined and item.bannerURL is not null ? { src: item.bannerURL, alt: item.displayName ?: item.name } : null,
             href: path('marketplace_detail', { package: item.name }),
             attributes: {'data-turbo-frame': '_top'},
@@ -162,7 +186,7 @@
     {% include 'components/card-group.html.twig' with {
         cards: cards,
         type: 'default',
-        cardsPerRow: 4,
+        cardsPerRow: 3,
         gridMode: 'narrow'
     } only %}
         {% if result.total is not null %}
