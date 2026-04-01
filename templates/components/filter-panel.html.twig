@@ -1,0 +1,136 @@
+{% macro generate_id(string) -%}
+    {{- string|lower|replace({
+        ' ': '-',
+        '.': '-',
+        '_': '-',
+        '[': '-',
+        ']': '',
+        '(': '',
+        ')': '',
+        '/': '-'
+    })|trim('-') -}}
+{%- endmacro %}
+
+{% macro generate_name(string) -%}
+    {% set parts = string|split('.') %}
+    {% set candidate = parts|last %}
+
+    {% if candidate in ['label', 'heading', 'title'] and parts|length > 1 %}
+        {% set candidate = parts|slice(-2, 1)|first %}
+    {% endif %}
+
+    {{- candidate|replace({
+        ' ': '_',
+        '-': '_'
+    })|lower -}}
+{%- endmacro %}
+
+{% import _self as filterPanel %}
+
+{% set heading = heading|default('marketplace.index.filters.heading') %}
+{% set filterCutoff = filterCutoff|default(0) %}
+{% set filterGroups = filterGroups|default([]) %}
+{% set accordionItems = [] %}
+{% set appliedTags = [] %}
+
+{% for filterGroup in filterGroups %}
+    {% set groupTitle = filterGroup.title|default('') %}
+    {% set groupId = filterPanel.generate_id(groupTitle ?: 'filter-group-' ~ loop.index)|trim %}
+    {% set filterGroupItemsType = filterGroup.filterGroupItemsType|default('checkbox') %}
+    {% set filterGroupItems = filterGroup.filterGroupItems|default([]) %}
+    {% set groupNameBase = filterPanel.generate_name(groupTitle ?: 'filter_group_' ~ loop.index)|trim %}
+    {% set groupName = groupNameBase ~ (filterGroupItemsType == 'checkbox' ? '[]' : '') %}
+    {% set visibleItems = filterCutoff > 0 ? filterGroupItems|slice(0, filterCutoff) : filterGroupItems %}
+    {% set hiddenItems = filterCutoff > 0 ? filterGroupItems|slice(filterCutoff) : [] %}
+    {% set hiddenPanelId = groupId ~ '-all' %}
+
+    {% for item in filterGroupItems %}
+        {% set isApplied = item.checked|default(false) and (item.value is not defined or item.value is not same as('')) %}
+
+        {% if isApplied %}
+            {% set appliedTags = appliedTags|merge([
+                {
+                    label: item.label,
+                    color: 'primary'
+                }
+            ]) %}
+        {% endif %}
+    {% endfor %}
+
+    {% set filterGroupContent %}
+        {% if filterGroupItemsType == 'select' %}
+            {% include 'components/radio.html.twig' with {
+                name: groupName,
+                items: visibleItems
+            } only %}
+        {% else %}
+            {% include 'components/checkbox.html.twig' with {
+                name: groupName,
+                items: visibleItems
+            } only %}
+        {% endif %}
+
+        {% if hiddenItems is not empty %}
+            <div class="collapse" id="{{ hiddenPanelId }}">
+                {% if filterGroupItemsType == 'select' %}
+                    {% include 'components/radio.html.twig' with {
+                        name: groupName,
+                        items: hiddenItems
+                    } only %}
+                {% else %}
+                    {% include 'components/checkbox.html.twig' with {
+                        name: groupName,
+                        items: hiddenItems
+                    } only %}
+                {% endif %}
+            </div>
+
+            <div class="mt-8">
+                {% include 'components/button.html.twig' with {
+                    buttons: [
+                        {
+                            label: viewAllText|default('marketplace.index.filters.view_all')|trans,
+                            variant: 'link',
+                            href: '#' ~ hiddenPanelId,
+                            attributes: {
+                                class: 'p-0',
+                                'data-bs-toggle': 'collapse',
+                                'aria-expanded': 'false',
+                                'aria-controls': hiddenPanelId
+                            }
+                        }
+                    ]
+                } only %}
+            </div>
+        {% endif %}
+    {% endset %}
+
+    {% set accordionItems = accordionItems|merge([
+        {
+            id: groupId,
+            title: groupTitle,
+            content: filterGroupContent,
+        }
+    ]) %}
+{% endfor %}
+
+{% set tileContent %}
+    {% if appliedTags is not empty %}
+        <div id="filters-applied" class="mb-16 px-16">
+            {% include 'components/tags.html.twig' with {
+                tags: appliedTags
+            } only %}
+        </div>
+    {% endif %}
+    <div class="type-heading-01 mb-16 px-16">{{ heading|trans }}</div>
+    {% if accordionItems is not empty %}
+        {% include 'components/accordion.html.twig' with {
+            items: accordionItems
+        } only %}
+    {% endif %}
+{% endset %}
+
+{% include 'components/tile.html.twig' with {
+    content: tileContent,
+    className: 'px-0'
+} only %}
