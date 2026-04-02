@@ -11,8 +11,8 @@
     {%- set padding_inline = item.padding_inline ?? true -%}
         <li class="panel">
             <a role="button" id="heading{{- itemId -}}" class="accordion-heading collapsed" data-bs-toggle="collapse" data-bs-parent="#accordion" href="#collapse{{- itemId -}}" aria-expanded="false" aria-controls="collapse{{- itemId -}}">
-                <i class="ri-arrow-down-s-line accordion-arrow"></i>
-                <span class="accordion-title text-break">{{ item.title|trans }}</span>
+                <i class="ri-arrow-down-wide-line accordion-arrow"></i>
+                <span class="accordion-title fw-semibold text-break">{{ item.title|trans }}</span>
             </a>
             <div id="collapse{{- itemId -}}" class="collapse accordion-wrapper" role="tabpanel" aria-labelledby="heading{{- itemId -}}" data-bs-parent="#accordion">
                 <div class="accordion-content{% if not padding_inline %} accordion-content--slim{% endif %}">
