@@ -26,7 +26,8 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Mautic Marketplace');
+        self::assertSelectorTextContains('h1', 'Marketing Automation, Made Better.');
+        self::assertPageTitleContains('Mautic Marketplace');
     }
 
     public function testBrowsePageLoads(): void
