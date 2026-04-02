@@ -28,7 +28,7 @@
                 {% set allTypesCount = (type_counts['mautic-plugin'] ?? 0) + (type_counts['mautic-theme'] ?? 0) + (type_counts['mautic-resource'] ?? 0) %}
                 {% include 'components/filter-panel.html.twig' with {
                     heading: 'marketplace.index.filters.heading',
-                    filterCutoff: 3,
+                    filterCutoff: 5,
                     filterGroups: [
                         {
                             title: 'marketplace.index.filters.type.label',
