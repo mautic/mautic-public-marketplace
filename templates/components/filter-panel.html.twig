@@ -71,7 +71,11 @@
                 {% endif %}
             </div>
 
-            <div class="mt-8">
+            <div
+                class="mt-8"
+                data-view-all-toggle
+                data-view-all-target="{{ hiddenPanelId }}"
+            >
                 {% include 'components/button.html.twig' with {
                     buttons: [
                         {
