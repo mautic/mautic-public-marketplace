@@ -36,16 +36,18 @@
     {% set groupTitle = filterGroup.title|default('') %}
     {% set groupId = filterPanel.generate_id(groupTitle ?: 'filter-group-' ~ loop.index)|trim %}
     {% set filterGroupItemsType = filterGroup.filterGroupItemsType|default('checkbox') %}
-    {% set filterGroupItems = filterGroup.filterGroupItems|default([]) %}
+    {% set filterGroupItems = filterGroup.filterGroupItems|default(filterGroup.content|default([])) %}
     {% set groupNameBase = filterPanel.generate_name(groupTitle ?: 'filter_group_' ~ loop.index)|trim %}
     {% set groupName = groupNameBase ~ (filterGroupItemsType == 'checkbox' ? '[]' : '') %}
-    {% set visibleItems = filterCutoff > 0 ? filterGroupItems|slice(0, filterCutoff) : filterGroupItems %}
-    {% set hiddenItems = filterCutoff > 0 ? filterGroupItems|slice(filterCutoff) : [] %}
+    {% set visibleItems = filterGroupItemsType == 'custom' ? filterGroupItems : (filterCutoff > 0 ? filterGroupItems|slice(0, filterCutoff) : filterGroupItems) %}
+    {% set hiddenItems = filterGroupItemsType == 'custom' ? [] : (filterCutoff > 0 ? filterGroupItems|slice(filterCutoff) : []) %}
     {% set hiddenPanelId = groupId ~ '-all' %}
 
     {% set filterGroupContent %}
     <div class="mt-8 mb-12 filter-panel--group">
-        {% if filterGroupItemsType == 'select' %}
+        {% if filterGroupItemsType == 'custom' %}
+            {{ filterGroupItems|raw }}
+        {% elseif filterGroupItemsType == 'select' %}
             {% include 'components/radio.html.twig' with {
                 name: groupName,
                 items: visibleItems
@@ -96,7 +98,7 @@
             id: groupId,
             title: groupTitle,
             content: filterGroupContent,
-            padding_inline: filterGroupItemsType == 'select' ? false : true,
+            padding_inline: filterGroupItemsType in ['select', 'custom'] ? false : true,
         }
     ]) %}
 {% endfor %}
