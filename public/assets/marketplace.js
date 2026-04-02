@@ -155,6 +155,47 @@ function initMarketplaceForm() {
     renderAppliedFilters();
 }
 
+function initFilterPanelToggles() {
+    if (!window.bootstrap || !window.bootstrap.Collapse) {
+        return;
+    }
+
+    document.querySelectorAll('[data-view-all-toggle]').forEach((toggleWrapper) => {
+        if (toggleWrapper.dataset.viewAllBound === 'true') {
+            return;
+        }
+
+        const targetId = toggleWrapper.dataset.viewAllTarget;
+        if (!targetId) {
+            return;
+        }
+
+        const collapsePanel = document.getElementById(targetId);
+        if (!collapsePanel) {
+            return;
+        }
+
+        const toggleButton = toggleWrapper.querySelector('[data-bs-toggle="collapse"]');
+        const setVisibility = (isExpanded) => {
+            toggleWrapper.hidden = isExpanded;
+            toggleWrapper.setAttribute('aria-hidden', isExpanded ? 'true' : 'false');
+        };
+        const syncVisibility = () => {
+            setVisibility(collapsePanel.classList.contains('show'));
+        };
+
+        toggleWrapper.dataset.viewAllBound = 'true';
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => {
+                setVisibility(true);
+            });
+        }
+        collapsePanel.addEventListener('shown.bs.collapse', syncVisibility);
+        collapsePanel.addEventListener('hidden.bs.collapse', syncVisibility);
+        syncVisibility();
+    });
+}
+
 function initTooltips() {
     if (!window.bootstrap || !window.bootstrap.Tooltip) {
         return;
@@ -169,5 +210,6 @@ function initTooltips() {
 
 document.addEventListener('turbo:load', () => {
     initMarketplaceForm();
+    initFilterPanelToggles();
     initTooltips();
 });
