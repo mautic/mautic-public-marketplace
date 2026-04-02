@@ -21,7 +21,7 @@
 {% set common_image_content %}
     {% if image is defined and image is not null and image.src is defined and image.src is not empty %}
         <div class="card__image-wrapper d-flex {% if type == 'static' or type == 'default' %}ratio ratio-4x3{% endif %}">
-            <img class="image__img object-fit-cover" src="{{ asset(image.src) }}" alt="{{ image.alt|trans }}">
+            <img class="image__img object-fit-cover" src="{{ asset(image.src) }}" alt="{{ image.alt|default('')|trans }}">
         </div>
     {% endif %}
 {% endset %}
