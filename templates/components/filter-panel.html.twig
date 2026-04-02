@@ -73,24 +73,18 @@
             </div>
 
             <div
-                class="mt-8"
+                class="px-16 mt-8"
                 data-view-all-toggle
                 data-view-all-target="{{ hiddenPanelId }}"
             >
-                {% include 'components/button.html.twig' with {
-                    buttons: [
-                        {
-                            label: viewAllText|default('marketplace.index.filters.view_all')|trans,
-                            variant: 'link',
-                            href: '#' ~ hiddenPanelId,
-                            attributes: {
-                                class: 'p-0',
-                                'data-bs-toggle': 'collapse',
-                                'aria-expanded': 'false',
-                                'aria-controls': hiddenPanelId
-                            }
-                        }
-                    ]
+                {% include 'components/link.html.twig' with {
+                    label: viewAllText|default('marketplace.index.filters.view_all')|trans,
+                    href: '#' ~ hiddenPanelId,
+                    attributes: {
+                        'data-bs-toggle': 'collapse',
+                        'aria-expanded': 'false',
+                        'aria-controls': hiddenPanelId
+                    }
                 } only %}
             </div>
         {% endif %}
@@ -112,19 +106,14 @@
     <div class="d-flex justify-content-between align-items-center mb-16 px-16">
         <div class="type-heading-01">{{ heading|trans }}</div>
         <div hidden data-clear-filters-wrapper>
-            {% include 'components/button.html.twig' with {
-                buttons: [
-                    {
-                        label: 'marketplace.index.filters.clear',
-                        variant: 'link',
-                        icon: 'ri-restart-line',
-                        attributes: {
-                            class: 'p-0 type-helper-text-01',
-                            type: 'button',
-                            'data-clear-filters': 'true'
-                        }
-                    }
-                ]
+            {% include 'components/link.html.twig' with {
+                label: 'marketplace.index.filters.clear',
+                renderIcon: 'ri-restart-line',
+                size: 'sm',
+                attributes: {
+                    type: 'button',
+                    'data-clear-filters': 'true'
+                }
             } only %}
         </div>
     </div>
