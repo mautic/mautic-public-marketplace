@@ -44,6 +44,7 @@
     {% set hiddenPanelId = groupId ~ '-all' %}
 
     {% set filterGroupContent %}
+    <div class="mt-8 mb-12 filter-panel--group">
         {% if filterGroupItemsType == 'select' %}
             {% include 'components/radio.html.twig' with {
                 name: groupName,
@@ -93,6 +94,7 @@
                 } only %}
             </div>
         {% endif %}
+    </div>
     {% endset %}
 
     {% set accordionItems = accordionItems|merge([
@@ -100,6 +102,7 @@
             id: groupId,
             title: groupTitle,
             content: filterGroupContent,
+            padding_inline: filterGroupItemsType == 'select' ? false : true,
         }
     ]) %}
 {% endfor %}
