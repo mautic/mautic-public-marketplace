@@ -8,6 +8,8 @@ function initMarketplaceForm() {
     const mauticInput = form.querySelector('input[name="mautic"]');
     const changeInputs = form.querySelectorAll('select, input[type="radio"], input[type="checkbox"]');
     const appliedFiltersContainer = form.querySelector('#filters-applied');
+    const clearFiltersWrapper = form.querySelector('[data-clear-filters-wrapper]');
+    const clearFiltersButton = form.querySelector('[data-clear-filters]');
     const focusKey = 'marketplace:focus';
     const scrollKey = 'marketplace:scroll';
 
@@ -36,6 +38,14 @@ function initMarketplaceForm() {
         }
 
         return form.querySelector(`input[type="radio"][name="${CSS.escape(input.name)}"][value=""]`);
+    };
+    const syncClearFiltersButton = (hasAppliedTags) => {
+        if (!clearFiltersWrapper || !clearFiltersButton) {
+            return;
+        }
+
+        clearFiltersWrapper.hidden = !hasAppliedTags;
+        clearFiltersWrapper.setAttribute('aria-hidden', hasAppliedTags ? 'false' : 'true');
     };
     const renderAppliedFilters = () => {
         if (!appliedFiltersContainer) {
@@ -66,6 +76,7 @@ function initMarketplaceForm() {
 
         appliedFiltersContainer.hidden = tags.length === 0;
         appliedFiltersContainer.innerHTML = tags.join('');
+        syncClearFiltersButton(tags.length > 0);
     };
     const dismissFilter = (inputId) => {
         const input = form.querySelector(`#${CSS.escape(inputId)}`);
@@ -86,6 +97,35 @@ function initMarketplaceForm() {
 
         renderAppliedFilters();
         submitForm(input);
+    };
+    const clearAllFilters = () => {
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        if (mauticInput) {
+            mauticInput.value = '';
+        }
+
+        changeInputs.forEach((input) => {
+            if (input.tagName === 'SELECT') {
+                const emptyOption = input.querySelector('option[value=""]');
+                input.value = emptyOption ? '' : (input.options[0]?.value ?? '');
+                return;
+            }
+
+            if (input.type === 'checkbox') {
+                input.checked = false;
+                return;
+            }
+
+            if (input.type === 'radio') {
+                input.checked = false;
+            }
+        });
+
+        renderAppliedFilters();
+        submitForm(searchInput || mauticInput || null);
     };
 
     if (searchInput) {
@@ -118,6 +158,13 @@ function initMarketplaceForm() {
             }
 
             dismissFilter(button.dataset.filterDismiss);
+        });
+    }
+
+    if (clearFiltersButton && clearFiltersButton.dataset.clearFiltersBound !== 'true') {
+        clearFiltersButton.dataset.clearFiltersBound = 'true';
+        clearFiltersButton.addEventListener('click', () => {
+            clearAllFilters();
         });
     }
 

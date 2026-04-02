@@ -102,7 +102,25 @@
 
 {% set tileContent %}
     <div id="filters-applied" class="mb-16 px-16" hidden aria-live="polite"></div>
-    <div class="type-heading-01 mb-16 px-16">{{ heading|trans }}</div>
+    <div class="d-flex justify-content-between align-items-center mb-16 px-16">
+        <div class="type-heading-01">{{ heading|trans }}</div>
+        <div hidden data-clear-filters-wrapper>
+            {% include 'components/button.html.twig' with {
+                buttons: [
+                    {
+                        label: 'marketplace.index.filters.clear',
+                        variant: 'link',
+                        icon: 'ri-restart-line',
+                        attributes: {
+                            class: 'p-0 type-helper-text-01',
+                            type: 'button',
+                            'data-clear-filters': 'true'
+                        }
+                    }
+                ]
+            } only %}
+        </div>
+    </div>
     {% if accordionItems is not empty %}
         {% include 'components/accordion.html.twig' with {
             items: accordionItems
