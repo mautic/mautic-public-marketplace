@@ -1,0 +1,34 @@
+.filter-panel--group {
+    .form-check {
+        position: relative;
+        padding-left: 0;
+        transition: var(--transition-all-productive);
+        margin-bottom: 0;
+        @include outline;
+    }
+
+    .form-check-label {
+        display: block;
+        padding: 8px 16px;
+        width: 100%;
+    }
+    
+    .form-check-input {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+        
+        &:hover + .form-check-label {
+            background-color: var(--layer-hover);
+        }
+
+        &:checked + .form-check-label {
+            background-color: var(--highlight);
+        }
+    }
+}
