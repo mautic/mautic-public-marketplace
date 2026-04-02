@@ -28,9 +28,20 @@
         {% set version_keys_sorted = package.versions ? (package.versions|keys|sort|reverse) : [] %}
         {% set latest_package_version = version_keys_sorted|length > 0 ? version_keys_sorted|first : null %}
         {% set latest_mautic_version = (latest_package_version and package.versions[latest_package_version].smv is defined) ? package.versions[latest_package_version].smv : null %}
+        {% set latest_mautic_tags = latest_mautic_version ? latest_mautic_version|mautic_version_tag_data : [] %}
         {% set leadspace_tags = [{ label: type_label|trans, color: 'gray' }] %}
-        {% if latest_mautic_version %}
-            {% set leadspace_tags = leadspace_tags|merge([{ label: 'mautic.marketplace.detail.latest_mautic_supported'|trans({ '%version%': latest_mautic_version }), color: 'blue' }]) %}
+        {% if latest_mautic_tags is not empty %}
+            {% for version_tag in latest_mautic_tags %}
+                {% set leadspace_tags = leadspace_tags|merge([{
+                    label: version_tag.label,
+                    color: 'blue',
+                    icon: 'ri-git-repository-fill',
+                    attributes: {
+                        href: path('marketplace_index', { mautic: [version_tag.constraint] }),
+                        title: 'mautic.marketplace.detail.supported_mautic_version'|trans
+                    }
+                }]) %}
+            {% endfor %}
         {% endif %}
         <div class="mx-n16 mx-lg-n32">
         {% set leadspace_media = (package.bannerURL is defined and package.bannerURL is not empty) 
