@@ -38,7 +38,7 @@ final class MarketplaceApiClient
         string $orderDir = 'desc',
         ?string $type = null,
         ?string $query = null,
-        ?string $mauticVersion = null,
+        array $mauticVersions = [],
         ?string $dateRange = null,
         ?string $popularity = null,
     ): PackageListResult {
@@ -57,8 +57,8 @@ final class MarketplaceApiClient
             $params['_type'] = $type;
         }
 
-        if (null !== $mauticVersion && '' !== $mauticVersion) {
-            $params['_smv'] = $mauticVersion;
+        if ([] !== $mauticVersions) {
+            $params['_smv'] = array_values(array_filter($mauticVersions, static fn (mixed $version): bool => \is_string($version) && '' !== $version));
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
@@ -69,7 +69,7 @@ final class MarketplaceApiClient
             $params['_popularity'] = $popularity;
         }
 
-        $data = $this->supabaseClient->query('GET', '/rest/v1/rpc/get_view', $params);
+        $data = $this->supabaseClient->rpc('/rest/v1/rpc/get_view', $params);
 
         $payload = $this->normalizeListPayload($data);
         $rows = $payload['rows'];
@@ -101,6 +101,30 @@ final class MarketplaceApiClient
         }
 
         return new PackageListResult($items, $limit, $offset, $total);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getCompatibleMauticVersions(): array
+    {
+        $data = $this->supabaseClient->rpc('/rest/v1/rpc/get_compatible_mautic_versions', []);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($data as $value) {
+            if (\is_string($value) && '' !== $value) {
+                $values[] = $value;
+            }
+        }
+
+        $values = array_values(array_unique($values));
+        sort($values);
+
+        return $values;
     }
 
     public function getPackage(string $packageName): ?PackageDetail
