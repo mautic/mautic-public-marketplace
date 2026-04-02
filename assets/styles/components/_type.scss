@@ -2,6 +2,8 @@
 // Typography
 // --------------------------------------------------
 
+$font-family-serif: "Source Serif 4", "Times New Roman", Times, Baskerville, Georgia, serif !default;
+
 ::selection {
   background-color: rgb(from var(--background-brand) r g b / 25%);
   color: var(--link-primary);
@@ -190,6 +192,7 @@
 }
 
 .type-fluid-quotation-01 {
+  font-family: $font-family-serif;
   font-size: var(--fluid-quotation-01-font-size);
   line-height: var(--fluid-quotation-01-line-height);
   font-weight: var(--fluid-quotation-01-font-weight);
@@ -197,6 +200,7 @@
 }
 
 .type-fluid-quotation-02 {
+  font-family: $font-family-serif;
   font-size: var(--fluid-quotation-02-font-size);
   line-height: var(--fluid-quotation-02-line-height);
   font-weight: var(--fluid-quotation-02-font-weight);

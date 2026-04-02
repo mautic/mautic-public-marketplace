@@ -24,19 +24,14 @@
                     </div>
                 {% endif %}
 
-                <div class="modal fade" id="{{ modalId }}" tabindex="-1" aria-labelledby="{{ modalId }}Label" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="{{ modalId }}Label">{{ image.alt }}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'mautic.core.close'|trans }}"></button>
-                            </div>
-                            <div class="modal-body text-center">
-                                <img src="{{ image.src }}" alt="{{ image.alt }}" class="img-fluid" style="max-height: 75vh;">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {% include 'components/modal.html.twig' with {
+                    id: modalId,
+                    title: image.alt,
+                    centered: true,
+                    size: 'lg',
+                    body_class: 'text-center',
+                    body: '<img src="' ~ image.src ~ '" alt="' ~ image.alt ~ '" class="img-fluid" style="max-height: 75vh;">'
+                } only %}
             {% endfor %}
         </div>
     {% endset %}
