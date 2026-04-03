@@ -1,0 +1,45 @@
+.quote__mark {
+    position: absolute;
+    inset-inline-start: 1rem;
+}
+
+.quote__copy {
+    inline-size: 100%;
+    padding-inline: 2rem;
+    margin: 0px;
+    word-break: break-word;
+}
+
+
+@media (min-width: 42rem) {
+    .quote__copy {
+        padding-block-end: 3rem;
+    }
+}
+
+.quote__mark-closing {
+    margin-inline-start: calc(-0.25rem);
+}
+
+@media (min-width: 42rem) {
+    .quote__mark-closing {
+        margin-inline-start: calc(-0.5rem);
+    }
+}
+
+.quote__wrapper {
+    position: relative;
+}
+
+.quote__source {
+    inline-size: 100%;
+    padding-inline: 1rem;
+    max-inline-size: 80%;
+    padding-block-end: 3rem;
+}
+
+.quote__source-heading,
+.quote__source-copy,
+.quote__source-bottom-copy {
+    padding-inline-start: 1rem;
+}

@@ -1,6 +1,6 @@
 {% if pictogram %}
 {% set svg_path = '@pictograms/' ~ pictogram ~ '.svg' %}
 <div class="pictogram pictogram--size-{{ size|default(32) }}" style="fill: {{ color|default('var(--icon-primary, currentColor)') }};">
-    {{ source(svg_path) }}
+    {{ source(svg_path, ignore_missing = true) }}
 </div>
 {% endif %}

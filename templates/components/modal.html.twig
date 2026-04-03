@@ -1,0 +1,82 @@
+{% set id = id|default('modal') %}
+{% set title = title|default(null) %}
+{% set title_id = title_id|default(id ~ 'Label') %}
+{% set body_id = body_id|default(id ~ 'Body') %}
+{% set fade = fade is defined ? fade : true %}
+{% set centered = centered is defined ? centered : false %}
+{% set scrollable = scrollable is defined ? scrollable : false %}
+{% set size = size|default(null) %}
+{% set fullscreen = fullscreen|default(null) %}
+{% set backdrop = backdrop|default(null) %}
+{% set keyboard = keyboard is defined ? keyboard : true %}
+{% set labelledby = labelledby|default(title ? title_id : null) %}
+{% set describedby = describedby|default(body is defined and body ? body_id : null) %}
+{% set close_label = close_label|default('mautic.core.close'|trans) %}
+{% set show_header = show_header is defined ? show_header : (title is not empty) %}
+{% set show_footer = show_footer is defined ? show_footer : (footer is defined and footer) %}
+{% set dialog_classes = ['modal-dialog'] %}
+{% set modal_classes = ['modal'] %}
+
+{% if fade %}
+    {% set modal_classes = modal_classes|merge(['fade']) %}
+{% endif %}
+
+{% if centered %}
+    {% set dialog_classes = dialog_classes|merge(['modal-dialog-centered']) %}
+{% endif %}
+
+{% if scrollable %}
+    {% set dialog_classes = dialog_classes|merge(['modal-dialog-scrollable']) %}
+{% endif %}
+
+{% if size %}
+    {% set dialog_classes = dialog_classes|merge(['modal-' ~ size]) %}
+{% endif %}
+
+{% if fullscreen %}
+    {% set dialog_classes = dialog_classes|merge(['modal-fullscreen' ~ (fullscreen == true ? '' : '-' ~ fullscreen)]) %}
+{% endif %}
+
+{% if modal_class is defined and modal_class %}
+    {% set modal_classes = modal_classes|merge(modal_class|split(' ')) %}
+{% endif %}
+
+{% if dialog_class is defined and dialog_class %}
+    {% set dialog_classes = dialog_classes|merge(dialog_class|split(' ')) %}
+{% endif %}
+
+<div
+    class="{{ modal_classes|join(' ')|trim }}"
+    id="{{ id }}"
+    tabindex="-1"
+    aria-hidden="true"
+    {% if labelledby %}aria-labelledby="{{ labelledby }}"{% endif %}
+    {% if describedby %}aria-describedby="{{ describedby }}"{% endif %}
+    {% if backdrop is not null %}data-bs-backdrop="{{ backdrop }}"{% endif %}
+    {% if not keyboard %}data-bs-keyboard="false"{% endif %}
+>
+    <div class="{{ dialog_classes|join(' ')|trim }}">
+        <div class="modal-content{% if content_class is defined and content_class %} {{ content_class }}{% endif %}">
+            {% if show_header %}
+                <div class="modal-header{% if header_class is defined and header_class %} {{ header_class }}{% endif %}">
+                    {% if title is not empty %}
+                        <h1 class="modal-title fs-5" id="{{ title_id }}">{{ title }}</h1>
+                    {% endif %}
+                    {% if dismissible is not defined or dismissible %}
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ close_label }}"></button>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div class="modal-body{% if body_class is defined and body_class %} {{ body_class }}{% endif %}"{% if describedby %} id="{{ body_id }}"{% endif %}>
+                {{ body|default('')|raw }}
+            </div>
+
+            {% if show_footer %}
+                <div class="modal-footer{% if footer_class is defined and footer_class %} {{ footer_class }}{% endif %}">
+                    {{ footer|raw }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,173 @@
+<section class="detail-header mt-80">
+    {% set contentBlockChild %}
+        <div class="marketplace-detail__description type-body-02">{{ package.description|markdown_to_html }}</div>
+    {% endset %}
+
+    <div class="row justify-content-between">
+        <div class="col-xs-12 col-sm-12 col-md-7">
+            {% include 'components/content-block.html.twig' with {
+                heading: 'mautic.marketplace.detail.description',
+                childContainer: contentBlockChild,
+                hasBorder: true
+            } %}
+
+            {% set statCards = [
+                { eyebrow: 'mautic.marketplace.detail.stats.downloads', heading: package.downloads.total ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.favers', heading: package.favers ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.stars', heading: package.githubStars ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.forks', heading: package.githubForks ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.open_issues', heading: package.githubOpenIssues ?? 0 },
+                { eyebrow: 'mautic.marketplace.detail.stats.dependents', heading: package.dependents ?? 0 }
+            ] %}
+    
+            <section>
+                {% include 'components/card-group.html.twig' with {
+                    type: 'static',
+                    gridMode: 'condensed',
+                    cardsPerRow: 3,
+                    cards: statCards
+                } %}
+            </section>
+
+        </div>
+        <div class="col-xs-12 col-md-4">
+            <div class="tile">
+                <!-- Last updated -->
+                <dt class="type-heading-01">{{ 'mautic.marketplace.detail.last_updated'|trans }}</dt>
+                {% if package.time %}
+                {% set updated_at = date(package.time) %}
+                <dd>
+                    <time datetime="{{ updated_at|date('c') }}">{{ updated_at|relative_time_ago }}</time>
+                    <i class="ri-information-2-line" aria-hidden="true" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ updated_at|date('Y-m-d') }}"></i>
+                </dd>
+                {% else %}
+                <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
+                {% endif %}
+
+                <!-- Language -->
+                <div class="mt-24">
+                    <dt class="type-heading-01">{{ 'mautic.marketplace.detail.language'|trans }}</dt>
+                    {% if package.language %}
+                    <dd>{{ package.language }}</dd>
+                    {% else %}
+                    <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
+                    {% endif %}
+
+                <!-- Maintainers -->
+                {% if package.maintainers %}
+                <dt class="type-heading-01 mt-24 mb-4">{{ 'mautic.marketplace.detail.maintainers'|trans }}</dt>
+                <dd class="d-flex flex-wrap gap-4">
+                    {% set maintainer_tags = package.maintainers|map(m => ({ label: m.name ?? m, color: 'blue' })) %}
+                    {% include 'components/tags.html.twig' with { tags: maintainer_tags } %}
+                </dd>
+                {% endif %}
+                </div>
+                
+                <!-- Repository -->
+                <dt class="type-heading-01 mt-24 mb-8">{{ 'mautic.marketplace.detail.repository'|trans }}</dt>
+                {% if package.repository or package.url %}
+                    {% if package.repository %}
+                    <dd>
+                        <i class="ri-github-fill ri-lg" aria-hidden="true"></i>
+                        <a href="{{ package.repository }}" target="_blank" rel="noopener">
+                            {% set repoParts = package.repository|split('/') %}
+                            {{ 'mautic.marketplace.detail.repository.github'|trans({
+                                '%repository%': repoParts[repoParts|length-2] ~ '/' ~ repoParts[repoParts|length-1]
+                            }) }}
+                        </a>
+                    </dd>
+                    {% endif %}
+                    {% if package.url %}
+                    <dd>
+                        <i class="ri-box-2-fill ri-lg" aria-hidden="true"></i>
+                            {% set pkgParts = package.url|split('/') %}
+                            <a href="{{ package.url }}" target="_blank" rel="noopener">
+                                {{ 'mautic.marketplace.detail.repository.packagist'|trans({
+                                    '%package%': pkgParts[pkgParts|length-2] ~ '/' ~ pkgParts[pkgParts|length-1]
+                                }) }}
+                            </a>
+                    </dd>
+                    {% endif %}
+
+                {% else %}
+                <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
+                {% endif %}
+            </div>
+
+            <!-- Versions -->
+
+            <section class="section mt-12">
+                {% set versionKeys = package.versions ? (package.versions|keys|sort|reverse) : [] %}
+                {% set versionTags = versionKeys|map(version => ({ label: version, color: 'gray' })) %}
+
+                {% set smvList = [] %}
+                {% if package.versions %}
+                    {% for version, data in package.versions %}
+                        {% if data.smv is defined and data.smv is not empty and (data.smv not in smvList) %}
+                            {% set smvList = smvList|merge([data.smv]) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                {% if versionKeys is empty %}
+                    {% include 'components/tile.html.twig' with {
+                        type: 'base',
+                        content: '<p class="muted mb-0">{{ "mautic.marketplace.detail.versions.empty"|trans }}</p>',
+                    } %}
+                {% elseif versionKeys|length <= 5 %}
+                    {% set versionsContent %}
+                        <div class="type-heading-01 mb-16">{{ 'mautic.marketplace.detail.versions.heading'|trans }} ({{ versionKeys|length }})</div>
+                        <div class="d-flex flex-wrap gap-4">
+                        {% include 'components/tags.html.twig' with { tags: versionTags } %}
+                        </div>
+                    {% endset %}
+
+                    {% include 'components/tile.html.twig' with {
+                        type: 'base',
+                        content: versionsContent,
+                    } %}
+                {% else %}
+                    {% set aboveFoldTags = versionTags|slice(0, 5) %}
+                    {% set belowFoldTags = versionTags|slice(5) %}
+
+                    {% set aboveFoldContent %}
+                        <div class="type-heading-01 mb-16">{{ 'mautic.marketplace.detail.versions.heading'|trans }} ({{ versionKeys|length }})</div>
+                        <div class="d-flex flex-wrap gap-4">
+                            {% include 'components/tags.html.twig' with { tags: aboveFoldTags } %}
+                        </div>
+                    {% endset %}
+
+                    {% set belowFoldContent %}
+                        <div class="d-flex flex-wrap gap-4 mt-4">
+                            {% include 'components/tags.html.twig' with { tags: belowFoldTags } %}
+                        </div>
+                    {% endset %}
+
+                    {% include 'components/tile.html.twig' with {
+                        type: 'expandable-interactive',
+                        className: 'mb-0',
+                        aboveFoldContent: aboveFoldContent,
+                        belowFoldContent: belowFoldContent,
+                    } %}
+                {% endif %}
+            </section>
+
+            <div class="tile mt-12">
+                {% include 'marketplace/detail/module--review-summary.html.twig' %}
+                <div class="mt-12">
+                {% include 'components/button.html.twig' with {
+                    buttons: [{
+                        label: 'mautic.marketplace.detail.reviews.show_all',
+                        variant: 'link',
+                        attributes: {
+                            'data-bs-toggle': 'modal',
+                            'data-bs-target': '#' ~ reviewsModalId,
+                            'class': 'justify-content-start p-0'
+                        }
+                    }]
+                } only %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

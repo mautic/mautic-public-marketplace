@@ -7,8 +7,12 @@
 # To list all registered routes, run the following command:
 #   bin/console debug:router
 
-marketplace_index:
+marketplace_homepage:
     path: /
+    controller: App\Controller\MarketplaceController::homepage
+
+marketplace_index:
+    path: /browse
     controller: App\Controller\MarketplaceController::index
 
 marketplace_detail:

@@ -1,0 +1,165 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mautic Marketplace{% endblock %}
+
+{% block body %}
+{% set browseBySignalCards = [
+    {
+        heading: 'mautic.marketplace.homepage.categories.most_popular.heading',
+        pictogram: 'chart--line',
+        href: path('marketplace_index', { popularity: 'most_popular' })
+    },
+    {
+        heading: 'mautic.marketplace.homepage.categories.top_rated.heading',
+        pictogram: 'trophy',
+        href: path('marketplace_index', { popularity: 'top_rated' })
+    },
+    {
+        heading: 'mautic.marketplace.homepage.categories.newest.heading',
+        pictogram: 'calendar',
+        href: path('marketplace_index', { popularity: 'newest' })
+    },
+    {
+        heading: 'mautic.marketplace.homepage.categories.rising.heading',
+        pictogram: 'growth',
+        href: path('marketplace_index', { popularity: 'rising' })
+    }
+] %}
+
+{% set packageTypeCards = [
+    {
+        heading: 'mautic.marketplace.homepage.package_types.plugin.heading',
+        copy: 'mautic.marketplace.homepage.package_types.plugin.copy',
+        pictogram: 'application--integration',
+        href: path('marketplace_index', { type: 'mautic-plugin' })
+    },
+    {
+        heading: 'mautic.marketplace.homepage.package_types.theme.heading',
+        copy: 'mautic.marketplace.homepage.package_types.theme.copy',
+        pictogram: 'content--design',
+        href: path('marketplace_index', { type: 'mautic-theme' })
+    },
+    {
+        heading: 'mautic.marketplace.homepage.package_types.resource.heading',
+        copy: 'mautic.marketplace.homepage.package_types.resource.copy',
+        pictogram: 'resources',
+        href: path('marketplace_index', { type: 'mautic-resource' })
+    }
+] %}
+
+{% set curatedJourneyCards = [
+    {
+        heading: 'mautic.marketplace.homepage.journeys.managed_hosting.heading',
+        image: {
+            src: 'assets/images/google-deepmind-4sRFTaQSM8Q-unsplash.jpg',
+            alt: 'mautic.marketplace.homepage.journeys.managed_hosting.image_alt'
+        },
+        eyebrow: 'mautic.marketplace.homepage.journeys.managed_hosting.eyebrow',
+        href: 'https://mautic.org/start-using-mautic/managed-mautic/'
+    },
+    {
+        eyebrow: 'mautic.marketplace.homepage.journeys.trials.eyebrow',
+        heading: 'mautic.marketplace.homepage.journeys.trials.heading',
+        copy: 'mautic.marketplace.homepage.journeys.trials.copy',
+        ctaType: 'external',
+        href: 'https://mautic.org/start-using-mautic/try-mautic/'
+    },
+    {
+        eyebrow: 'mautic.marketplace.homepage.journeys.download.eyebrow',
+        heading: 'mautic.marketplace.homepage.journeys.download.heading',
+        copy: 'mautic.marketplace.homepage.journeys.download.copy',
+        ctaType: 'external',
+        href: 'https://mautic.org/download/'
+    },
+    {
+        eyebrow: 'mautic.marketplace.homepage.journeys.product.eyebrow',
+        heading: 'mautic.marketplace.homepage.journeys.product.heading',
+        copy: 'mautic.marketplace.homepage.journeys.product.copy',
+        ctaType: 'external',
+        href: 'https://mautic.org/'
+    }
+] %}
+
+{% include 'components/lead-space.html.twig' with {
+    variant: 'super',
+    heading: 'mautic.marketplace.leadspace.heading',
+    description: 'mautic.marketplace.leadspace.description',
+    gradientStyleScheme: 'with-gradient',
+    gradientStyleSchemeColor: '#00004a',
+    media: {
+        src: 'assets/images/google-deepmind-2ufXB-oAyG0-unsplash.jpg',
+        alt: 'mautic.marketplace.leadspace.image_alt'
+    },
+    buttons: [
+        {
+            label: 'mautic.marketplace.leadspace.button_label.primary',
+            icon: 'ri-arrow-right-line',
+            href: path('marketplace_index')
+        },
+        {
+            label: 'mautic.marketplace.leadspace.button_label.secondary',
+            icon: 'ri-compass-3-line',
+            href: '#homepage-browse'
+        }
+    ]
+} %}
+
+{% set childContainerTypes %}
+    {{ include('components/card-group.html.twig', {
+        cards: packageTypeCards,
+        type: 'pictogram',
+        cardsPerRow: 3,
+        gridMode: 'narrow'
+    }, with_context = false) }}
+
+    <div class="my-64">
+        {{ include('components/content-block.html.twig', {
+            heading: 'mautic.marketplace.homepage.categories.heading',
+            childContainer: include('components/card-group.html.twig', {
+                cards: browseBySignalCards,
+                type: 'pictogram',
+                cardsPerRow: 4,
+                gridMode: 'narrow'
+            }, with_context = false)
+        }, with_context = false) }}
+    </div>
+{% endset %}
+
+<div class="mt-64">
+    {{ include('components/content-block.html.twig', {
+        heading: 'mautic.marketplace.homepage.package_types.heading',
+
+        childContainer: childContainerTypes
+    }, with_context = false) }}
+</div>
+
+{% set childContainerCuratedJourneyCards %}
+    {{ include('components/card-group.html.twig', {
+        cards: curatedJourneyCards,
+        type: 'card-in-card',
+        cardsPerRow: 3,
+        gridMode: 'condensed'
+    }, with_context = false) }}
+    <div class="mb-64">
+        {{ include('components/content-item-row.html.twig', {
+            type: 'default',
+            eyebrow: 'mautic.marketplace.homepage.why.eyebrow',
+            heading: 'mautic.marketplace.homepage.why.heading',
+            copy: 'mautic.marketplace.homepage.why.copy',
+            cta: {
+                label: 'mautic.marketplace.homepage.why.cta',
+                link: path('marketplace_index')
+            }
+        }, with_context = false) }}
+    </div>
+{% endset %}
+
+<div class="mb-64">
+    {{ include('components/content-block.html.twig', {
+        heading: 'mautic.marketplace.homepage.journeys.section_heading',
+        copy: 'mautic.marketplace.homepage.journeys.section_copy',
+        childContainer: childContainerCuratedJourneyCards
+    }, with_context = false) }}
+</div>
+
+{% endblock %}

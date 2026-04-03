@@ -1,0 +1,45 @@
+{% if package.gallery is defined and package.gallery is not empty %}
+    {% set galleryContent %}
+        <div class="row">
+            {% set imageCount = package.gallery|length %}
+            {% for image in package.gallery %}
+                {% set modalId = 'galleryModal_' ~ loop.index %}
+                {% set common_image_content %}
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#{{ modalId }}" tabindex="0">
+                        <img src="{{ image.src }}" alt="{{ image.alt }}" class="img-fluid object-fit-cover h-100 animation--grow">
+                    </a>
+                {% endset %}
+
+                {% if imageCount == 1 %}
+                    <div class="col-12 col-md-12 mb-md-24 mb-12">
+                        {{ common_image_content }}
+                    </div>
+                {% elseif imageCount == 2 %}
+                    <div class="col-12 col-md-6 mb-md-24 mb-12">
+                        {{ common_image_content }}
+                    </div>
+                {% else %}
+                    <div class="col-12 col-md-3 mb-md-24 mb-12">
+                        {{ common_image_content }}
+                    </div>
+                {% endif %}
+
+                {% include 'components/modal.html.twig' with {
+                    id: modalId,
+                    title: image.alt,
+                    centered: true,
+                    size: 'lg',
+                    body_class: 'text-center',
+                    body: '<img src="' ~ image.src ~ '" alt="' ~ image.alt ~ '" class="img-fluid" style="max-height: 75vh;">'
+                } only %}
+            {% endfor %}
+        </div>
+    {% endset %}
+
+    <section class="mt-64">
+    {% include 'components/content-block.html.twig' with {
+        heading: 'mautic.marketplace.detail.gallery.heading',
+        childContainer: galleryContent
+    } %}
+    </section>
+{% endif %}

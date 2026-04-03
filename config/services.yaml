@@ -19,6 +19,9 @@ services:
     App\:
         resource: '../src/'
 
+    twig.markdown.default:
+        alias: App\Markdown\SafeMarkdownConverter
+
 when@test:
     services:
         App\Tests\Mock\Auth0MockHttpClient:

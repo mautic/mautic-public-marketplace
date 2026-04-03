@@ -1,0 +1,122 @@
+
+{% set backwardHref = backwardHref|default('') %}
+{% set forwardHref = forwardHref|default('') %}
+{% set disabled = disabled|default(false) %}
+{% set id = id|default('pagination') %}
+{% set itemRangeText = itemRangeText|default('') %}
+{% set itemsPerPageText = itemsPerPageText|default('mautic.marketplace.pagination.items_per_page') %}
+{% set itemText = itemText|default('') %}
+{% set pageRangeText = pageRangeText|default('') %}
+{% set pageSelectLabelText = pageSelectLabelText|default('mautic.marketplace.pagination.page_select_label') %}
+{% set pageInputDisabled = pageInputDisabled|default(false) %}
+{% set pageSize = pageSize|default(10) %}
+{% set pageSizes = pageSizes|default([
+    { value: 10, label: '10' },
+    { value: 20, label: '20' },
+    { value: 30, label: '30' },
+    { value: 40, label: '40' },
+    { value: 50, label: '50' }
+]) %}
+{% set pagesUnknown = pagesUnknown|default(false) %}
+{% set pageText = pageText|default('') %}
+{% set size = size|default('md') %}
+{% set totalItems = totalItems|default(null) %}
+{% set page = page|default(1) %}
+{% set totalPages = totalPages|default(
+    totalItems is not null and pageSize > 0
+        ? max(1, (totalItems / pageSize)|round(0, 'ceil'))
+        : 1
+) %}
+{% set pageInputDisabled = pageInputDisabled or totalPages <= 1 %}
+{% set pageSizeInputDisabled = pageSizeInputDisabled|default(false) or (totalItems is not null and totalItems < (pageSizes is not empty ? min(pageSizes|column('value')) : pageSize)) %}
+
+<nav class="pagination pagination--{{ size }}" aria-label="{{ 'marketplace.index.pagination.aria'|trans }}">
+    <div class="pagination__left">
+        <label id="{{ id }}-items-per-page-label"
+            class="pagination__text" for="{{ id }}-items-per-page">{{ itemsPerPageText|trans }}</label>
+        <div class="form-item select__item-count">
+            {% include 'components/select.html.twig' with {
+                id: id ~ '-items-per-page',
+                name: 'limit',
+                label: null,
+                options: pageSizes,
+                value: pageSize,
+                disabled: disabled or pageSizeInputDisabled,
+                wrapper_class: '',
+                attributes: {
+                    class: 'select-input',
+                    title: pageSize,
+                    'aria-labelledby': id ~ '-items-per-page-label'
+                }
+            } only %}
+        </div>
+        <span class="pagination__text pagination__items-count">{% if pagesUnknown %}{{ itemText is not empty ? itemText|trans : '' }}{% elseif itemRangeText is not empty %}{{ itemRangeText }}{% endif %}</span>
+    </div>
+    <div class="pagination__right">
+        <div class="form-item select__page-number">
+            <label for="{{ id }}-page-number"
+                class="label visually-hidden" dir="ltr">{{ pageSelectLabelText|trans({'%pages%': totalPages}) }}</label>
+            {% include 'components/select.html.twig' with {
+                id: id ~ '-page-number',
+                name: 'offset',
+                label: null,
+                options: range(1, totalPages)|map(n => { value: (n - 1) * pageSize, label: n }),
+                value: (page - 1) * pageSize,
+                disabled: disabled or pageInputDisabled,
+                wrapper_class: '',
+                attributes: {
+                    class: 'select-input',
+                    title: pageText is not empty ? pageText|trans : page,
+                    'aria-label': pageSelectLabelText|trans({'%pages%': totalPages})
+                }
+            } only %}
+        </div>
+        {% if pageRangeText is not empty %}
+        <span class="pagination__text">{{ pageRangeText }}</span>
+        {% endif %}
+        <div class="pagination__control-buttons">
+                <div class="tooltip-trigger__wrapper">
+                    {% include 'components/button.html.twig' with {
+                        buttons: [
+                            ({
+                                label: 'marketplace.index.pagination.previous',
+                                variant: 'ghost',
+                                icon_only: true,
+                                icon: 'ri-arrow-left-s-fill ri-lg',
+                                attributes: (page <= 1 or disabled ? {
+                                    class: 'pagination__button pagination__button--backward pagination__button--no-index btn--disabled',
+                                    disabled: 'disabled',
+                                } : {
+                                    class: 'pagination__button pagination__button--backward',
+                                    'data-bs-toggle': 'tooltip',
+                                    'data-bs-placement': 'top',
+                                    'data-bs-title': 'marketplace.index.pagination.previous'|trans,
+                                })|merge({ id: id ~ '-backward' })|merge(page > 1 and not disabled and backwardHref != '' ? {} : { type: 'button' }),
+                            })|merge(page > 1 and not disabled and backwardHref != '' ? { href: backwardHref } : {}),
+                        ]
+                    } only %}
+                </div>
+                <div class="tooltip-trigger__wrapper">
+                    {% include 'components/button.html.twig' with {
+                        buttons: [
+                            ({
+                                label: 'marketplace.index.pagination.next',
+                                variant: 'ghost',
+                                icon_only: true,
+                                icon: 'ri-arrow-right-s-fill ri-lg',
+                                attributes: (page >= totalPages or disabled ? {
+                                    class: 'pagination__button pagination__button--forward btn--disabled',
+                                    disabled: 'disabled',
+                                } : {
+                                    class: 'pagination__button pagination__button--forward',
+                                    'data-bs-toggle': 'tooltip',
+                                    'data-bs-placement': 'top',
+                                    'data-bs-title': 'marketplace.index.pagination.next'|trans,
+                                })|merge({ id: id ~ '-forward' })|merge(page < totalPages and not disabled and forwardHref != '' ? {} : { type: 'button' }),
+                            })|merge(page < totalPages and not disabled and forwardHref != '' ? { href: forwardHref } : {}),
+                        ]
+                    } only %}
+                </div>
+        </div>
+    </div>
+</nav>
