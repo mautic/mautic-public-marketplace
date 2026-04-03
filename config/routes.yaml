@@ -23,3 +23,12 @@ review_api_submit:
     methods: [POST]
     requirements:
         package: .+
+
+package_submit:
+    path: /api/package/submit
+    controller: App\Controller\Api\SubmitApiController::submit
+    methods: [POST]
+
+publish_index:
+    path: /publish
+    controller: App\Controller\PublishController::index

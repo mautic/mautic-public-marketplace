@@ -44,18 +44,27 @@ final class SupabaseClient
      */
     public function mutate(string $method, string $path, array $body): void
     {
+        $this->mutateAndReturn($method, $path, $body);
+    }
+
+    /**
+     * @param array<string, mixed>  $body
+     * @param array<string, string> $extraHeaders
+     */
+    public function mutateAndReturn(string $method, string $path, array $body, array $extraHeaders = []): mixed
+    {
         $response = $this->httpClient->request($method, $this->baseUri.$path, [
             'json' => $body,
-            'headers' => [
+            'headers' => array_merge([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
                 'apikey' => $this->serviceRoleKey,
                 'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
                 'Prefer' => 'return=representation',
-            ],
+            ], $extraHeaders),
         ]);
 
-        $this->decodeResponse($response);
+        return $this->decodeResponse($response);
     }
 
     private function decodeResponse(ResponseInterface $response): mixed

@@ -36,3 +36,11 @@ when@test:
             autowire: true
             arguments:
                 $httpClient: '@App\Tests\Mock\SupabaseMockHttpClient'
+
+        App\Tests\Mock\ZipDownloadMockHttpClient:
+            class: App\Tests\Mock\ZipDownloadMockHttpClient
+
+        App\Marketplace\PackageSubmitService:
+            autowire: true
+            arguments:
+                $httpClient: '@App\Tests\Mock\ZipDownloadMockHttpClient'

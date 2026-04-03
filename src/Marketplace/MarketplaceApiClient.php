@@ -144,6 +144,68 @@ final class MarketplaceApiClient
         );
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getPackageByName(string $name): ?array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+            'name' => 'eq.'.$name,
+            'select' => '*',
+        ]);
+
+        if (!\is_array($data) || [] === $data) {
+            return null;
+        }
+
+        return $data[0] ?? null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    public function createPackage(array $data): array
+    {
+        $result = $this->supabaseClient->mutateAndReturn('POST', '/rest/v1/packages', $data);
+
+        return \is_array($result) ? ($result[0] ?? $result) : [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    public function updatePackage(string $name, array $data): array
+    {
+        $result = $this->supabaseClient->mutateAndReturn(
+            'PATCH',
+            '/rest/v1/packages?name=eq.'.urlencode($name),
+            $data,
+        );
+
+        return \is_array($result) ? ($result[0] ?? $result) : [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    public function upsertVersion(array $data): array
+    {
+        $result = $this->supabaseClient->mutateAndReturn(
+            'POST',
+            '/rest/v1/versions?on_conflict=package_name,version',
+            $data,
+            ['Prefer' => 'return=representation,resolution=merge-duplicates'],
+        );
+
+        return \is_array($result) ? ($result[0] ?? $result) : [];
+    }
+
     public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void
     {
         $this->supabaseClient->mutate('POST', '/rest/v1/reviews', [

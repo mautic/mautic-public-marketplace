@@ -16,6 +16,15 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
             }
 
+            if ('PATCH' === $method) {
+                return new MockResponse('[]', ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
+            // GET /rest/v1/packages?name=eq.xxx — package lookup by name
+            if (str_contains($url, '/rest/v1/packages') && str_contains($url, 'name=eq.')) {
+                return self::packageByNameResponse($url);
+            }
+
             if (str_contains($url, 'get_pack')) {
                 return self::packageDetailResponse($url);
             }
@@ -160,6 +169,36 @@ final class SupabaseMockHttpClient extends MockHttpClient
 
         return new MockResponse(
             json_encode($data),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    private static function packageByNameResponse(string $url): MockResponse
+    {
+        $params = self::parseQueryParams($url);
+        $nameFilter = $params['name'] ?? '';
+        $packageName = str_replace('eq.', '', $nameFilter);
+
+        $all = self::allPackages();
+
+        if (isset($all[$packageName])) {
+            $pkg = $all[$packageName];
+            $data = [[
+                'name' => $pkg['name'],
+                'displayname' => $pkg['displayname'],
+                'description' => $pkg['description'],
+                'type' => $pkg['type'],
+            ]];
+
+            return new MockResponse(
+                json_encode($data),
+                ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+            );
+        }
+
+        // Package not found — return empty array
+        return new MockResponse(
+            '[]',
             ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
         );
     }

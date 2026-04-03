@@ -3,3 +3,4 @@ import '@hotwired/turbo';
 import 'bootstrap';
 import './auth0-redirect.js';
 import './rating.js';
+import './publish.js';
