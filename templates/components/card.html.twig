@@ -21,7 +21,7 @@
 {% set common_image_content %}
     {% if image is defined and image is not null and image.src is defined and image.src is not empty %}
         <div class="card__image-wrapper d-flex {% if type == 'static' or type == 'default' %}ratio ratio-4x3{% endif %}">
-            <img class="image__img object-fit-cover" src="{{ asset(image.src) }}" alt="{{ image.alt|trans }}">
+            <img class="image__img object-fit-cover" src="{{ asset(image.src) }}" alt="{{ image.alt|default('')|trans }}">
         </div>
     {% endif %}
 {% endset %}
@@ -35,7 +35,16 @@
 {% set common_heading_content %}
     {% if heading is defined %}
         <div class="card__heading-wrapper">
-            <h3 class="card-heading {% if type == 'feature--large' %}type-fluid-heading-04{% else %}type-heading-0{{ type == 'link' ? '2' : '3' }}{% endif %} {% if type == 'feature--large' %}mb-32{% elseif type != 'pictogram' and type != 'link' %}mb-64{% endif %} text-break">{{ heading|trans }}</h3>
+            <h3 class="card-heading
+                {% if type == 'feature--large' %}
+                    type-fluid-heading-04 mb-32
+                {% else %}
+                    type-heading-0{{ type == 'link' ? '2' : '3' }}
+                    {% if type != 'pictogram' and type != 'link' %}
+                        mb-32
+                    {% endif %}
+                {% endif %}
+                text-break">{{ heading|trans }}</h3>
         </div>
     {% endif %}
 {% endset %}
@@ -189,11 +198,13 @@
                     {{ common_custom_content }}
                     {{ common_tags_content }}
                 </div>
+                {% if cta is defined or footerCopy is defined or icon is defined %}
                 <div class="card__footer">
                     {{ common_cta_copy_content }}
                     {{ common_footer_copy_content }}
                     {{ common_icon_content }}
                 </div>
+                {% endif %}
             </div>
         {% endset %}
         {% include 'components/tile.html.twig' with {

@@ -154,7 +154,7 @@
                     )
                     : 'marketplace.package.description.none'
             ),
-            image: item.bannerURL is defined and item.bannerURL is not null ? { src: item.bannerURL, alt: item.displayName ?: item.name } : null,
+            image: { src: (item.bannerURL is defined and item.bannerURL is not null) ? item.bannerURL : '/assets/images/package_placeholder.jpg' },
             href: path('marketplace_detail', { package: item.name }),
             attributes: {'data-turbo-frame': '_top'},
             customContent: customContent,
