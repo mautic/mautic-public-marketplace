@@ -6,6 +6,8 @@
 {% set wrapper_class = wrapper_class|default('') %}
 {% set attributes = attributes|default({}) %}
 {% set icon = icon|default(null) %}
+{% set help_text = help_text|default(null) %}
+{% set validation = validation|default({}) %}
 
 
 <div class="form-floating">
@@ -22,9 +24,10 @@
             disabled: disabled|default(false),
             required: required|default(false),
             multiple: multiple|default(false),
-            help_text: null,
+            help_text: help_text,
             wrapper_class: '',
-            attributes: attributes
+            attributes: attributes,
+            validation: validation
         } only %}
     {% else %}
         {% include 'components/form-control.html.twig' with {
@@ -42,9 +45,10 @@
             disabled: disabled|default(false),
             readonly: readonly|default(false),
             required: required|default(false),
-            help_text: null,
+            help_text: help_text,
             wrapper_class: '',
-            attributes: attributes
+            attributes: attributes,
+            validation: validation
         } only %}
     {% endif %}
 </div>
