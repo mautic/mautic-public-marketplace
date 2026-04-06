@@ -107,20 +107,20 @@
                 (<a href="#" id="auth0-logout-btn">{{ 'mautic.marketplace.detail.review_form.logout'|trans }}</a>)
             </p>
             <form id="review-form" class="review-form">
-                <div class="review-form__stars">
-                    <label>{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
-                    <div id="rating-stars" class="star-rating">
-                        <span class="star-icon" data-rating="1">&#9733;</span>
-                        <span class="star-icon" data-rating="2">&#9733;</span>
-                        <span class="star-icon" data-rating="3">&#9733;</span>
-                        <span class="star-icon" data-rating="4">&#9733;</span>
-                        <span class="star-icon" data-rating="5">&#9733;</span>
+                <div class="review-form__stars mt-32 mb-24">
+                    <label class="review-form__label type-label-01 text-secondary mb-8">{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
+                    <div id="rating-stars" class="review-form__star-rating ri-xl">
+                        <i class="ri-star-fill review-form__star-icon" data-rating="1"></i>
+                        <i class="ri-star-fill review-form__star-icon" data-rating="2"></i>
+                        <i class="ri-star-fill review-form__star-icon" data-rating="3"></i>
+                        <i class="ri-star-fill review-form__star-icon" data-rating="4"></i>
+                        <i class="ri-star-fill review-form__star-icon" data-rating="5"></i>
                     </div>
-                    <input type="hidden" id="rating" name="rating" value="0">
                 </div>
                 <div class="review-form__text">
                     <label for="review">{{ 'mautic.marketplace.detail.review_form.review'|trans }}</label>
                     <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="{{ 'mautic.marketplace.detail.review_form.review_placeholder'|trans }}"></textarea>
+                    <input type="hidden" id="rating" name="rating" value="0" class="review-form__rating-input">
                 </div>
                 {% include 'components/button.html.twig' with {
                     buttons: [{

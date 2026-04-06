@@ -84,7 +84,7 @@ function initRating() {
         await auth0Client.logout({ logoutParams: { returnTo: window.location.origin } });
     });
 
-    const stars = document.querySelectorAll('#rating-stars .star-icon');
+    const stars = document.querySelectorAll('#rating-stars .review-form__star-icon');
     const ratingInput = document.getElementById('rating');
 
     stars.forEach(function (star) {
@@ -107,9 +107,9 @@ function initRating() {
     function updateStars(rating) {
         stars.forEach(function (s, index) {
             if (index < rating) {
-                s.classList.add('star-active');
+                s.classList.add('review-form__star-icon--active');
             } else {
-                s.classList.remove('star-active');
+                s.classList.remove('review-form__star-icon--active');
             }
         });
     }
@@ -117,9 +117,9 @@ function initRating() {
     function highlightStars(rating) {
         stars.forEach(function (s, index) {
             if (index < rating) {
-                s.classList.add('star-hover');
+                s.classList.add('review-form__star-icon--hover');
             } else {
-                s.classList.remove('star-hover');
+                s.classList.remove('review-form__star-icon--hover');
             }
         });
     }
