@@ -89,9 +89,17 @@
         </div>
 
         <div id="auth-login" style="display:none">
-            <button type="button" id="auth0-login-btn" class="bx--btn bx--btn--primary">
-                {{ 'mautic.marketplace.detail.review_form.login'|trans }}
-            </button>
+            {% include 'components/button.html.twig' with {
+                buttons: [{
+                    label: 'mautic.marketplace.detail.review_form.login',
+                    variant: 'tertiary',
+                    icon: 'ri-login-box-line',
+                    attributes: {
+                        id: 'auth0-login-btn',
+                        type: 'button'
+                    }
+                }]
+            } only %}
         </div>
 
         <div id="auth-form" style="display:none">
@@ -114,7 +122,18 @@
                     <label for="review">{{ 'mautic.marketplace.detail.review_form.review'|trans }}</label>
                     <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="{{ 'mautic.marketplace.detail.review_form.review_placeholder'|trans }}"></textarea>
                 </div>
-                <button type="submit" id="submit-btn" class="bx--btn bx--btn--primary">{{ 'mautic.marketplace.detail.review_form.submit'|trans }}</button>
+                {% include 'components/button.html.twig' with {
+                    buttons: [{
+                        label: 'mautic.marketplace.detail.review_form.submit',
+                        variant: 'tertiary',
+                        size: 'sm',
+                        icon: 'ri-arrow-right-line',
+                        attributes: {
+                            id: 'submit-btn',
+                            type: 'submit'
+                        }
+                    }]
+                } only %}
             </form>
         </div>
 
