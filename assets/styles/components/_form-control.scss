@@ -1,3 +1,7 @@
 .form-control:hover {
     background-color: var(--field-hover);
 }
+
+.form-control {
+    border-bottom: 1px solid var(--border-strong);
+}
