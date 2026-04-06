@@ -90,3 +90,12 @@
         min-inline-size: unset;
     }
 }
+
+.review-form__star-icon {
+    cursor: pointer;
+    color: var(--text-placeholder);
+    transition: var(--transition-all-productive);
+}
+
+.review-form__star-icon--active { color: var(--bs-warning); }
+.review-form__star-icon--hover { color: var(--bs-warning); }
