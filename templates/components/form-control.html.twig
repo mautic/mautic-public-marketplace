@@ -17,11 +17,16 @@
 {% set attributes = attributes|default({}) %}
 {% set common_label_html %}
     {% if label %}
-    <label for="{{ id }}" class="form-label">
-        {% if icon %}
+    <label for="{{ id }}" class="form-label type-label-01">
+        {% if icon is defined and icon is not empty %}
         <i class="{{ icon }} me-4" aria-hidden="true"></i>
-    {% endif %}
-    {{ label|trans }}</label>
+        {% endif %}
+        {% if required %}
+            {{ 'mautic.marketplace.forms.field.required'|trans({'%fieldLabel%': label|trans}) }}
+        {% else %}
+            {{ label|trans }}
+        {% endif %}
+    </label>
     {% endif %}
 {% endset %}
 
@@ -50,7 +55,7 @@
             class="{{ input_class|trim }}"
             id="{{ id }}"
             name="{{ name }}"
-            {% if placeholder is not null %}placeholder="{{ placeholder|trans }}"{% endif %}
+            {% if placeholder is defined and placeholder is not empty %}placeholder="{{ placeholder|trans }}"{% endif %}
             {% if describedby is not empty %}aria-describedby="{{ describedby|join(' ') }}"{% endif %}
             {% if not plaintext %}rows="{{ rows }}"{% endif %}
             {% if disabled %}disabled{% endif %}
@@ -69,7 +74,7 @@
             id="{{ id }}"
             name="{{ name }}"
             {% if value is not same as(null) %}value="{{ value }}"{% endif %}
-            {% if placeholder is not null %}placeholder="{{ placeholder|trans }}"{% endif %}
+            {% if placeholder is defined and placeholder is not empty %}placeholder="{{ placeholder|trans }}"{% endif %}
             {% if describedby is not empty %}aria-describedby="{{ describedby|join(' ') }}"{% endif %}
             {% if disabled %}disabled{% endif %}
             {% if readonly %}readonly{% endif %}
