@@ -18,7 +18,14 @@
         {% set version_keys_sorted = package.versions ? (package.versions|keys|sort|reverse) : [] %}
         {% set latest_package_version = version_keys_sorted|length > 0 ? version_keys_sorted|first : null %}
         {% set latest_mautic_version = (latest_package_version and package.versions[latest_package_version].smv is defined) ? package.versions[latest_package_version].smv : null %}
-        {% set leadspace_tags = [{ label: type_label|trans, color: 'gray' }] %}
+        {% set leadspace_tags = [{
+            label: type_label|trans,
+            color: 'gray',
+            attributes: {
+                href: path('marketplace_index', { type: package.type }),
+                'data-turbo-frame': '_top'
+            }
+        }] %}
         {% if latest_mautic_version %}
             {% set leadspace_tags = leadspace_tags|merge([{ label: 'mautic.marketplace.detail.latest_mautic_supported'|trans({ '%version%': latest_mautic_version }), color: 'blue' }]) %}
         {% endif %}
