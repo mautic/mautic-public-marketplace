@@ -116,12 +116,20 @@
                         <i class="ri-star-fill review-form__star-icon" data-rating="4"></i>
                         <i class="ri-star-fill review-form__star-icon" data-rating="5"></i>
                     </div>
-                </div>
-                <div class="review-form__text">
-                    <label for="review">{{ 'mautic.marketplace.detail.review_form.review'|trans }}</label>
-                    <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="{{ 'mautic.marketplace.detail.review_form.review_placeholder'|trans }}"></textarea>
                     <input type="hidden" id="rating" name="rating" value="0" class="review-form__rating-input">
                 </div>
+
+                {% include 'components/form-control.html.twig' with {
+                    type: 'textarea',
+                    name: 'review',
+                    value: '',
+                    label: 'mautic.marketplace.detail.review_form.review',
+                    placeholder: 'mautic.marketplace.detail.review_form.review_placeholder',
+                    required: true,
+                    rows: 4,
+                    wrapper_class: 'review-form__text my-24',
+                } only %}
+
                 {% include 'components/button.html.twig' with {
                     buttons: [{
                         label: 'mautic.marketplace.detail.review_form.submit',
