@@ -84,14 +84,19 @@ function initRating() {
         await auth0Client.logout({ logoutParams: { returnTo: window.location.origin } });
     });
 
-    const stars = document.querySelectorAll('#rating-stars .review-form__star-icon');
+    const stars = document.querySelectorAll('#rating-stars [data-rating-option]');
     const ratingInput = document.getElementById('rating');
 
-    stars.forEach(function (star) {
+    function setRating(nextRating) {
+        ratingInput.value = String(nextRating);
+        updateStars(nextRating);
+        ratingInput.dispatchEvent(new Event('input', { bubbles: true }));
+        ratingInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    stars.forEach(function (star, index) {
         star.addEventListener('click', function () {
-            const rating = this.getAttribute('data-rating');
-            ratingInput.value = rating;
-            updateStars(rating);
+            setRating(this.getAttribute('data-rating'));
         });
 
         star.addEventListener('mouseenter', function () {
@@ -102,14 +107,55 @@ function initRating() {
         star.addEventListener('mouseleave', function () {
             highlightStars(ratingInput.value);
         });
+
+        star.addEventListener('keydown', function (event) {
+            const currentIndex = Number.parseInt(this.getAttribute('data-rating'), 10) - 1;
+
+            if (['ArrowLeft', 'ArrowDown'].includes(event.key)) {
+                event.preventDefault();
+                stars[Math.max(0, currentIndex - 1)]?.focus();
+                setRating(Math.max(1, currentIndex));
+            }
+
+            if (['ArrowRight', 'ArrowUp'].includes(event.key)) {
+                event.preventDefault();
+                stars[Math.min(stars.length - 1, currentIndex + 1)]?.focus();
+                setRating(Math.min(stars.length, currentIndex + 2));
+            }
+
+            if ('Home' === event.key) {
+                event.preventDefault();
+                stars[0]?.focus();
+                setRating(1);
+            }
+
+            if ('End' === event.key) {
+                event.preventDefault();
+                stars[stars.length - 1]?.focus();
+                setRating(stars.length);
+            }
+
+            if (['Enter', ' '].includes(event.key)) {
+                event.preventDefault();
+                setRating(this.getAttribute('data-rating'));
+            }
+        });
     });
 
     function updateStars(rating) {
+        const normalizedRating = Number.parseInt(rating, 10) || 0;
+
         stars.forEach(function (s, index) {
-            if (index < rating) {
-                s.classList.add('review-form__star-icon--active');
+            const isActive = index < normalizedRating;
+            const isSelected = index + 1 === normalizedRating;
+
+            s.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+            s.setAttribute('tabindex', index === Math.max(0, normalizedRating - 1) ? '0' : (0 === normalizedRating && 0 === index ? '0' : '-1'));
+
+            if (isActive) {
+                s.classList.add('review-form__star-button--active');
             } else {
-                s.classList.remove('review-form__star-icon--active');
+                s.classList.remove('review-form__star-button--active');
             }
         });
     }
@@ -117,28 +163,22 @@ function initRating() {
     function highlightStars(rating) {
         stars.forEach(function (s, index) {
             if (index < rating) {
-                s.classList.add('review-form__star-icon--hover');
+                s.classList.add('review-form__star-button--hover');
             } else {
-                s.classList.remove('review-form__star-icon--hover');
+                s.classList.remove('review-form__star-button--hover');
             }
         });
     }
 
     document.getElementById('review-form').addEventListener('submit', async function (e) {
+        if (e.defaultPrevented) {
+            return;
+        }
+
         e.preventDefault();
 
         const rating = parseInt(ratingInput.value);
         const review = document.getElementById('review').value;
-
-        if (rating < 1 || rating > 5) {
-            showError('Please select a rating between 1 and 5 stars.');
-            return;
-        }
-
-        if (!review.trim()) {
-            showError('Please write a review.');
-            return;
-        }
 
         try {
             submitBtn.disabled = true;
@@ -192,6 +232,7 @@ function initRating() {
         successEl.style.display = 'none';
     }
 
+    updateStars(ratingInput.value);
     initAuth0();
 }
 

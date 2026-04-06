@@ -83,6 +83,23 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorExists(sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
     }
 
+    public function testReviewFormRendersValidationMarkup(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/alpha-plugin');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form#review-form.needs-validation[novalidate]');
+        self::assertSelectorExists('#review-help[data-validation-help]');
+        self::assertSelectorExists('#review-feedback[data-validation-feedback]');
+        self::assertSelectorExists('#rating-feedback[data-validation-feedback]');
+
+        $reviewField = $client->getCrawler()->filter('#review');
+
+        self::assertSame('review-help', $reviewField->attr('aria-describedby'));
+        self::assertSame('review-feedback', $reviewField->attr('data-validation-feedback-id'));
+    }
+
     public function testFilterByResourceType(): void
     {
         $client = self::createClient();
@@ -108,6 +125,19 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertContains('Plugin (2)', $labels);
         self::assertContains('Theme (1)', $labels);
         self::assertSame('', $allTypesValue);
+    }
+
+    public function testGroupedFilterControlsRenderSharedValidationFeedback(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+
+        $typeGroup = $client->getCrawler()->filter('fieldset[data-validation-group][data-validation-name="type"]');
+
+        self::assertSame(1, $typeGroup->count());
+        self::assertSame(1, $typeGroup->filter('[data-validation-feedback]')->count());
     }
 
     public function testTypeCountsAreCustomizedBySearch(): void
