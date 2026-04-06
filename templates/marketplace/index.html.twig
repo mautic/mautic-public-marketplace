@@ -25,63 +25,43 @@
     <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true" data-turbo-frame="package-results">
         <div class="row mt-12 mb-32">
             <div class="col-12 col-lg-3 order-2 order-lg-1 mt-24 mt-lg-0">
-                <div class="type-heading-01 my-16 px-16">{{ 'marketplace.index.filters.heading'|trans }}</div>
-                {% set typeAccordionContent %}
-                    {% set allTypesCount = (type_counts['mautic-plugin'] ?? 0) + (type_counts['mautic-theme'] ?? 0) + (type_counts['mautic-resource'] ?? 0) %}
-                    {% include 'components/radio.html.twig' with {
-                        name: 'type',
-                        items: [
-                            { value: '', label: 'marketplace.index.filters.type.all_count'|trans({'%count%': allTypesCount}), checked: (filters.type ?? '') == '' },
-                            { value: 'mautic-plugin', label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-plugin' },
-                            { value: 'mautic-theme', label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-theme' },
-                            { value: 'mautic-resource', label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), checked: (filters.type ?? '') == 'mautic-resource' }
-                        ]
-                    } only %}
-                {% endset %}
-                {% set mauticAccordionContent %}
+                {% set allTypesCount = (type_counts['mautic-plugin'] ?? 0) + (type_counts['mautic-theme'] ?? 0) + (type_counts['mautic-resource'] ?? 0) %}
+                {% set compatibilityFilterContent %}
                     <div class="form-group">
                         <input class="form-control" id="mautic" name="mautic" type="text" value="{{ filters.mautic ?? '' }}" placeholder="{{ 'marketplace.index.filters.mautic.placeholder'|trans }}">
                     </div>
                 {% endset %}
-
-                {% set dateRangeAccordionContent %}
-                    {% include 'components/select.html.twig' with {
-                        id: 'date_range',
-                        name: 'date_range',
-                        value: filters.date_range ?? '',
-                        placeholder: 'marketplace.index.filters.date_range.all',
-                        options: [
-                            { value: '7d', label: 'marketplace.index.filters.date_range.7d' },
-                            { value: '30d', label: 'marketplace.index.filters.date_range.30d' },
-                            { value: '90d', label: 'marketplace.index.filters.date_range.90d' },
-                            { value: '365d', label: 'marketplace.index.filters.date_range.365d' }
-                        ]
-                    } only %}
-                {% endset %}
-                <div class="mb-16">
-                    {% include 'components/accordion.html.twig' with {
-                        items: [
-                            {
-                                id: 'marketplace_filter_type',
-                                title: 'marketplace.index.filters.type.label',
-                                content: typeAccordionContent,
-                                padding_inline: false
-                            },
-                            {
-                                id: 'marketplace_filter_mautic',
-                                title: 'marketplace.index.filters.mautic.label',
-                                content: mauticAccordionContent,
-                                padding_inline: false
-                            },
-                            {
-                                id: 'marketplace_filter_date_range',
-                                title: 'marketplace.index.filters.date_range.label',
-                                content: dateRangeAccordionContent,
-                                padding_inline: false
-                            }
-                        ]
-                    } only %}
-                </div>
+                {% include 'components/filter-panel.html.twig' with {
+                    heading: 'marketplace.index.filters.heading',
+                    filterCutoff: 5,
+                    filterGroups: [
+                        {
+                            title: 'marketplace.index.filters.type.label',
+                            filterGroupItemsType: 'select',
+                            filterGroupItems: [
+                                { label: 'marketplace.index.filters.type.all_count'|trans({'%count%': allTypesCount}), value: '', checked: (filters.type ?? '') == '' },
+                                { label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), value: 'mautic-plugin', checked: (filters.type ?? '') == 'mautic-plugin' },
+                                { label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), value: 'mautic-theme', checked: (filters.type ?? '') == 'mautic-theme' },
+                                { label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), value: 'mautic-resource', checked: (filters.type ?? '') == 'mautic-resource' }
+                            ]
+                        },
+                        {
+                            title: 'marketplace.index.filters.compatibility.label',
+                            filterGroupItemsType: 'custom',
+                            filterGroupItems: compatibilityFilterContent
+                        },
+                        {
+                            title: 'marketplace.index.filters.date_range.label',
+                            filterGroupItemsType: 'select',
+                            filterGroupItems: [
+                                { label: 'marketplace.index.filters.date_range.7d', value: '7d', checked: (filters.date_range ?? '') == '7d' },
+                                { label: 'marketplace.index.filters.date_range.30d', value: '30d', checked: (filters.date_range ?? '') == '30d' },
+                                { label: 'marketplace.index.filters.date_range.90d', value: '90d', checked: (filters.date_range ?? '') == '90d' },
+                                { label: 'marketplace.index.filters.date_range.365d', value: '365d', checked: (filters.date_range ?? '') == '365d' }
+                            ]
+                        }
+                    ]
+                } only %}
                 <input type="hidden" name="orderby" value="{{ orderby }}">
                 <input type="hidden" name="orderdir" value="{{ orderdir }}">
                 {% if marketplace_total_pages <= 1 %}
