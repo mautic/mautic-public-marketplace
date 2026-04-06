@@ -103,21 +103,53 @@
         </div>
 
         <div id="auth-form" style="display:none">
-            <p class="muted">{{ 'mautic.marketplace.detail.review_form.logged_in_as'|trans }} <strong id="auth-user-name"></strong>
-                (<a href="#" id="auth0-logout-btn">{{ 'mautic.marketplace.detail.review_form.logout'|trans }}</a>)
-            </p>
-            <form id="review-form" class="review-form">
-                <div class="review-form__stars mt-32 mb-24">
-                    <label class="review-form__label type-label-01 text-secondary mb-8">{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
-                    <div id="rating-stars" class="review-form__star-rating ri-xl">
-                        <i class="ri-star-fill review-form__star-icon" data-rating="1"></i>
-                        <i class="ri-star-fill review-form__star-icon" data-rating="2"></i>
-                        <i class="ri-star-fill review-form__star-icon" data-rating="3"></i>
-                        <i class="ri-star-fill review-form__star-icon" data-rating="4"></i>
-                        <i class="ri-star-fill review-form__star-icon" data-rating="5"></i>
+            {% include 'components/tags.html.twig' with {
+                tags: [{
+                    label: 'mautic.marketplace.detail.review_form.logout_with_username'|trans({
+                        '%username%': '<strong id="auth-user-name"></strong>'
+                    }),
+                    type: 'read-only',
+                    color: 'gray',
+                    attributes: {
+                        id: 'auth0-logout-btn',
+                        href: '#'
+                    }
+                }]
+            } only %}
+            <form id="review-form" class="review-form needs-validation" novalidate>
                 <div
+                    class="review-form__stars mt-32 mb-24"
+                    data-validation-group="true"
+                    data-validation-name="rating"
+                    data-validation-type="custom"
+                    data-validation-label="{{ 'mautic.marketplace.detail.review_form.rating'|trans }}"
+                    data-validation-rules="{{ ['ratingSelected']|json_encode|e('html_attr') }}"
+                    data-validation-messages="{{ {
+                        ratingSelected: 'mautic.marketplace.detail.review_form.rating_required'|trans
+                    }|json_encode|e('html_attr') }}"
+                    data-validation-feedback-id="rating-feedback"
+                    data-validation-focus-selector="#rating-option-1"
+                >
+                    <label id="rating-label" class="review-form__label type-label-01 text-secondary mb-8">{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
+                    <div id="rating-stars" class="review-form__star-rating ri-xl" role="radiogroup" aria-labelledby="rating-label" tabindex="-1">
+                        {% for rating in 1..5 %}
+                            <button
+                                type="button"
+                                class="review-form__star-button"
+                                id="rating-option-{{ rating }}"
+                                role="radio"
+                                aria-checked="false"
+                                aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': rating }) }}"
+                                data-rating-option
+                                data-rating="{{ rating }}"
+                                tabindex="{{ loop.first ? '0' : '-1' }}"
+                            >
+                                <i class="ri-star-fill review-form__star-icon" aria-hidden="true"></i>
+                            </button>
+                        {% endfor %}
                     </div>
                     <input type="hidden" id="rating" name="rating" value="0" class="review-form__rating-input">
+                    <div id="rating-feedback" class="invalid-feedback" data-validation-feedback hidden aria-live="polite"></div>
                 </div>
 
                 {% include 'components/form-control.html.twig' with {
@@ -126,9 +158,17 @@
                     value: '',
                     label: 'mautic.marketplace.detail.review_form.review',
                     placeholder: 'mautic.marketplace.detail.review_form.review_placeholder',
+                    help_text: 'mautic.marketplace.detail.review_form.review_help',
                     required: true,
                     rows: 4,
                     wrapper_class: 'review-form__text my-24',
+                    validation: {
+                        rules: ['notBlank', 'maxWords(200)'],
+                        messages: {
+                            notBlank: 'mautic.marketplace.detail.review_form.review_required'|trans,
+                            maxWords: 'mautic.marketplace.detail.review_form.review_word_limit'|trans({'%count%': 200}),
+                        }
+                    }
                 } only %}
 
                 {% include 'components/button.html.twig' with {
