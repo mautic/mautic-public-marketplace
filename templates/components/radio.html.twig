@@ -1,14 +1,14 @@
 {% set items = items|default([]) %}
 {% set name = name|default('radio') %}
 {% set legend = legend|default(null) %}
-{% set help_text = help_text|default(null) %}
-{% set wrapper_class = wrapper_class|default('') %}
+{% set helpText = helpText|default(null) %}
+{% set wrapperClass = wrapperClass|default('') %}
 {% set inline = inline|default(false) %}
 {% set reverse = reverse|default(false) %}
 {% set required = required|default(false) %}
 {% set validation = validation|default({}) %}
 {% set base_id = name|replace({'[': '-', ']': '', ' ': '-', '.': '-'}) %}
-{% set help_id = help_text ? base_id ~ '-help' : null %}
+{% set help_id = helpText ? base_id ~ '-help' : null %}
 {% set feedback_id = base_id ~ '-feedback' %}
 {% set validation_label = validation.label|default(legend ? legend|trans : name) %}
 {% set validation_rules = validation.rules|default([]) %}
@@ -17,7 +17,7 @@
 }|merge(validation.messages|default({})) %}
 
 <fieldset
-    class="{{ [wrapper_class, 'border-0', 'p-0', 'm-0']|filter(value => value is not empty)|join(' ') }}"
+    class="{{ [wrapperClass, 'border-0', 'p-0', 'm-0']|filter(value => value is not empty)|join(' ') }}"
     data-validation-group="true"
     data-validation-name="{{ name }}"
     data-validation-type="radio"
@@ -71,8 +71,8 @@
         </div>
     {% endfor %}
 
-    {% if help_text %}
-        <div id="{{ help_id }}" class="form-text" data-validation-help>{{ help_text|trans }}</div>
+    {% if helpText %}
+        <div id="{{ help_id }}" class="form-text" data-validation-help>{{ helpText|trans }}</div>
     {% endif %}
 
     <div id="{{ feedback_id }}" class="invalid-feedback" data-validation-feedback hidden aria-live="polite"></div>

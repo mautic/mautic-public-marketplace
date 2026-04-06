@@ -3,10 +3,10 @@
 {% set id = id|default(name|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
 {% set label = label|default('') %}
 {% set placeholder = placeholder|default(label) %}
-{% set wrapper_class = wrapper_class|default('') %}
+{% set wrapperClass = wrapperClass|default('') %}
 {% set attributes = attributes|default({}) %}
 {% set icon = icon|default(null) %}
-{% set help_text = help_text|default(null) %}
+{% set helpText = helpText|default(null) %}
 {% set validation = validation|default({}) %}
 
 
@@ -16,7 +16,7 @@
             id: id,
             name: name,
             label: label,
-            label_position: 'bottom',
+            labelPosition: 'bottom',
             icon: icon,
             size: size|default(null),
             options: options|default([]),
@@ -24,8 +24,8 @@
             disabled: disabled|default(false),
             required: required|default(false),
             multiple: multiple|default(false),
-            help_text: help_text,
-            wrapper_class: '',
+            helpText: helpText,
+            wrapperClass: '',
             attributes: attributes,
             validation: validation
         } only %}
@@ -35,7 +35,7 @@
             name: name,
             type: type|default('text'),
             label: label,
-            label_position: 'bottom',
+            labelPosition: 'bottom',
             icon: icon,
             value: value|default(''),
             placeholder: placeholder,
@@ -45,8 +45,8 @@
             disabled: disabled|default(false),
             readonly: readonly|default(false),
             required: required|default(false),
-            help_text: help_text,
-            wrapper_class: '',
+            helpText: helpText,
+            wrapperClass: '',
             attributes: attributes,
             validation: validation
         } only %}

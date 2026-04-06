@@ -1,18 +1,18 @@
 {% set name = name|default('select') %}
 {% set id = id|default(name|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
 {% set label = label|default(null) %}
-{% set label_position = label_position|default('top') %}
+{% set labelPosition = labelPosition|default('top') %}
 {% set options = options|default([]) %}
 {% set value = value|default(null) %}
-{% set help_text = help_text|default(null) %}
-{% set help_id = help_id|default(help_text ? id ~ '-help' : null) %}
+{% set helpText = helpText|default(null) %}
+{% set help_id = help_id|default(helpText ? id ~ '-help' : null) %}
 {% set feedback_id = feedback_id|default(id ~ '-feedback') %}
 {% set render_feedback = render_feedback|default(true) %}
 {% set size = size|default(null) %}
 {% set disabled = disabled|default(false) %}
 {% set required = required|default(false) %}
 {% set multiple = multiple|default(false) %}
-{% set wrapper_class = wrapper_class|default('') %}
+{% set wrapperClass = wrapperClass|default('') %}
 {% set describedby = describedby|default([]) %}
 {% set attributes = attributes|default({}) %}
 {% set icon = icon|default(null) %}
@@ -55,11 +55,11 @@
 
 {% set describedby_default = describedby|join(' ') %}
 
-{% if wrapper_class is defined and wrapper_class is not empty %}
-<div class="{{ wrapper_class }}">
+{% if wrapperClass is defined and wrapperClass is not empty %}
+<div class="{{ wrapperClass }}">
 {% endif %}
 
-    {% if label_position == 'top' %}
+    {% if labelPosition == 'top' %}
         {{ common_label_html }}
     {% endif %}
 
@@ -104,17 +104,17 @@
         {% endfor %}
     </select>
 
-    {% if label_position == 'bottom' %}
+    {% if labelPosition == 'bottom' %}
         {{ common_label_html }}
     {% endif %}
 
-    {% if help_text %}
-        <div id="{{ help_id }}" class="form-text" data-validation-help>{{ help_text|trans }}</div>
+    {% if helpText %}
+        <div id="{{ help_id }}" class="form-text" data-validation-help>{{ helpText|trans }}</div>
     {% endif %}
 
     {% if render_feedback %}
         <div id="{{ feedback_id }}" class="invalid-feedback" data-validation-feedback hidden aria-live="polite"></div>
     {% endif %}
-{% if wrapper_class is defined and wrapper_class is not empty %}
+{% if wrapperClass is defined and wrapperClass is not empty %}
 </div>
 {% endif %}
