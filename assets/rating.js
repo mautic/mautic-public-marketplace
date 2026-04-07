@@ -17,10 +17,18 @@ function initRating() {
     const loadingEl = document.getElementById('auth-loading');
     const loginEl = document.getElementById('auth-login');
     const formEl = document.getElementById('auth-form');
+    const loginBtn = document.getElementById('auth0-login-btn');
+    const logoutBtn = document.getElementById('auth0-logout-btn');
     const userNameEl = document.getElementById('auth-user-name');
     const errorEl = document.getElementById('review-error');
     const successEl = document.getElementById('review-success');
     const submitBtn = document.getElementById('submit-btn');
+
+    function setDisplay(element, value) {
+        if (element) {
+            element.style.display = value;
+        }
+    }
 
     async function initAuth0() {
         try {
@@ -42,28 +50,30 @@ function initRating() {
         } catch (e) {
             console.error('Auth0 init error:', e);
             showError('Failed to initialize authentication.');
-            loadingEl.style.display = 'none';
-            loginEl.style.display = 'block';
+            setDisplay(loadingEl, 'none');
+            setDisplay(loginEl, 'block');
         }
     }
 
     async function updateUI() {
-        loadingEl.style.display = 'none';
+        setDisplay(loadingEl, 'none');
 
         const isAuthenticated = await auth0Client.isAuthenticated();
 
         if (isAuthenticated) {
             const user = await auth0Client.getUser();
-            userNameEl.textContent = user.name || user.email;
-            loginEl.style.display = 'none';
-            formEl.style.display = 'block';
+            if (userNameEl) {
+                userNameEl.textContent = user.name || user.email;
+            }
+            setDisplay(loginEl, 'none');
+            setDisplay(formEl, 'block');
         } else {
-            loginEl.style.display = 'block';
-            formEl.style.display = 'none';
+            setDisplay(loginEl, 'block');
+            setDisplay(formEl, 'none');
         }
     }
 
-    document.getElementById('auth0-login-btn').addEventListener('click', async function () {
+    loginBtn?.addEventListener('click', async function () {
         try {
             await auth0Client.loginWithRedirect({
                 authorizationParams: {
@@ -79,7 +89,7 @@ function initRating() {
         }
     });
 
-    document.getElementById('auth0-logout-btn').addEventListener('click', async function (e) {
+    logoutBtn?.addEventListener('click', async function (e) {
         e.preventDefault();
         await auth0Client.logout({ logoutParams: { returnTo: window.location.origin } });
     });
@@ -216,20 +226,24 @@ function initRating() {
     });
 
     function showError(msg) {
-        errorEl.textContent = msg;
-        errorEl.style.display = 'block';
-        successEl.style.display = 'none';
+        if (errorEl) {
+            errorEl.textContent = msg;
+        }
+        setDisplay(errorEl, 'block');
+        setDisplay(successEl, 'none');
     }
 
     function showSuccess(msg) {
-        successEl.textContent = msg;
-        successEl.style.display = 'block';
-        errorEl.style.display = 'none';
+        if (successEl) {
+            successEl.textContent = msg;
+        }
+        setDisplay(successEl, 'block');
+        setDisplay(errorEl, 'none');
     }
 
     function hideMessages() {
-        errorEl.style.display = 'none';
-        successEl.style.display = 'none';
+        setDisplay(errorEl, 'none');
+        setDisplay(successEl, 'none');
     }
 
     updateStars(ratingInput.value);

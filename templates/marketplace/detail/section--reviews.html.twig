@@ -103,22 +103,9 @@
         </div>
 
         <div id="auth-form" style="display:none">
-            {% include 'components/tags.html.twig' with {
-                tags: [{
-                    label: 'mautic.marketplace.detail.review_form.logout_with_username'|trans({
-                        '%username%': '<strong id="auth-user-name"></strong>'
-                    }),
-                    type: 'read-only',
-                    color: 'gray',
-                    attributes: {
-                        id: 'auth0-logout-btn',
-                        href: '#'
-                    }
-                }]
-            } only %}
             <form id="review-form" class="review-form needs-validation" novalidate>
                 <div
-                    class="review-form__stars mt-32 mb-24"
+                    class="review-form__stars mb-24"
                     data-validation-group="true"
                     data-validation-name="rating"
                     data-validation-type="custom"
@@ -162,11 +149,14 @@
                     required: true,
                     rows: 4,
                     wrapperClass: 'review-form__text my-24',
+                    attributes: {
+                        minlength: 50
+                    },
                     validation: {
-                        rules: ['notBlank', 'maxWords(200)'],
+                        rules: ['notBlank'],
                         messages: {
                             notBlank: 'mautic.marketplace.detail.review_form.review_required'|trans,
-                            maxWords: 'mautic.marketplace.detail.review_form.review_word_limit'|trans({'%count%': 200}),
+                            tooShort: 'mautic.marketplace.detail.review_form.review_min_length'|trans({'%count%': 50}),
                         }
                     }
                 } only %}
