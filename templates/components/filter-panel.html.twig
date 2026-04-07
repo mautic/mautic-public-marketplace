@@ -1,0 +1,132 @@
+{% macro generate_id(string) -%}
+    {{- string|lower|replace({
+        ' ': '-',
+        '.': '-',
+        '_': '-',
+        '[': '-',
+        ']': '',
+        '(': '',
+        ')': '',
+        '/': '-'
+    })|trim('-') -}}
+{%- endmacro %}
+
+{% macro generate_name(string) -%}
+    {% set parts = string|split('.') %}
+    {% set candidate = parts|last %}
+
+    {% if candidate in ['label', 'heading', 'title'] and parts|length > 1 %}
+        {% set candidate = parts|slice(-2, 1)|first %}
+    {% endif %}
+
+    {{- candidate|replace({
+        ' ': '_',
+        '-': '_'
+    })|lower -}}
+{%- endmacro %}
+
+{% import _self as filterPanel %}
+
+{% set heading = heading|default('marketplace.index.filters.heading') %}
+{% set filterCutoff = filterCutoff|default(0) %}
+{% set filterGroups = filterGroups|default([]) %}
+{% set accordionItems = [] %}
+
+{% for filterGroup in filterGroups %}
+    {% set groupTitle = filterGroup.title|default('') %}
+    {% set groupId = filterPanel.generate_id(groupTitle ?: 'filter-group-' ~ loop.index)|trim %}
+    {% set filterGroupItemsType = filterGroup.filterGroupItemsType|default('checkbox') %}
+    {% set filterGroupItems = filterGroup.filterGroupItems|default(filterGroup.content|default([])) %}
+    {% set groupNameBase = filterPanel.generate_name(groupTitle ?: 'filter_group_' ~ loop.index)|trim %}
+    {% set groupName = groupNameBase ~ (filterGroupItemsType == 'checkbox' ? '[]' : '') %}
+    {% set visibleItems = filterGroupItemsType == 'custom' ? filterGroupItems : (filterCutoff > 0 ? filterGroupItems|slice(0, filterCutoff) : filterGroupItems) %}
+    {% set hiddenItems = filterGroupItemsType == 'custom' ? [] : (filterCutoff > 0 ? filterGroupItems|slice(filterCutoff) : []) %}
+    {% set hiddenPanelId = groupId ~ '-all' %}
+
+    {% set filterGroupContent %}
+    <div class="mt-8 mb-12 filter-panel--group">
+        {% if filterGroupItemsType == 'custom' %}
+            {{ filterGroupItems|raw }}
+        {% elseif filterGroupItemsType == 'select' %}
+            {% include 'components/radio.html.twig' with {
+                name: groupName,
+                items: visibleItems
+            } only %}
+        {% else %}
+            {% include 'components/checkbox.html.twig' with {
+                name: groupName,
+                items: visibleItems
+            } only %}
+        {% endif %}
+
+        {% if hiddenItems is not empty %}
+            <div class="collapse" id="{{ hiddenPanelId }}">
+                {% if filterGroupItemsType == 'select' %}
+                    {% include 'components/radio.html.twig' with {
+                        name: groupName,
+                        items: hiddenItems
+                    } only %}
+                {% else %}
+                    {% include 'components/checkbox.html.twig' with {
+                        name: groupName,
+                        items: hiddenItems
+                    } only %}
+                {% endif %}
+            </div>
+
+            <div
+                class="px-16 mt-8"
+                data-view-all-toggle
+                data-view-all-target="{{ hiddenPanelId }}"
+            >
+                {% include 'components/link.html.twig' with {
+                    label: viewAllText|default('marketplace.index.filters.view_all')|trans,
+                    href: '#' ~ hiddenPanelId,
+                    attributes: {
+                        'data-bs-toggle': 'collapse',
+                        'aria-expanded': 'false',
+                        'aria-controls': hiddenPanelId
+                    }
+                } only %}
+            </div>
+        {% endif %}
+    </div>
+    {% endset %}
+
+    {% set accordionItems = accordionItems|merge([
+        {
+            id: groupId,
+            title: groupTitle,
+            content: filterGroupContent,
+            padding_inline: filterGroupItemsType in ['select', 'custom'] ? false : true,
+        }
+    ]) %}
+{% endfor %}
+
+{% set tileContent %}
+    <div id="filters-applied" class="mb-16 px-16" hidden aria-live="polite"></div>
+    <div class="d-flex justify-content-between align-items-center mb-16 px-16">
+        <div class="type-heading-01">{{ heading|trans }}</div>
+        <div hidden data-clear-filters-wrapper>
+            {% include 'components/link.html.twig' with {
+                label: 'marketplace.index.filters.clear',
+                renderIcon: 'ri-restart-line',
+                size: 'sm',
+                attributes: {
+                    type: 'button',
+                    'data-clear-filters': 'true'
+                }
+            } only %}
+        </div>
+    </div>
+    {% if accordionItems is not empty %}
+        {% include 'components/accordion.html.twig' with {
+            items: accordionItems
+        } only %}
+    {% endif %}
+{% endset %}
+
+{% include 'components/tile.html.twig' with {
+    content: tileContent,
+    className: 'px-0'
+} only %}

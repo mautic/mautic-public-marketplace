@@ -7,6 +7,9 @@ function initMarketplaceForm() {
     const searchInput = form.querySelector('input[name="query"]');
     const mauticInput = form.querySelector('input[name="mautic"]');
     const changeInputs = form.querySelectorAll('select, input[type="radio"], input[type="checkbox"]');
+    const appliedFiltersContainer = form.querySelector('#filters-applied');
+    const clearFiltersWrapper = form.querySelector('[data-clear-filters-wrapper]');
+    const clearFiltersButton = form.querySelector('[data-clear-filters]');
     const focusKey = 'marketplace:focus';
     const scrollKey = 'marketplace:scroll';
 
@@ -22,6 +25,107 @@ function initMarketplaceForm() {
             sessionStorage.setItem(scrollKey, String(window.scrollY));
             form.requestSubmit();
         }
+    };
+    const escapeHtml = (value) => value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    const getResetRadio = (input) => {
+        if (!input || input.type !== 'radio') {
+            return null;
+        }
+
+        return form.querySelector(`input[type="radio"][name="${CSS.escape(input.name)}"][value=""]`);
+    };
+    const syncClearFiltersButton = (hasAppliedTags) => {
+        if (!clearFiltersWrapper || !clearFiltersButton) {
+            return;
+        }
+
+        clearFiltersWrapper.hidden = !hasAppliedTags;
+        clearFiltersWrapper.setAttribute('aria-hidden', hasAppliedTags ? 'false' : 'true');
+    };
+    const renderAppliedFilters = () => {
+        if (!appliedFiltersContainer) {
+            return;
+        }
+
+        const tags = [];
+
+        changeInputs.forEach((input) => {
+            if (!input.checked || input.value === '') {
+                return;
+            }
+
+            const label = form.querySelector(`label[for="${CSS.escape(input.id)}"]`);
+            if (!label) {
+                return;
+            }
+
+            tags.push(`
+                <div class="label label-primary" aria-label="${escapeHtml(label.textContent.trim())}" size="md">
+                    <span aria-hidden="true">${escapeHtml(label.textContent.trim())}</span>
+                    <button type="button" class="label-close" aria-label="Dismiss" title="Dismiss" data-filter-dismiss="${escapeHtml(input.id)}">
+                        <i class="ri-close-line" aria-hidden="true" focusable="false"></i>
+                    </button>
+                </div>
+            `);
+        });
+
+        appliedFiltersContainer.hidden = tags.length === 0;
+        appliedFiltersContainer.innerHTML = tags.join('');
+        syncClearFiltersButton(tags.length > 0);
+    };
+    const dismissFilter = (inputId) => {
+        const input = form.querySelector(`#${CSS.escape(inputId)}`);
+        if (!input) {
+            return;
+        }
+
+        if (input.type === 'checkbox') {
+            input.checked = false;
+        } else if (input.type === 'radio') {
+            const resetRadio = getResetRadio(input);
+            if (resetRadio) {
+                resetRadio.checked = true;
+            } else {
+                input.checked = false;
+            }
+        }
+
+        renderAppliedFilters();
+        submitForm(input);
+    };
+    const clearAllFilters = () => {
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        if (mauticInput) {
+            mauticInput.value = '';
+        }
+
+        changeInputs.forEach((input) => {
+            if (input.tagName === 'SELECT') {
+                const emptyOption = input.querySelector('option[value=""]');
+                input.value = emptyOption ? '' : (input.options[0]?.value ?? '');
+                return;
+            }
+
+            if (input.type === 'checkbox') {
+                input.checked = false;
+                return;
+            }
+
+            if (input.type === 'radio') {
+                input.checked = false;
+            }
+        });
+
+        renderAppliedFilters();
+        submitForm(searchInput || mauticInput || null);
     };
 
     if (searchInput) {
@@ -39,8 +143,30 @@ function initMarketplaceForm() {
     }
 
     changeInputs.forEach((input) => {
-        input.addEventListener('change', () => submitForm(input));
+        input.addEventListener('change', () => {
+            renderAppliedFilters();
+            submitForm(input);
+        });
     });
+
+    if (appliedFiltersContainer && !appliedFiltersContainer.dataset.dismissBound) {
+        appliedFiltersContainer.dataset.dismissBound = 'true';
+        appliedFiltersContainer.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-filter-dismiss]');
+            if (!button) {
+                return;
+            }
+
+            dismissFilter(button.dataset.filterDismiss);
+        });
+    }
+
+    if (clearFiltersButton && clearFiltersButton.dataset.clearFiltersBound !== 'true') {
+        clearFiltersButton.dataset.clearFiltersBound = 'true';
+        clearFiltersButton.addEventListener('click', () => {
+            clearAllFilters();
+        });
+    }
 
     try {
         const saved = sessionStorage.getItem(focusKey);
@@ -72,6 +198,49 @@ function initMarketplaceForm() {
     } catch (e) {
         sessionStorage.removeItem(scrollKey);
     }
+
+    renderAppliedFilters();
+}
+
+function initFilterPanelToggles() {
+    if (!window.bootstrap || !window.bootstrap.Collapse) {
+        return;
+    }
+
+    document.querySelectorAll('[data-view-all-toggle]').forEach((toggleWrapper) => {
+        if (toggleWrapper.dataset.viewAllBound === 'true') {
+            return;
+        }
+
+        const targetId = toggleWrapper.dataset.viewAllTarget;
+        if (!targetId) {
+            return;
+        }
+
+        const collapsePanel = document.getElementById(targetId);
+        if (!collapsePanel) {
+            return;
+        }
+
+        const toggleButton = toggleWrapper.querySelector('[data-bs-toggle="collapse"]');
+        const setVisibility = (isExpanded) => {
+            toggleWrapper.hidden = isExpanded;
+            toggleWrapper.setAttribute('aria-hidden', isExpanded ? 'true' : 'false');
+        };
+        const syncVisibility = () => {
+            setVisibility(collapsePanel.classList.contains('show'));
+        };
+
+        toggleWrapper.dataset.viewAllBound = 'true';
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => {
+                setVisibility(true);
+            });
+        }
+        collapsePanel.addEventListener('shown.bs.collapse', syncVisibility);
+        collapsePanel.addEventListener('hidden.bs.collapse', syncVisibility);
+        syncVisibility();
+    });
 }
 
 function initTooltips() {
@@ -88,5 +257,6 @@ function initTooltips() {
 
 document.addEventListener('turbo:load', () => {
     initMarketplaceForm();
+    initFilterPanelToggles();
     initTooltips();
 });
