@@ -1,5 +1,5 @@
 -- Drop the old 9-parameter version so PostgREST only exposes the array-based signature.
-DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS get_view;
 
 CREATE OR REPLACE FUNCTION get_view(
     _limit INT,

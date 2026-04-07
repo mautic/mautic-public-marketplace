@@ -58,7 +58,7 @@ final class MarketplaceApiClient
         }
 
         if ([] !== $mauticVersions) {
-            $params['_smv'] = array_values(array_filter($mauticVersions, static fn (mixed $version): bool => \is_string($version) && '' !== $version));
+            $params['_smv'] = $mauticVersions;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
