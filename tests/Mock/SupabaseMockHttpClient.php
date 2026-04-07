@@ -247,7 +247,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     private static function parseParams(string $url, string $method, array $options): array
     {
