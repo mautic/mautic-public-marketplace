@@ -19,7 +19,14 @@
         {% set latest_package_version = version_keys_sorted|length > 0 ? version_keys_sorted|first : null %}
         {% set latest_mautic_version = (latest_package_version and package.versions[latest_package_version].smv is defined) ? package.versions[latest_package_version].smv : null %}
         {% set latest_mautic_tags = latest_mautic_version ? latest_mautic_version|mautic_version_tag_data : [] %}
-        {% set leadspace_tags = [{ label: type_label|trans, color: 'gray' }] %}
+        {% set leadspace_tags = [{
+            label: type_label|trans,
+            color: 'gray',
+            attributes: {
+                href: path('marketplace_index', { type: package.type }),
+                'data-turbo-frame': '_top'
+            }
+        }] %}
         {% if latest_mautic_tags is not empty %}
             {% for version_tag in latest_mautic_tags %}
                 {% set leadspace_tags = leadspace_tags|merge([{
