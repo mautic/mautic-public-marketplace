@@ -8,9 +8,14 @@
     {% endif %}
 
     {% if package %}
-        <p class="muted pt-16">
-            <a href="{{ path('marketplace_index') }}">&larr; {{ 'mautic.marketplace.detail.back'|trans }}</a>
-        </p>
+        <div class="py-16">
+            {% include 'components/link.html.twig' with {
+                href: path('marketplace_index'),
+                label: 'mautic.marketplace.detail.back'|trans,
+                renderIcon: 'ri-arrow-left-line',
+                iconPosition: 'left'
+            } only %}
+        </div>
         {% set type_label = package.type == 'mautic-plugin' ? 'mautic.marketplace.detail.type.plugin' :
             package.type == 'mautic-theme' ? 'mautic.marketplace.detail.type.theme' :
             package.type == 'mautic-resource' ? 'mautic.marketplace.detail.type.resource' :
