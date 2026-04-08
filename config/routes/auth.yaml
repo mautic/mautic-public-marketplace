@@ -1,3 +1,11 @@
+auth_login:
+  path: /auth/login
+  controller: App\Controller\AuthController::login
+
 auth_callback:
   path: /auth/callback
   controller: App\Controller\AuthController::callback
+
+auth_logout:
+  path: /auth/logout
+  controller: App\Controller\AuthController::logout

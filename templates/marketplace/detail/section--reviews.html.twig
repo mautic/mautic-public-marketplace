@@ -77,49 +77,43 @@
         <p class="text-placeholder">{{ 'mautic.marketplace.detail.reviews.empty'|trans }}</p>
     {% endif %}
 
-    <section class="section mt-32" id="marketplace-review-container"
-        data-auth0-domain="{{ auth0_domain }}"
-        data-auth0-client-id="{{ auth0_client_id }}"
-        data-api-url="{{ path('review_api_submit', {package: name}) }}"
-        data-package-name="{{ name }}">
+    <section class="section mt-32" id="marketplace-review-container">
         <h2 class="type-heading-03 mb-16">{{ 'mautic.marketplace.detail.review_form.heading'|trans }}</h2>
 
-        <div id="auth-loading">
-            <p class="muted">{{ 'mautic.marketplace.detail.review_form.loading_authentication'|trans }}</p>
-        </div>
-
-        <div id="auth-login" style="display:none">
-            <button type="button" id="auth0-login-btn" class="bx--btn bx--btn--primary">
-                {{ 'mautic.marketplace.detail.review_form.login'|trans }}
-            </button>
-        </div>
-
-        <div id="auth-form" style="display:none">
-            <p class="muted">{{ 'mautic.marketplace.detail.review_form.logged_in_as'|trans }} <strong id="auth-user-name"></strong>
-                (<a href="#" id="auth0-logout-btn">{{ 'mautic.marketplace.detail.review_form.logout'|trans }}</a>)
+        {% if app.user %}
+            <p class="muted">{{ 'mautic.marketplace.detail.review_form.logged_in_as'|trans }} <strong>{{ app.user.name ?? app.user.email ?? 'Anonymous' }}</strong>
+                (<a href="{{ path('auth_logout') }}">{{ 'mautic.marketplace.detail.review_form.logout'|trans }}</a>)
             </p>
-            <form id="review-form" class="review-form">
+            {% if review_errors.form is defined %}
+                <div class="alert alert--error mb-16">{{ review_errors.form }}</div>
+            {% endif %}
+            <form id="review-form" class="review-form" method="post" action="{{ path('review_submit', { package: name }) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('review_' ~ name) }}">
                 <div class="review-form__stars">
                     <label>{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
                     <div id="rating-stars" class="star-rating">
-                        <span class="star-icon" data-rating="1">&#9733;</span>
-                        <span class="star-icon" data-rating="2">&#9733;</span>
-                        <span class="star-icon" data-rating="3">&#9733;</span>
-                        <span class="star-icon" data-rating="4">&#9733;</span>
-                        <span class="star-icon" data-rating="5">&#9733;</span>
+                        {% for ratingValue in 1..5 %}
+                            <button type="button"
+                                class="star-icon{{ review_form.rating|default('0') == ratingValue ? ' star-active' : '' }}"
+                                data-rating="{{ ratingValue }}"
+                                aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': ratingValue }) }}">
+                                &#9733;
+                            </button>
+                        {% endfor %}
                     </div>
-                    <input type="hidden" id="rating" name="rating" value="0">
+                    <input type="hidden" id="rating" name="rating" value="{{ review_form.rating|default('0') }}">
                 </div>
                 <div class="review-form__text">
                     <label for="review">{{ 'mautic.marketplace.detail.review_form.review'|trans }}</label>
-                    <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="{{ 'mautic.marketplace.detail.review_form.review_placeholder'|trans }}"></textarea>
+                    <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="{{ 'mautic.marketplace.detail.review_form.review_placeholder'|trans }}">{{ review_form.review|default('') }}</textarea>
                 </div>
                 <button type="submit" id="submit-btn" class="bx--btn bx--btn--primary">{{ 'mautic.marketplace.detail.review_form.submit'|trans }}</button>
             </form>
-        </div>
-
-        <div id="review-error" class="alert alert--error" style="display:none"></div>
-        <div id="review-success" class="alert alert--success" style="display:none"></div>
+        {% else %}
+            <a class="bx--btn bx--btn--primary" href="{{ path('auth_login', { returnTo: app.request.requestUri }) }}">
+                {{ 'mautic.marketplace.detail.review_form.login'|trans }}
+            </a>
+        {% endif %}
     </section>
 {% endset %}
 

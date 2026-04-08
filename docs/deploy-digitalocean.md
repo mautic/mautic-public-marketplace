@@ -193,9 +193,9 @@ If you use this deploy user, set `DO_SSH_USER=deploy`.
 - The staging workflow also runs Supabase functions/migrations against the staging Supabase project.
 
 ## Auth0 configuration
-Create an Auth0 **Single Page Application** and configure it for staging/prod:
+Create an Auth0 **Regular Web Application** and configure it for staging/prod:
 
-- **Application type:** Single Page Application (SPA)
+- **Application type:** Regular Web Application
 - **Allowed Callback URLs:**
   - `https://marketplace-staging.mautic.org/auth/callback`
   - `https://marketplace.mautic.org/auth/callback`
@@ -208,8 +208,8 @@ Create an Auth0 **Single Page Application** and configure it for staging/prod:
 
 Set these env vars in `/etc/marketplace/prod.env` and `/etc/marketplace/staging.env`:
 - `AUTH0_DOMAIN` (e.g., `mautic-dev.us.auth0.com`)
-- `AUTH0_CLIENT_ID` (SPA client ID)
-- `AUTH0_CLIENT_SECRET` is not used by the SPA SDK but kept for parity
+- `AUTH0_CLIENT_ID` (Regular Web Application client ID)
+- `AUTH0_CLIENT_SECRET` (required for the server-side code exchange)
 
 ## Rollback
 - Re-deploy the previous image tag on the droplet.

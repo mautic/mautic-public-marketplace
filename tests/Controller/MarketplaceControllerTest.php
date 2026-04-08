@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Auth0\Auth0User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class MarketplaceControllerTest extends WebTestCase
@@ -37,6 +38,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('h1');
+        self::assertSelectorExists('a[href="/auth/login?returnTo=%2Fbrowse"]');
     }
 
     public function testFilteringByTypeAndMauticVersion(): void
@@ -195,6 +197,20 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'v5.0+');
         self::assertSelectorTextContains('time', '2 months ago');
         self::assertSelectorExists(sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+        self::assertSelectorExists('a[href="/auth/login?returnTo=%2Fpackage%2Fmautic%2Falpha-plugin"]');
+    }
+
+    public function testAuthenticatedDetailPageShowsAccountMenuAndReviewForm(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/package/mautic/alpha-plugin');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Logged in as');
+        self::assertSelectorExists('form[action="/package/mautic/alpha-plugin/review"]');
+        self::assertSelectorExists('a[href="/profile"]');
+        self::assertSelectorExists('a[href="/auth/logout"]');
     }
 
     public function testFilterByResourceType(): void
