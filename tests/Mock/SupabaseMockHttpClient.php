@@ -24,6 +24,10 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 return self::compatibleMauticVersionsResponse();
             }
 
+            if (str_contains($url, 'get_available_languages')) {
+                return self::availableLanguagesResponse($method, $options);
+            }
+
             return self::packageListResponse($url, $method, $options);
         });
     }
@@ -45,6 +49,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'time' => (new \DateTimeImmutable('-5 days'))->format('c'),
                 'maintainers' => 'escopecz',
                 'smv' => '^5.0 || ^5.1',
+                'language' => 'en',
                 'average_rating' => 0,
                 'total_review' => 0,
             ],
@@ -59,6 +64,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'time' => (new \DateTimeImmutable('-60 days'))->format('c'),
                 'maintainers' => 'rcheesley',
                 'smv' => '^4.3 || ^5.0',
+                'language' => 'English',
                 'average_rating' => 0,
                 'total_review' => 0,
             ],
@@ -73,6 +79,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'time' => (new \DateTimeImmutable('-200 days'))->format('c'),
                 'maintainers' => 'escopecz',
                 'smv' => '^4.4 || ^5.0 || ^5.2',
+                'language' => 'nl',
                 'average_rating' => 0,
                 'total_review' => 0,
             ],
@@ -87,6 +94,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'time' => (new \DateTimeImmutable('-10 days'))->format('c'),
                 'maintainers' => 'rcheesley',
                 'smv' => '^4.2 || ^5.3',
+                'language' => 'Nederlands',
                 'average_rating' => 0,
                 'total_review' => 0,
             ],
@@ -117,6 +125,15 @@ final class SupabaseMockHttpClient extends MockHttpClient
             $rows = array_values(array_filter($rows, static fn (array $r): bool => [] !== array_intersect(
                 self::splitSmvValues($r['smv'] ?? null),
                 $selectedVersions,
+            )));
+        }
+
+        $selectedLanguages = self::normalizeSelectedLanguages($params['_language'] ?? null);
+        if ([] !== $selectedLanguages) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => \in_array(
+                self::canonicalizeLanguage($r['language'] ?? null),
+                $selectedLanguages,
+                true,
             )));
         }
 
@@ -188,6 +205,25 @@ final class SupabaseMockHttpClient extends MockHttpClient
         );
     }
 
+    private static function availableLanguagesResponse(string $method, array $options): MockResponse
+    {
+        $params = self::parseParams('', $method, $options);
+        $rows = self::filteredRowsForAvailableLanguages($params);
+        $languages = [];
+
+        foreach ($rows as $row) {
+            $language = $row['language'] ?? null;
+            if (\is_string($language) && '' !== trim($language)) {
+                $languages[] = trim($language);
+            }
+        }
+
+        return new MockResponse(
+            json_encode(array_values(array_unique($languages))),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
     private static function packageDetailResponse(string $url): MockResponse
     {
         $params = self::parseParams($url, 'GET', []);
@@ -206,6 +242,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'downloads' => ['total' => $pkg['downloads']],
                 'favers' => $pkg['favers'],
                 'time' => $pkg['time'],
+                'language' => $pkg['language'],
                 'versions' => [
                     '1.0.0' => [
                         'smv' => $pkg['smv'],
@@ -299,5 +336,90 @@ final class SupabaseMockHttpClient extends MockHttpClient
         $parts = array_map(static fn (string $part): string => trim($part), $parts);
 
         return array_values(array_filter($parts, static fn (string $part): bool => '' !== $part));
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function filteredRowsForAvailableLanguages(array $params): array
+    {
+        $rows = array_values(self::allPackages());
+
+        if (isset($params['_type']) && '' !== $params['_type']) {
+            $type = $params['_type'];
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['type'] ?? '') === $type));
+        }
+
+        if (isset($params['_query']) && '' !== $params['_query']) {
+            $q = strtolower($params['_query']);
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => str_contains(strtolower($r['name']), $q)
+                || str_contains(strtolower($r['maintainers'] ?? ''), $q)));
+        }
+
+        $selectedVersions = self::normalizeSelectedVersions($params['_smv'] ?? null);
+        if ([] !== $selectedVersions) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => [] !== array_intersect(
+                self::splitSmvValues($r['smv'] ?? null),
+                $selectedVersions,
+            )));
+        }
+
+        $dateRange = $params['_date_range'] ?? null;
+        if (null !== $dateRange && '' !== $dateRange) {
+            $rows = self::filterByDateRange($rows, $dateRange);
+        }
+
+        $popularity = $params['_popularity'] ?? null;
+        if ('rising' === $popularity) {
+            $rows = self::filterByDateRange($rows, '30d');
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function normalizeSelectedLanguages(mixed $value): array
+    {
+        if (\is_string($value)) {
+            $value = [$value];
+        }
+
+        if (!\is_array($value)) {
+            return [];
+        }
+
+        $languages = [];
+        foreach ($value as $item) {
+            $canonical = self::canonicalizeLanguage($item);
+            if (null === $canonical) {
+                continue;
+            }
+
+            $languages[] = $canonical;
+        }
+
+        return array_values(array_unique($languages));
+    }
+
+    private static function canonicalizeLanguage(mixed $language): ?string
+    {
+        if (!\is_string($language)) {
+            return null;
+        }
+
+        $language = strtolower(trim($language));
+        if ('' === $language) {
+            return null;
+        }
+
+        return match ($language) {
+            'en', 'en-us', 'en-gb', 'english' => 'english',
+            'nl', 'nl-nl', 'dutch', 'nederlands' => 'dutch',
+            default => $language,
+        };
     }
 }

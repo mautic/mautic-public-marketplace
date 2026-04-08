@@ -69,6 +69,34 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('[data-view-all-toggle]', 'View all');
     }
 
+    public function testLanguageFilterRendersOnlyLanguagesPresentInMatchingResults(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+
+        $labels = $client->getCrawler()->filter('input[name="language[]"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertSame(['Dutch', 'English'], $labels);
+        self::assertNotContains('French', $labels);
+    }
+
+    public function testLanguageFilterNarrowsOptionsToCurrentFilteredResultSet(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?type=mautic-plugin');
+
+        self::assertResponseIsSuccessful();
+
+        $labels = $client->getCrawler()->filter('input[name="language[]"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertSame(['English'], $labels);
+        self::assertNotContains('Dutch', $labels);
+    }
+
     public function testFilteringByMultipleMauticVersions(): void
     {
         $client = self::createClient();
@@ -79,6 +107,54 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('.card-group', 'Zebra Theme');
         self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
         self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+    }
+
+    public function testFilteringByLanguage(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?language[]=english');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFilteringByMultipleLanguages(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?language[]=english&language[]=dutch');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testLanguageFilterKeepsSiblingOptionsWhenSelected(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?query=escopecz&language[]=english');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+
+        $labels = $client->getCrawler()->filter('input[name="language[]"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertSame(['Dutch', 'English'], $labels);
+    }
+
+    public function testLanguageFilterIsHiddenWhenNoMatchingResultsExist(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?query=no-such-package');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('input[name="language[]"]');
     }
 
     public function testSortingByNameAsc(): void
