@@ -285,7 +285,7 @@ VALUES (
     12,
     9,
     2,
-    'PHP',
+    'English',
     14,
     6,
     '{"total": 2847}'::jsonb,
