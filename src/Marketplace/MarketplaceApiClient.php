@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Marketplace;
 
-use App\Auth0\Auth0Client;
-use App\Auth0\Exception\Auth0AuthenticationException;
 use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\Dto\PackageListResult;
 use App\Marketplace\Dto\PackageSummary;
@@ -17,18 +15,7 @@ final class MarketplaceApiClient
 {
     public function __construct(
         private readonly SupabaseClient $supabaseClient,
-        private readonly Auth0Client $auth0Client,
     ) {
-    }
-
-    /**
-     * @return array<string, mixed>
-     *
-     * @throws Auth0AuthenticationException
-     */
-    public function validateToken(string $token): array
-    {
-        return $this->auth0Client->validateToken($token);
     }
 
     public function listPackages(
@@ -220,6 +207,42 @@ final class MarketplaceApiClient
             $this->toArray($row['reviews'] ?? null),
             $this->toArray($row['versions'] ?? null),
         );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getUserReviews(string $auth0UserId): array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/reviews', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
+            'select' => '*',
+            'order' => 'created_at.desc',
+        ]);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getUserUploadedPackages(string $auth0UserId): array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
+            'select' => 'name,displayname,description,type,downloads,favers',
+            'order' => 'name.asc',
+        ]);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        return $data;
     }
 
     public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void
