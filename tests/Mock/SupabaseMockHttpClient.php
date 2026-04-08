@@ -16,6 +16,14 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
             }
 
+            if ('GET' === $method && str_contains($url, '/rest/v1/reviews') && !str_contains($url, '/rpc/')) {
+                return self::userReviewsResponse($url);
+            }
+
+            if ('GET' === $method && str_contains($url, '/rest/v1/packages') && !str_contains($url, '/rpc/')) {
+                return self::userPackagesResponse($url);
+            }
+
             if (str_contains($url, 'get_pack')) {
                 return self::packageDetailResponse($url);
             }
@@ -218,6 +226,93 @@ final class SupabaseMockHttpClient extends MockHttpClient
 
         return new MockResponse(
             json_encode($data),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    private static function userReviewsResponse(string $url): MockResponse
+    {
+        $params = self::parseParams($url, 'GET', []);
+        $userId = $params['auth0_user_id'] ?? '';
+        $userId = str_replace('eq.', '', $userId);
+
+        $allReviews = [
+            [
+                'id' => 1,
+                'objectId' => 'mautic/example-plugin',
+                'auth0_user_id' => 'auth0|test123',
+                'user' => 'Test User',
+                'rating' => 5,
+                'review' => 'Great plugin!',
+                'picture' => null,
+                'created_at' => (new \DateTimeImmutable('-2 days'))->format('c'),
+            ],
+            [
+                'id' => 2,
+                'objectId' => 'mautic/zebra-theme',
+                'auth0_user_id' => 'auth0|test123',
+                'user' => 'Test User',
+                'rating' => 4,
+                'review' => 'Nice theme.',
+                'picture' => null,
+                'created_at' => (new \DateTimeImmutable('-5 days'))->format('c'),
+            ],
+            [
+                'id' => 3,
+                'objectId' => 'mautic/alpha-plugin',
+                'auth0_user_id' => 'auth0|other',
+                'user' => 'Other User',
+                'rating' => 3,
+                'review' => 'OK plugin.',
+                'picture' => null,
+                'created_at' => (new \DateTimeImmutable('-1 day'))->format('c'),
+            ],
+        ];
+
+        $filtered = array_values(array_filter($allReviews, static fn (array $r): bool => $r['auth0_user_id'] === $userId));
+
+        return new MockResponse(
+            json_encode($filtered),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    private static function userPackagesResponse(string $url): MockResponse
+    {
+        $params = self::parseParams($url, 'GET', []);
+        $maintainersFilter = $params['maintainers'] ?? '';
+
+        $allPackages = self::allPackages();
+
+        // Parse the cs. filter: cs.[{"name":"value"}]
+        $matchName = null;
+        if (preg_match('/cs\.\[\{"name":"([^"]+)"\}\]/', $maintainersFilter, $matches)) {
+            $matchName = $matches[1];
+        }
+
+        if (null === $matchName) {
+            return new MockResponse(
+                json_encode([]),
+                ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+            );
+        }
+
+        $filtered = [];
+        foreach ($allPackages as $pkg) {
+            if (strcasecmp($pkg['maintainers'], $matchName) === 0) {
+                $filtered[] = [
+                    'name' => $pkg['name'],
+                    'displayname' => $pkg['displayname'],
+                    'description' => $pkg['description'],
+                    'type' => $pkg['type'],
+                    'downloads' => $pkg['downloads'],
+                    'favers' => $pkg['favers'],
+                ];
+            }
+        }
+
+        return new MockResponse(
+            json_encode($filtered),
             ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
         );
     }

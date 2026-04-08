@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Profile - Mautic Marketplace{% endblock %}
+
+{% block body %}
+<div id="profile-container"
+     data-api-url="{{ path('profile_api') }}"
+     data-auth0-domain="{{ auth0_domain }}"
+     data-auth0-client-id="{{ auth0_client_id }}">
+
+    <div id="profile-loading">
+        <p>Loading profile...</p>
+    </div>
+
+    <div id="profile-login" style="display: none;">
+        <h2>My Profile</h2>
+        <p>Please log in to view your profile.</p>
+        <button id="profile-login-btn" type="button" class="cds--btn cds--btn--primary">Log in</button>
+    </div>
+
+    <div id="profile-content" style="display: none;">
+        <div id="profile-user-info">
+            <img id="profile-avatar" src="" alt="User avatar" width="80" height="80" style="border-radius: 50%; display: none;">
+            <h2 id="profile-name"></h2>
+            <p id="profile-email"></p>
+        </div>
+
+        <section id="profile-reviews-section">
+            <h3>My Reviews</h3>
+            <div id="profile-reviews-list">
+                <p>No reviews yet.</p>
+            </div>
+        </section>
+
+        <section id="profile-packages-section">
+            <h3>Uploaded Packages</h3>
+            <div id="profile-packages-list">
+                <p>No uploaded packages yet.</p>
+            </div>
+        </section>
+    </div>
+
+    <div id="profile-error" style="display: none;">
+        <p id="profile-error-message"></p>
+    </div>
+</div>
+{% endblock %}

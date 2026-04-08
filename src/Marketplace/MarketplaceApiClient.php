@@ -169,6 +169,61 @@ final class MarketplaceApiClient
         );
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getUserReviews(string $auth0UserId): array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/reviews', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
+            'select' => '*',
+            'order' => 'created_at.desc',
+        ]);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getUserPackages(string $userName, ?string $userEmail): array
+    {
+        $results = [];
+
+        $byName = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+            'maintainers' => 'cs.[{"name":"'.addcslashes($userName, '"\\').'"}]',
+            'select' => 'name,displayname,description,type,downloads,favers',
+            'order' => 'name.asc',
+        ]);
+
+        if (\is_array($byName)) {
+            $results = $byName;
+        }
+
+        if (null !== $userEmail && '' !== $userEmail && $userEmail !== $userName) {
+            $byEmail = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+                'maintainers' => 'cs.[{"name":"'.addcslashes($userEmail, '"\\').'"}]',
+                'select' => 'name,displayname,description,type,downloads,favers',
+                'order' => 'name.asc',
+            ]);
+
+            if (\is_array($byEmail)) {
+                $seen = array_column($results, 'name');
+                foreach ($byEmail as $pkg) {
+                    if (!\in_array($pkg['name'] ?? null, $seen, true)) {
+                        $results[] = $pkg;
+                    }
+                }
+            }
+        }
+
+        return $results;
+    }
+
     public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void
     {
         $this->supabaseClient->mutate('POST', '/rest/v1/reviews', [
