@@ -20,10 +20,6 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 return self::userReviewsResponse($url);
             }
 
-            if ('GET' === $method && str_contains($url, '/rest/v1/packages') && !str_contains($url, '/rpc/')) {
-                return self::userPackagesResponse($url);
-            }
-
             if (str_contains($url, 'get_pack')) {
                 return self::packageDetailResponse($url);
             }
@@ -270,46 +266,6 @@ final class SupabaseMockHttpClient extends MockHttpClient
         ];
 
         $filtered = array_values(array_filter($allReviews, static fn (array $r): bool => $r['auth0_user_id'] === $userId));
-
-        return new MockResponse(
-            json_encode($filtered),
-            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
-        );
-    }
-
-    private static function userPackagesResponse(string $url): MockResponse
-    {
-        $params = self::parseParams($url, 'GET', []);
-        $maintainersFilter = $params['maintainers'] ?? '';
-
-        $allPackages = self::allPackages();
-
-        // Parse the cs. filter: cs.[{"name":"value"}]
-        $matchName = null;
-        if (preg_match('/cs\.\[\{"name":"([^"]+)"\}\]/', $maintainersFilter, $matches)) {
-            $matchName = $matches[1];
-        }
-
-        if (null === $matchName) {
-            return new MockResponse(
-                json_encode([]),
-                ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
-            );
-        }
-
-        $filtered = [];
-        foreach ($allPackages as $pkg) {
-            if (strcasecmp($pkg['maintainers'], $matchName) === 0) {
-                $filtered[] = [
-                    'name' => $pkg['name'],
-                    'displayname' => $pkg['displayname'],
-                    'description' => $pkg['description'],
-                    'type' => $pkg['type'],
-                    'downloads' => $pkg['downloads'],
-                    'favers' => $pkg['favers'],
-                ];
-            }
-        }
 
         return new MockResponse(
             json_encode($filtered),

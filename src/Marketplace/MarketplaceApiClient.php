@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Marketplace;
 
-use App\Auth0\Auth0Client;
-use App\Auth0\Exception\Auth0AuthenticationException;
 use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\Dto\PackageListResult;
 use App\Marketplace\Dto\PackageSummary;
@@ -17,18 +15,7 @@ final class MarketplaceApiClient
 {
     public function __construct(
         private readonly SupabaseClient $supabaseClient,
-        private readonly Auth0Client $auth0Client,
     ) {
-    }
-
-    /**
-     * @return array<string, mixed>
-     *
-     * @throws Auth0AuthenticationException
-     */
-    public function validateToken(string $token): array
-    {
-        return $this->auth0Client->validateToken($token);
     }
 
     public function listPackages(
@@ -190,38 +177,19 @@ final class MarketplaceApiClient
     /**
      * @return list<array<string, mixed>>
      */
-    public function getUserPackages(string $userName, ?string $userEmail): array
+    public function getUserUploadedPackages(string $auth0UserId): array
     {
-        $results = [];
-
-        $byName = $this->supabaseClient->query('GET', '/rest/v1/packages', [
-            'maintainers' => 'cs.[{"name":"'.addcslashes($userName, '"\\').'"}]',
+        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
             'select' => 'name,displayname,description,type,downloads,favers',
             'order' => 'name.asc',
         ]);
 
-        if (\is_array($byName)) {
-            $results = $byName;
+        if (!\is_array($data)) {
+            return [];
         }
 
-        if (null !== $userEmail && '' !== $userEmail && $userEmail !== $userName) {
-            $byEmail = $this->supabaseClient->query('GET', '/rest/v1/packages', [
-                'maintainers' => 'cs.[{"name":"'.addcslashes($userEmail, '"\\').'"}]',
-                'select' => 'name,displayname,description,type,downloads,favers',
-                'order' => 'name.asc',
-            ]);
-
-            if (\is_array($byEmail)) {
-                $seen = array_column($results, 'name');
-                foreach ($byEmail as $pkg) {
-                    if (!\in_array($pkg['name'] ?? null, $seen, true)) {
-                        $results[] = $pkg;
-                    }
-                }
-            }
-        }
-
-        return $results;
+        return $data;
     }
 
     public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void

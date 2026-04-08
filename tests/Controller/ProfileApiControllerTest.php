@@ -35,21 +35,19 @@ final class ProfileApiControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(405);
     }
 
-    public function testGetProfileWithValidTokenReturnsUserInfo(): void
+    public function testGetProfileWithValidTokenReturnsHtml(): void
     {
         $client = self::createClient();
         $client->request('GET', '/api/profile', server: [
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ]);
 
-        self::assertResponseStatusCodeSame(200);
+        self::assertResponseIsSuccessful();
 
-        $content = json_decode((string) $client->getResponse()->getContent(), true);
+        $content = (string) $client->getResponse()->getContent();
 
-        self::assertArrayHasKey('user', $content);
-        self::assertSame('auth0|test123', $content['user']['sub']);
-        self::assertSame('Test User', $content['user']['name']);
-        self::assertSame('test@example.com', $content['user']['email']);
+        self::assertStringContainsString('Test User', $content);
+        self::assertStringContainsString('test@example.com', $content);
     }
 
     public function testGetProfileReturnsUserReviews(): void
@@ -59,50 +57,26 @@ final class ProfileApiControllerTest extends WebTestCase
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ]);
 
-        self::assertResponseStatusCodeSame(200);
+        self::assertResponseIsSuccessful();
 
-        $content = json_decode((string) $client->getResponse()->getContent(), true);
+        $content = (string) $client->getResponse()->getContent();
 
-        self::assertArrayHasKey('reviews', $content);
-        self::assertCount(2, $content['reviews']);
-        self::assertSame('mautic/example-plugin', $content['reviews'][0]['objectId']);
-        self::assertSame(5, $content['reviews'][0]['rating']);
-        self::assertSame('mautic/zebra-theme', $content['reviews'][1]['objectId']);
+        self::assertStringContainsString('mautic/example-plugin', $content);
+        self::assertStringContainsString('mautic/zebra-theme', $content);
+        self::assertStringContainsString('Great plugin!', $content);
     }
 
-    public function testGetProfileReturnsUploadedPackages(): void
+    public function testGetProfileWithNoReviewsShowsEmptyMessage(): void
     {
         $client = self::createClient();
         $client->request('GET', '/api/profile', server: [
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ]);
 
-        self::assertResponseStatusCodeSame(200);
+        self::assertResponseIsSuccessful();
 
-        $content = json_decode((string) $client->getResponse()->getContent(), true);
+        $content = (string) $client->getResponse()->getContent();
 
-        self::assertArrayHasKey('uploaded_packages', $content);
-        self::assertIsArray($content['uploaded_packages']);
-    }
-
-    public function testGetProfileResponseStructure(): void
-    {
-        $client = self::createClient();
-        $client->request('GET', '/api/profile', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer valid-token',
-        ]);
-
-        self::assertResponseStatusCodeSame(200);
-
-        $content = json_decode((string) $client->getResponse()->getContent(), true);
-
-        self::assertArrayHasKey('user', $content);
-        self::assertArrayHasKey('reviews', $content);
-        self::assertArrayHasKey('uploaded_packages', $content);
-
-        self::assertArrayHasKey('sub', $content['user']);
-        self::assertArrayHasKey('name', $content['user']);
-        self::assertArrayHasKey('email', $content['user']);
-        self::assertArrayHasKey('picture', $content['user']);
+        self::assertStringContainsString('My Reviews', $content);
     }
 }

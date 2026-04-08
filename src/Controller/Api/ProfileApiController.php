@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
-use App\Auth0\Exception\Auth0AuthenticationException;
+use App\Auth0\Auth0User;
 use App\Marketplace\MarketplaceApiClient;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ProfileApiController extends AbstractController
@@ -19,45 +17,27 @@ final class ProfileApiController extends AbstractController
     ) {
     }
 
-    public function profile(Request $request): JsonResponse
+    public function profile(): Response
     {
-        $authHeader = $request->headers->get('Authorization', '');
-        if (!str_starts_with($authHeader, 'Bearer ')) {
-            return $this->json(['error' => 'Missing or invalid Authorization header.'], Response::HTTP_UNAUTHORIZED);
-        }
+        /** @var Auth0User $user */
+        $user = $this->getUser();
 
         try {
-            $userInfo = $this->apiClient->validateToken(substr($authHeader, 7));
-        } catch (Auth0AuthenticationException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_UNAUTHORIZED);
-        }
-
-        try {
-            $reviews = $this->apiClient->getUserReviews($userInfo['sub']);
+            $reviews = $this->apiClient->getUserReviews($user->getUserIdentifier());
         } catch (SupabaseApiException) {
             $reviews = [];
         }
 
-        $userName = $userInfo['name'] ?? $userInfo['email'] ?? null;
-        $userEmail = $userInfo['email'] ?? null;
-
         try {
-            $packages = (null !== $userName && '' !== $userName)
-                ? $this->apiClient->getUserPackages($userName, $userEmail)
-                : [];
+            $uploadedPackages = $this->apiClient->getUserUploadedPackages($user->getUserIdentifier());
         } catch (SupabaseApiException) {
-            $packages = [];
+            $uploadedPackages = [];
         }
 
-        return $this->json([
-            'user' => [
-                'sub' => $userInfo['sub'],
-                'name' => $userInfo['name'] ?? null,
-                'email' => $userInfo['email'] ?? null,
-                'picture' => $userInfo['picture'] ?? null,
-            ],
+        return $this->render('profile/_content.html.twig', [
+            'user' => $user,
             'reviews' => $reviews,
-            'uploaded_packages' => $packages,
+            'uploaded_packages' => $uploadedPackages,
         ]);
     }
 }
