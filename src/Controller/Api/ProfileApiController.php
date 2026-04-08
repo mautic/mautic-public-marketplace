@@ -35,7 +35,6 @@ final class ProfileApiController extends AbstractController
         }
 
         return $this->render('profile/_content.html.twig', [
-            'user' => $user,
             'reviews' => $reviews,
             'uploaded_packages' => $uploadedPackages,
         ]);
