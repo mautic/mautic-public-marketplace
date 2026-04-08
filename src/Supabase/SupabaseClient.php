@@ -40,6 +40,24 @@ final class SupabaseClient
     }
 
     /**
+     * @param array<string, mixed> $body
+     */
+    public function rpc(string $path, array $body): mixed
+    {
+        $response = $this->httpClient->request('POST', $this->baseUri.$path, [
+            'json' => $body,
+            'headers' => [
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'apikey' => $this->anonKey,
+                'Authorization' => \sprintf('Bearer %s', $this->anonKey),
+            ],
+        ]);
+
+        return $this->decodeResponse($response);
+    }
+
+    /**
      * @param array<string, mixed>  $body
      * @param array<string, string> $extraHeaders
      */

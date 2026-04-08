@@ -42,10 +42,42 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testFilteringByTypeAndMauticVersion(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/browse?type=mautic-theme&mautic=^4.4');
+        $client->request('GET', '/browse?type=mautic-theme&mautic[]=%5E4.4');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+    }
+
+    public function testMauticVersionFilterRendersCheckboxOptionsAndShowAllToggle(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+
+        $labels = $client->getCrawler()->filter('input[name="mautic[]"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertContains('v4.2+', $labels);
+        self::assertContains('v4.3+', $labels);
+        self::assertContains('v4.4+', $labels);
+        self::assertContains('v5.0+', $labels);
+        self::assertContains('v5.1+', $labels);
+        self::assertContains('v5.2+', $labels);
+        self::assertContains('v5.3+', $labels);
+        self::assertSelectorTextContains('[data-view-all-toggle]', 'View all');
+    }
+
+    public function testFilteringByMultipleMauticVersions(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?mautic[]=%5E4.2&mautic[]=%5E4.4');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
         self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
     }
 
@@ -79,6 +111,12 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Alpha Plugin');
         self::assertSelectorTextContains('body', 'Alpha plugin for sorting.');
+        self::assertSelectorExists('a#tag-v4-3[href$="/browse?mautic%5B0%5D=%5E4.3"]');
+        self::assertSelectorExists('a#tag-v5-0[href$="/browse?mautic%5B0%5D=%5E5.0"]');
+        self::assertSelectorExists('a#tag-v4-3 span[data-bs-toggle="tooltip"][title="Supported Mautic version"]');
+        self::assertSelectorExists('a#tag-v5-0 span[data-bs-toggle="tooltip"][title="Supported Mautic version"]');
+        self::assertSelectorTextContains('body', 'v4.3+');
+        self::assertSelectorTextContains('body', 'v5.0+');
         self::assertSelectorTextContains('time', '2 months ago');
         self::assertSelectorExists(sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
     }
