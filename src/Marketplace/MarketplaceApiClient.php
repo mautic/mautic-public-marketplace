@@ -39,6 +39,7 @@ final class MarketplaceApiClient
         ?string $type = null,
         ?string $query = null,
         array $mauticVersions = [],
+        array $languages = [],
         ?string $dateRange = null,
         ?string $popularity = null,
     ): PackageListResult {
@@ -59,6 +60,10 @@ final class MarketplaceApiClient
 
         if ([] !== $mauticVersions) {
             $params['_smv'] = $mauticVersions;
+        }
+
+        if ([] !== $languages) {
+            $params['_language'] = $languages;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
@@ -101,6 +106,54 @@ final class MarketplaceApiClient
         }
 
         return new PackageListResult($items, $limit, $offset, $total);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAvailableLanguages(
+        ?string $type = null,
+        ?string $query = null,
+        array $mauticVersions = [],
+        ?string $dateRange = null,
+        ?string $popularity = null,
+    ): array {
+        $params = [];
+
+        if (null !== $query && '' !== $query) {
+            $params['_query'] = $query;
+        }
+
+        if (null !== $type && '' !== $type) {
+            $params['_type'] = $type;
+        }
+
+        if ([] !== $mauticVersions) {
+            $params['_smv'] = $mauticVersions;
+        }
+
+        if (null !== $dateRange && '' !== $dateRange) {
+            $params['_date_range'] = $dateRange;
+        }
+
+        if (null !== $popularity && '' !== $popularity) {
+            $params['_popularity'] = $popularity;
+        }
+
+        $data = $this->supabaseClient->rpc('/rest/v1/rpc/get_available_languages', $params);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($data as $value) {
+            if (\is_string($value) && '' !== trim($value)) {
+                $values[] = trim($value);
+            }
+        }
+
+        return array_values(array_unique($values));
     }
 
     /**

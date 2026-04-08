@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Formatter\LanguageFilterFormatter;
 use App\Formatter\MauticVersionConstraintFormatter;
 use App\Marketplace\MarketplaceApiClient;
 use App\Supabase\Exception\SupabaseApiException;
@@ -22,6 +23,7 @@ final class MarketplaceController extends AbstractController
 
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
+        private readonly LanguageFilterFormatter $languageFilterFormatter,
         private readonly MauticVersionConstraintFormatter $mauticVersionConstraintFormatter,
         #[Autowire(env: 'AUTH0_DOMAIN')]
         private readonly string $auth0Domain,
@@ -44,6 +46,7 @@ final class MarketplaceController extends AbstractController
         $type = $request->query->get('type');
         $query = $request->query->get('query');
         $mauticVersions = $this->normalizeMauticVersions($request->query->all()['mautic'] ?? null);
+        $languages = $this->normalizeLanguages($request->query->all()['language'] ?? null);
         $dateRange = $request->query->get('date_range');
         $popularity = $request->query->get('popularity');
 
@@ -56,16 +59,25 @@ final class MarketplaceController extends AbstractController
                 \is_string($type) ? $type : null,
                 \is_string($query) ? $query : null,
                 $mauticVersions,
+                $languages,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
             $typeCounts = $this->buildTypeCounts(
                 \is_string($query) ? $query : null,
                 $mauticVersions,
+                $languages,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
             $compatibleMauticVersions = $this->apiClient->getCompatibleMauticVersions();
+            $availableLanguages = $this->apiClient->getAvailableLanguages(
+                \is_string($type) ? $type : null,
+                \is_string($query) ? $query : null,
+                $mauticVersions,
+                \is_string($dateRange) ? $dateRange : null,
+                \is_string($popularity) ? $popularity : null,
+            );
         } catch (SupabaseApiException $exception) {
             return $this->render('marketplace/index.html.twig', [
                 'error' => $exception->getMessage(),
@@ -73,6 +85,7 @@ final class MarketplaceController extends AbstractController
                 'type_counts' => $this->emptyTypeCounts(),
                 'mautic_versions' => [],
                 'mautic_version_labels' => [],
+                'language_options' => [],
                 'filters' => [
                     'limit' => $limit,
                     'offset' => $offset,
@@ -81,6 +94,7 @@ final class MarketplaceController extends AbstractController
                     'type' => $type,
                     'query' => $query,
                     'mautic' => $mauticVersions,
+                    'language' => $languages,
                     'date_range' => $dateRange,
                     'popularity' => $popularity,
                 ],
@@ -93,6 +107,7 @@ final class MarketplaceController extends AbstractController
             'type_counts' => $typeCounts,
             'mautic_versions' => $compatibleMauticVersions,
             'mautic_version_labels' => $this->buildMauticVersionLabels($compatibleMauticVersions),
+            'language_options' => $this->languageFilterFormatter->buildOptions($availableLanguages),
             'filters' => [
                 'limit' => $limit,
                 'offset' => $offset,
@@ -101,6 +116,7 @@ final class MarketplaceController extends AbstractController
                 'type' => $type,
                 'query' => $query,
                 'mautic' => $mauticVersions,
+                'language' => $languages,
                 'date_range' => $dateRange,
                 'popularity' => $popularity,
             ],
@@ -146,7 +162,7 @@ final class MarketplaceController extends AbstractController
     /**
      * @return array<string, int>
      */
-    private function buildTypeCounts(?string $query, array $mauticVersions, ?string $dateRange, ?string $popularity): array
+    private function buildTypeCounts(?string $query, array $mauticVersions, array $languages, ?string $dateRange, ?string $popularity): array
     {
         $baseResult = $this->apiClient->listPackages(
             1,
@@ -156,6 +172,7 @@ final class MarketplaceController extends AbstractController
             null,
             $query,
             $mauticVersions,
+            $languages,
             $dateRange,
             $popularity,
         );
@@ -173,6 +190,7 @@ final class MarketplaceController extends AbstractController
             null,
             $query,
             $mauticVersions,
+            $languages,
             $dateRange,
             $popularity,
         );
@@ -240,5 +258,35 @@ final class MarketplaceController extends AbstractController
         }
 
         return array_values(array_unique($versions));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizeLanguages(mixed $value): array
+    {
+        if (\is_string($value)) {
+            $value = [$value];
+        }
+
+        if (!\is_array($value)) {
+            return [];
+        }
+
+        $languages = [];
+        foreach ($value as $item) {
+            if (!\is_string($item)) {
+                continue;
+            }
+
+            $canonical = $this->languageFilterFormatter->canonicalize($item);
+            if (null === $canonical) {
+                continue;
+            }
+
+            $languages[] = $canonical;
+        }
+
+        return array_values(array_unique($languages));
     }
 }
