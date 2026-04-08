@@ -15,59 +15,42 @@
                 <i class="ri-star-line" aria-hidden="true"></i>
                 {{ ratingSummary }}
             </div>
-            {% endset %}
-            {% set card = {
-                heading: item.displayName ?: item.name,
-                copy: (
-                (item.headline is defined and item.headline is not empty
-                    ? item.headline
-                    : (item.description is defined and item.description is not empty
-                        ? item.description
-                        : null
-                    )
-                ) is not null
-                    ? (
-                        (item.headline is defined and item.headline is not empty
-                            ? item.headline
-                            : item.description
-                        )
-                        |striptags
-                        |replace({
-                            '# ': '', '## ': '', '### ': '', '#### ': '', '##### ': '', '###### ': '',
-                            '*': '', '**': '', '_': '', '__': '', '`': '', '~~': '',
-                            '[': '', ']': '', '(': '', ')': '', '> ': '', '- ': '', '+ ': '', '!': '', '|': '', '>': ''
-                        })
-                        |u.truncate(100, '…')
-                    )
-                    : 'marketplace.package.description.none'
-                ),
-                image: { src: (item.bannerURL is defined and item.bannerURL is not null) ? item.bannerURL : '/assets/images/package_placeholder.jpg' },
-                customContent: customContent,
-                tags: [
-                    {
-                        label: item.type == 'mautic-plugin' ? 'marketplace.package.type.plugin' : item.type == 'mautic-theme' ? 'marketplace.package.type.theme' : 'marketplace.package.type.resource',
-                        color: item.type == 'mautic-plugin' ? 'primary' : item.type == 'mautic-theme' ? 'secondary' : 'tertiary' }
-                ]
-            } %}
-            {% set cards = cards|merge([card]) %}
-        {% endfor %}
-
-        {% include 'components/card-group.html.twig' with {
-            cards: cards,
-            type: 'default',
-            cardsPerRow: 3,
-            gridMode: 'condensed'
-        } only %}
+            <div>
+                <i class="ri-download-line" aria-hidden="true"></i>
+                {{ downloadsTotal }}
+            </div>
+        </div>
         {% endset %}
         {% set card = {
             heading: item.displayName ?: item.name,
-            copy: item.description ?: 'marketplace.package.description.none',
-            image: item.bannerURL is not null ? { src: item.bannerURL, alt: item.displayName ?: item.name } : null,
-            href: path('marketplace_detail', { package: item.name }),
+            copy: (
+            (item.headline is defined and item.headline is not empty
+                ? item.headline
+                : (item.description is defined and item.description is not empty
+                    ? item.description
+                    : null
+                )
+            ) is not null
+                ? (
+                    (item.headline is defined and item.headline is not empty
+                        ? item.headline
+                        : item.description
+                    )
+                    |striptags
+                    |replace({
+                        '# ': '', '## ': '', '### ': '', '#### ': '', '##### ': '', '###### ': '',
+                        '*': '', '**': '', '_': '', '__': '', '`': '', '~~': '',
+                        '[': '', ']': '', '(': '', ')': '', '> ': '', '- ': '', '+ ': '', '!': '', '|': '', '>': ''
+                    })
+                    |u.truncate(100, '...')
+                )
+                : 'marketplace.package.description.none'
+            ),
+            image: { src: (item.bannerURL is defined and item.bannerURL is not null) ? item.bannerURL : '/assets/images/package_placeholder.jpg' },
             customContent: customContent,
             tags: [
-                { 
-                    label: item.type == 'mautic-plugin' ? 'marketplace.package.type.plugin' : item.type == 'mautic-theme' ? 'marketplace.package.type.theme' : 'marketplace.package.type.resource', 
+                {
+                    label: item.type == 'mautic-plugin' ? 'marketplace.package.type.plugin' : item.type == 'mautic-theme' ? 'marketplace.package.type.theme' : 'marketplace.package.type.resource',
                     color: item.type == 'mautic-plugin' ? 'primary' : item.type == 'mautic-theme' ? 'secondary' : 'tertiary' }
             ]
         } %}

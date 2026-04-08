@@ -14,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 
 final class SubmitApiController extends AbstractController
 {
@@ -23,7 +24,7 @@ final class SubmitApiController extends AbstractController
     ) {
     }
 
-    public function submit(Request $request): JsonResponse
+    public function submit(Request $request, #[MapRequestPayload] SubmitRequest $submitRequest): JsonResponse
     {
         $authHeader = $request->headers->get('Authorization', '');
         if (!str_starts_with($authHeader, 'Bearer ')) {
@@ -37,13 +38,7 @@ final class SubmitApiController extends AbstractController
         }
 
         try {
-            $submitRequest = SubmitRequest::fromPayload($request->getPayload());
-        } catch (SubmitValidationException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        }
-
-        try {
-            $result = $this->submitService->submit($submitRequest->assetUrl, $userInfo);
+            $result = $this->submitService->submit($submitRequest->asset_url, $userInfo);
         } catch (SubmitValidationException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         } catch (SupabaseApiException $e) {

@@ -11,7 +11,9 @@ final class SubmitApiControllerTest extends WebTestCase
     public function testSubmitWithoutAuthorizationHeader(): void
     {
         $client = self::createClient();
-        $client->request('POST', '/api/package/submit', content: json_encode([
+        $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
+        ], content: json_encode([
             'asset_url' => 'https://example.com/asset/campaign.zip',
         ]));
 
@@ -22,6 +24,7 @@ final class SubmitApiControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Basic abc123',
         ], content: json_encode([
             'asset_url' => 'https://example.com/asset/campaign.zip',
@@ -42,56 +45,57 @@ final class SubmitApiControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([
             'asset_url' => '',
         ]));
 
-        self::assertResponseStatusCodeSame(400);
-        self::assertStringContainsString('Asset URL is required', (string) $client->getResponse()->getContent());
+        self::assertResponseStatusCodeSame(422);
     }
 
     public function testSubmitWithInvalidUrl(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([
             'asset_url' => 'not-a-url',
         ]));
 
-        self::assertResponseStatusCodeSame(400);
-        self::assertStringContainsString('Asset URL must be a valid URL', (string) $client->getResponse()->getContent());
+        self::assertResponseStatusCodeSame(422);
     }
 
     public function testSubmitWithHttpUrl(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([
             'asset_url' => 'http://example.com/asset/campaign.zip',
         ]));
 
-        self::assertResponseStatusCodeSame(400);
-        self::assertStringContainsString('Asset URL must use HTTPS', (string) $client->getResponse()->getContent());
+        self::assertResponseStatusCodeSame(422);
     }
 
     public function testSubmitWithMissingAssetUrl(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([]));
 
-        self::assertResponseStatusCodeSame(400);
-        self::assertStringContainsString('Asset URL is required', (string) $client->getResponse()->getContent());
+        self::assertResponseStatusCodeSame(422);
     }
 
     public function testSuccessfulSubmit(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([
             'asset_url' => 'https://example.com/asset/campaign.zip',
@@ -109,11 +113,11 @@ final class SubmitApiControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: 'not-json');
 
         self::assertResponseStatusCodeSame(400);
-        self::assertStringContainsString('Could not decode request body', (string) $client->getResponse()->getContent());
     }
 
     public function testPublishPageRendersWithAssetUrl(): void

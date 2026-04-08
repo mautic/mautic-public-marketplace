@@ -169,7 +169,7 @@ final class MarketplaceApiClient
      */
     public function createPackage(array $data): array
     {
-        $result = $this->supabaseClient->mutateAndReturn('POST', '/rest/v1/packages', $data);
+        $result = $this->supabaseClient->mutate('POST', '/rest/v1/packages', $data);
 
         return \is_array($result) ? ($result[0] ?? $result) : [];
     }
@@ -181,7 +181,7 @@ final class MarketplaceApiClient
      */
     public function updatePackage(string $name, array $data): array
     {
-        $result = $this->supabaseClient->mutateAndReturn(
+        $result = $this->supabaseClient->mutate(
             'PATCH',
             '/rest/v1/packages?name=eq.'.urlencode($name),
             $data,
@@ -197,7 +197,7 @@ final class MarketplaceApiClient
      */
     public function upsertVersion(array $data): array
     {
-        $result = $this->supabaseClient->mutateAndReturn(
+        $result = $this->supabaseClient->mutate(
             'POST',
             '/rest/v1/versions?on_conflict=package_name,version',
             $data,

@@ -40,18 +40,10 @@ final class SupabaseClient
     }
 
     /**
-     * @param array<string, mixed> $body
-     */
-    public function mutate(string $method, string $path, array $body): void
-    {
-        $this->mutateAndReturn($method, $path, $body);
-    }
-
-    /**
      * @param array<string, mixed>  $body
      * @param array<string, string> $extraHeaders
      */
-    public function mutateAndReturn(string $method, string $path, array $body, array $extraHeaders = []): mixed
+    public function mutate(string $method, string $path, array $body, array $extraHeaders = []): mixed
     {
         $response = $this->httpClient->request($method, $this->baseUri.$path, [
             'json' => $body,

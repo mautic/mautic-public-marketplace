@@ -19,7 +19,7 @@ final class ZipDownloadMockHttpClient extends MockHttpClient
         });
     }
 
-    public static function createValidZip(string $composerJson = null): string
+    public static function createValidZip(?string $composerJson = null): string
     {
         $composerJson ??= json_encode([
             'name' => 'testuser/test-campaign',
@@ -27,6 +27,9 @@ final class ZipDownloadMockHttpClient extends MockHttpClient
             'type' => 'mautic-resource',
             'version' => '1.0.0',
             'keywords' => ['test', 'campaign'],
+            'require' => [
+                'mautic/core-lib' => '^5.0',
+            ],
             'extra' => [
                 'mautic' => [
                     'minimum-version' => '5.0',
@@ -37,6 +40,10 @@ final class ZipDownloadMockHttpClient extends MockHttpClient
         ]);
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'test_zip_');
+        if (false === $tmpFile) {
+            throw new \RuntimeException('Failed to create temporary file for test ZIP archive.');
+        }
+
         $zip = new \ZipArchive();
         $zip->open($tmpFile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         $zip->addFromString('composer.json', $composerJson);
@@ -45,6 +52,10 @@ final class ZipDownloadMockHttpClient extends MockHttpClient
 
         $content = file_get_contents($tmpFile);
         unlink($tmpFile);
+
+        if (false === $content) {
+            throw new \RuntimeException('Failed to read generated ZIP archive contents.');
+        }
 
         return $content;
     }

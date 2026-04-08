@@ -53,7 +53,10 @@ final class PackageSubmitService
             throw new SubmitValidationException('Failed to create temporary file.');
         }
 
-        file_put_contents($tmpFile, $response->getContent());
+        $bytesWritten = file_put_contents($tmpFile, $response->getContent());
+        if (false === $bytesWritten) {
+            throw new SubmitValidationException('Failed to write downloaded asset to temporary file.');
+        }
 
         return $tmpFile;
     }
@@ -74,7 +77,7 @@ final class PackageSubmitService
             $composerJson = $zip->getFromName('composer.json');
 
             if (false === $composerJson) {
-                // Try to find composer.json in a subdirectory
+                // Try one level deep only (e.g. "folder/composer.json"), not deeper paths like "vendor/x/composer.json"
                 for ($i = 0; $i < $zip->numFiles; ++$i) {
                     $name = $zip->getNameIndex($i);
                     if (false !== $name && str_ends_with($name, '/composer.json') && 1 === substr_count($name, '/')) {
@@ -114,12 +117,18 @@ final class PackageSubmitService
         }
 
         $type = $data['type'] ?? null;
-        if ('mautic-resource' !== $type) {
-            throw new SubmitValidationException('composer.json "type" must be "mautic-resource".');
+        $allowedTypes = ['mautic-plugin', 'mautic-theme', 'mautic-resource'];
+        if (!\in_array($type, $allowedTypes, true)) {
+            throw new SubmitValidationException(\sprintf('composer.json "type" must be one of: %s.', implode(', ', $allowedTypes)));
         }
 
         if (!isset($data['version']) || !\is_string($data['version']) || '' === trim($data['version'])) {
             throw new SubmitValidationException('composer.json must contain a "version" field.');
+        }
+
+        $require = $data['require'] ?? [];
+        if (\is_array($require) && !isset($require['mautic/core-lib'])) {
+            throw new SubmitValidationException('composer.json "require" must include "mautic/core-lib" (e.g. "^7.0").');
         }
     }
 
@@ -133,6 +142,7 @@ final class PackageSubmitService
     {
         $packageName = (string) $composerData['name'];
         $version = (string) $composerData['version'];
+        $type = (string) $composerData['type'];
         $campaignUuid = $composerData['extra']['mautic']['campaign-uuid'] ?? null;
 
         $existingPackage = $this->apiClient->getPackageByName($packageName);
@@ -144,9 +154,9 @@ final class PackageSubmitService
             'name' => $packageName,
             'displayname' => $composerData['extra']['mautic']['display-name'] ?? $this->toDisplayName($packageName),
             'description' => $composerData['description'] ?? null,
-            'type' => 'mautic-resource',
+            'type' => $type,
             'time' => (new \DateTimeImmutable())->format('c'),
-            'maintainers' => json_encode([['name' => $maintainerName]]),
+            'maintainers' => [['name' => $maintainerName]],
         ];
 
         if (\is_string($campaignUuid) && '' !== $campaignUuid) {
@@ -154,10 +164,10 @@ final class PackageSubmitService
         }
 
         if ($created) {
-            $packageData['downloads'] = json_encode(['total' => 0]);
+            $packageData['downloads'] = ['total' => 0];
             $this->apiClient->createPackage($packageData);
         } else {
-            unset($packageData['name'], $packageData['downloads']);
+            unset($packageData['name']);
             $this->apiClient->updatePackage($packageName, $packageData);
         }
 
@@ -168,11 +178,11 @@ final class PackageSubmitService
             'version' => $version,
             'version_normalized' => $this->normalizeVersion($version),
             'description' => $composerData['description'] ?? null,
-            'keywords' => isset($composerData['keywords']) ? json_encode($composerData['keywords']) : null,
-            'license' => isset($composerData['license']) ? json_encode($composerData['license']) : null,
-            'authors' => isset($composerData['authors']) ? json_encode($composerData['authors']) : null,
-            'type' => 'mautic-resource',
-            'dist' => json_encode(['url' => $assetUrl, 'type' => 'zip']),
+            'keywords' => $composerData['keywords'] ?? null,
+            'license' => $composerData['license'] ?? null,
+            'authors' => $composerData['authors'] ?? null,
+            'type' => $type,
+            'dist' => ['url' => $assetUrl, 'type' => 'zip'],
             'time' => (new \DateTimeImmutable())->format('c'),
             'smv' => $smv,
         ];
@@ -204,7 +214,7 @@ final class PackageSubmitService
             return null;
         }
 
-        $mauticConstraint = $require['mautic/core'] ?? $require['mautic/mautic'] ?? null;
+        $mauticConstraint = $require['mautic/core-lib'] ?? $require['mautic/core'] ?? $require['mautic/mautic'] ?? null;
         if (!\is_string($mauticConstraint)) {
             return $composerData['extra']['mautic']['minimum-version'] ?? null;
         }
