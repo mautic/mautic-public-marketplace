@@ -190,7 +190,16 @@
             } only %}
         {% endif %}
     {% else %}
-            <div class="empty-state muted">{{ 'marketplace.index.empty'|trans }}</div>
+    <div class="d-flex flex-column align-items-center my-48">
+        {% include 'components/pictogram.html.twig' with {
+            pictogram: 'design--research',
+            color: 'var(--interactive)',
+            size: 80
+        } only %}
+        <h2 class="type-fluid-heading-05 mt-24 mb-16 text-primary">{{ 'marketplace.index.empty.heading'|trans }}</h2>
+        <div class="type-body-02 mb-16 text-center text-helper">{{ 'marketplace.index.empty.copy'|trans }}</div>
+    </div>
+
     {% endif %}
                 </turbo-frame>
             </div>
