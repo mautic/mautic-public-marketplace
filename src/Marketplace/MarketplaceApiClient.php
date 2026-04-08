@@ -27,6 +27,8 @@ final class MarketplaceApiClient
         ?string $query = null,
         array $mauticVersions = [],
         array $languages = [],
+        ?int $minimumRating = null,
+        ?string $ratedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
     ): PackageListResult {
@@ -51,6 +53,14 @@ final class MarketplaceApiClient
 
         if ([] !== $languages) {
             $params['_language'] = $languages;
+        }
+
+        if (null !== $minimumRating) {
+            $params['_minimum_rating'] = $minimumRating;
+        }
+
+        if (null !== $ratedBy && '' !== $ratedBy) {
+            $params['_rated_by'] = $ratedBy;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
@@ -102,6 +112,8 @@ final class MarketplaceApiClient
         ?string $type = null,
         ?string $query = null,
         array $mauticVersions = [],
+        ?int $minimumRating = null,
+        ?string $ratedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
     ): array {
@@ -117,6 +129,14 @@ final class MarketplaceApiClient
 
         if ([] !== $mauticVersions) {
             $params['_smv'] = $mauticVersions;
+        }
+
+        if (null !== $minimumRating) {
+            $params['_minimum_rating'] = $minimumRating;
+        }
+
+        if (null !== $ratedBy && '' !== $ratedBy) {
+            $params['_rated_by'] = $ratedBy;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {

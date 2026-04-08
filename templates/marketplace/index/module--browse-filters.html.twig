@@ -15,6 +15,19 @@
         checked: value in (filters.language ?? [])
     }]) %}
 {% endfor %}
+{% set ratingGroupContent %}
+    {% include 'components/radio.html.twig' with {
+        name: 'rating',
+        items: [
+            { label: 'marketplace.index.filters.rating.all', value: '', checked: (filters.rating ?? '') == '' },
+            { label: 'marketplace.index.filters.rating.5', value: '5', checked: (filters.rating ?? '') == 5 },
+            { label: 'marketplace.index.filters.rating.4', value: '4', checked: (filters.rating ?? '') == 4 },
+            { label: 'marketplace.index.filters.rating.3', value: '3', checked: (filters.rating ?? '') == 3 },
+            { label: 'marketplace.index.filters.rating.2', value: '2', checked: (filters.rating ?? '') == 2 },
+            { label: 'marketplace.index.filters.rating.1', value: '1', checked: (filters.rating ?? '') == 1 }
+        ]
+    } only %}
+{% endset %}
 {% set filterGroups = [
     {
         title: 'marketplace.index.filters.compatibility.label',
@@ -33,8 +46,27 @@
             { label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), value: 'mautic-resource', checked: (filters.type ?? '') == 'mautic-resource' }
         ],
         expanded: true
+    },
+    {
+        title: 'marketplace.index.filters.rating.label',
+        filterGroupItemsType: 'custom',
+        filterGroupItems: ratingGroupContent
     }
 ] %}
+{% if app.user %}
+    {% set filterGroups = filterGroups|merge([{
+        title: 'marketplace.index.filters.account.label',
+        name: 'things_i_rated',
+        filterGroupItemsType: 'checkbox',
+        filterGroupItems: [
+            {
+                label: 'marketplace.index.filters.packages_rated_by_me',
+                value: '1',
+                checked: filters.things_i_rated ?? false
+            }
+        ]
+    }]) %}
+{% endif %}
 {% if languageFilterItems is not empty %}
     {% set filterGroups = filterGroups|merge([{
         title: 'marketplace.index.filters.language.label',

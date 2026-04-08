@@ -58,8 +58,8 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'maintainers' => 'escopecz',
                 'smv' => '^5.0 || ^5.1',
                 'language' => 'en',
-                'average_rating' => 0,
-                'total_review' => 0,
+                'average_rating' => 5.0,
+                'total_review' => 1,
             ],
             'mautic/alpha-plugin' => [
                 'name' => 'mautic/alpha-plugin',
@@ -73,8 +73,8 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'maintainers' => 'rcheesley',
                 'smv' => '^4.3 || ^5.0',
                 'language' => 'English',
-                'average_rating' => 0,
-                'total_review' => 0,
+                'average_rating' => 3.0,
+                'total_review' => 1,
             ],
             'mautic/zebra-theme' => [
                 'name' => 'mautic/zebra-theme',
@@ -88,8 +88,8 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'maintainers' => 'escopecz',
                 'smv' => '^4.4 || ^5.0 || ^5.2',
                 'language' => 'nl',
-                'average_rating' => 0,
-                'total_review' => 0,
+                'average_rating' => 4.0,
+                'total_review' => 1,
             ],
             'mautic/welcome-campaign' => [
                 'name' => 'mautic/welcome-campaign',
@@ -143,6 +143,17 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 $selectedLanguages,
                 true,
             )));
+        }
+
+        $minimumRating = isset($params['_minimum_rating']) && is_numeric($params['_minimum_rating']) ? (int) $params['_minimum_rating'] : null;
+        if (null !== $minimumRating) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['average_rating'] ?? 0) >= $minimumRating));
+        }
+
+        $ratedBy = isset($params['_rated_by']) && \is_string($params['_rated_by']) ? trim($params['_rated_by']) : null;
+        if (null !== $ratedBy && '' !== $ratedBy) {
+            $reviewedObjectIds = array_column(array_filter(self::allReviews(), static fn (array $review): bool => $review['auth0_user_id'] === $ratedBy), 'objectId');
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => \in_array($r['name'], $reviewedObjectIds, true)));
         }
 
         // Filter by date range
@@ -273,7 +284,22 @@ final class SupabaseMockHttpClient extends MockHttpClient
         $userId = $params['auth0_user_id'] ?? '';
         $userId = str_replace('eq.', '', $userId);
 
-        $allReviews = [
+        $allReviews = self::allReviews();
+
+        $filtered = array_values(array_filter($allReviews, static fn (array $r): bool => $r['auth0_user_id'] === $userId));
+
+        return new MockResponse(
+            json_encode($filtered),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function allReviews(): array
+    {
+        return [
             [
                 'id' => 1,
                 'objectId' => 'mautic/example-plugin',
@@ -305,13 +331,6 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'created_at' => (new \DateTimeImmutable('-1 day'))->format('c'),
             ],
         ];
-
-        $filtered = array_values(array_filter($allReviews, static fn (array $r): bool => $r['auth0_user_id'] === $userId));
-
-        return new MockResponse(
-            json_encode($filtered),
-            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
-        );
     }
 
     private static function userPackagesResponse(string $url): MockResponse
@@ -463,6 +482,17 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 self::splitSmvValues($r['smv'] ?? null),
                 $selectedVersions,
             )));
+        }
+
+        $minimumRating = isset($params['_minimum_rating']) && is_numeric($params['_minimum_rating']) ? (int) $params['_minimum_rating'] : null;
+        if (null !== $minimumRating) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['average_rating'] ?? 0) >= $minimumRating));
+        }
+
+        $ratedBy = isset($params['_rated_by']) && \is_string($params['_rated_by']) ? trim($params['_rated_by']) : null;
+        if (null !== $ratedBy && '' !== $ratedBy) {
+            $reviewedObjectIds = array_column(array_filter(self::allReviews(), static fn (array $review): bool => $review['auth0_user_id'] === $ratedBy), 'objectId');
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => \in_array($r['name'], $reviewedObjectIds, true)));
         }
 
         $dateRange = $params['_date_range'] ?? null;

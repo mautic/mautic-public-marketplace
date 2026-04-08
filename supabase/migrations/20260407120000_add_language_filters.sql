@@ -10,6 +10,8 @@ CREATE OR REPLACE FUNCTION get_view(
     _smv TEXT[] DEFAULT NULL,
     _type TEXT DEFAULT NULL,
     _language TEXT[] DEFAULT NULL,
+    _minimum_rating INT DEFAULT NULL,
+    _rated_by TEXT DEFAULT NULL,
     _date_range TEXT DEFAULT NULL,
     _popularity TEXT DEFAULT NULL
 )
@@ -88,10 +90,27 @@ BEGIN
                         WHEN lower(btrim(p.language)) IN (''nl'', ''nl-nl'', ''dutch'', ''nederlands'') THEN ''dutch''
                         ELSE lower(btrim(p.language))
                     END
-                ) = ANY(%L::TEXT[])
+                    ) = ANY(%L::TEXT[])
+           )
+           AND (
+                %L IS NULL
+                OR COALESCE((
+                    SELECT ROUND(AVG(r2.rating), 1)
+                    FROM reviews r2
+                    WHERE r2."objectId" = p.name
+                ), 0) >= %L
+           )
+           AND (
+                %L IS NULL
+                OR EXISTS (
+                    SELECT 1
+                    FROM reviews rr
+                    WHERE rr."objectId" = p.name
+                      AND rr.auth0_user_id = %L
+                )
            )
            ' || date_filter,
-        _query, _query, _query, _type, _type, _smv, _smv, _language, _language
+        _query, _query, _query, _type, _type, _smv, _smv, _language, _language, _minimum_rating, _minimum_rating, _rated_by, _rated_by
     ) INTO total;
 
     sql_query := format(
@@ -138,14 +157,31 @@ BEGIN
                             WHEN lower(btrim(p.language)) IN (''nl'', ''nl-nl'', ''dutch'', ''nederlands'') THEN ''dutch''
                             ELSE lower(btrim(p.language))
                         END
-                    ) = ANY(%L::TEXT[])
+                        ) = ANY(%L::TEXT[])
+               )
+               AND (
+                    %L IS NULL
+                    OR COALESCE((
+                        SELECT ROUND(AVG(r2.rating), 1)
+                        FROM reviews r2
+                        WHERE r2."objectId" = p.name
+                    ), 0) >= %L
+               )
+               AND (
+                    %L IS NULL
+                    OR EXISTS (
+                        SELECT 1
+                        FROM reviews rr
+                        WHERE rr."objectId" = p.name
+                          AND rr.auth0_user_id = %L
+                    )
                )
                ' || date_filter || '
              GROUP BY p.name, p.url, p.repository, p.description, p.downloads, p.favers, p.type, p.displayname, p.language, p.time, p.created_at
              ORDER BY %s %s, p.name ASC
              LIMIT %L OFFSET %L
          ) t',
-        _query, _query, _query, _type, _type, _smv, _smv, _language, _language, _orderby, _orderdir, _limit, _offset
+        _query, _query, _query, _type, _type, _smv, _smv, _language, _language, _minimum_rating, _minimum_rating, _rated_by, _rated_by, _orderby, _orderdir, _limit, _offset
     );
 
     EXECUTE sql_query INTO todo;
@@ -161,6 +197,8 @@ CREATE OR REPLACE FUNCTION get_available_languages(
     _query TEXT DEFAULT NULL,
     _smv TEXT[] DEFAULT NULL,
     _type TEXT DEFAULT NULL,
+    _minimum_rating INT DEFAULT NULL,
+    _rated_by TEXT DEFAULT NULL,
     _date_range TEXT DEFAULT NULL,
     _popularity TEXT DEFAULT NULL
 )
@@ -202,13 +240,30 @@ BEGIN
                           AND EXISTS (
                               SELECT 1
                               FROM unnest(%L::TEXT[]) AS selected_smv
-                              WHERE v.smv ILIKE ''%%'' || selected_smv || ''%%''
-                          )
+                          WHERE v.smv ILIKE ''%%'' || selected_smv || ''%%''
+                      )
+                )
+               )
+               AND (
+                    %L IS NULL
+                    OR COALESCE((
+                        SELECT ROUND(AVG(r2.rating), 1)
+                        FROM reviews r2
+                        WHERE r2."objectId" = p.name
+                    ), 0) >= %L
+               )
+               AND (
+                    %L IS NULL
+                    OR EXISTS (
+                        SELECT 1
+                        FROM reviews rr
+                        WHERE rr."objectId" = p.name
+                          AND rr.auth0_user_id = %L
                     )
                )
                ' || date_filter || '
          ) available_languages',
-        _query, _query, _query, _type, _type, _smv, _smv
+        _query, _query, _query, _type, _type, _smv, _smv, _minimum_rating, _minimum_rating, _rated_by, _rated_by
     ) INTO languages;
 
     RETURN languages;
