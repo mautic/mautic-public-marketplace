@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Formatter\MauticVersionConstraintFormatter;
 use App\Marketplace\MarketplaceApiClient;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,6 +22,7 @@ final class MarketplaceController extends AbstractController
 
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
+        private readonly MauticVersionConstraintFormatter $mauticVersionConstraintFormatter,
         #[Autowire(env: 'AUTH0_DOMAIN')]
         private readonly string $auth0Domain,
         #[Autowire(env: 'AUTH0_CLIENT_ID')]
@@ -41,7 +43,7 @@ final class MarketplaceController extends AbstractController
         $orderDir = (string) $request->query->get('orderdir', 'desc');
         $type = $request->query->get('type');
         $query = $request->query->get('query');
-        $mautic = $request->query->get('mautic');
+        $mauticVersions = $this->normalizeMauticVersions($request->query->all()['mautic'] ?? null);
         $dateRange = $request->query->get('date_range');
         $popularity = $request->query->get('popularity');
 
@@ -53,21 +55,24 @@ final class MarketplaceController extends AbstractController
                 $orderDir,
                 \is_string($type) ? $type : null,
                 \is_string($query) ? $query : null,
-                \is_string($mautic) ? $mautic : null,
+                $mauticVersions,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
             $typeCounts = $this->buildTypeCounts(
                 \is_string($query) ? $query : null,
-                \is_string($mautic) ? $mautic : null,
+                $mauticVersions,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
+            $compatibleMauticVersions = $this->apiClient->getCompatibleMauticVersions();
         } catch (SupabaseApiException $exception) {
             return $this->render('marketplace/index.html.twig', [
                 'error' => $exception->getMessage(),
                 'result' => null,
                 'type_counts' => $this->emptyTypeCounts(),
+                'mautic_versions' => [],
+                'mautic_version_labels' => [],
                 'filters' => [
                     'limit' => $limit,
                     'offset' => $offset,
@@ -75,7 +80,7 @@ final class MarketplaceController extends AbstractController
                     'orderdir' => $orderDir,
                     'type' => $type,
                     'query' => $query,
-                    'mautic' => $mautic,
+                    'mautic' => $mauticVersions,
                     'date_range' => $dateRange,
                     'popularity' => $popularity,
                 ],
@@ -86,6 +91,8 @@ final class MarketplaceController extends AbstractController
             'error' => null,
             'result' => $result,
             'type_counts' => $typeCounts,
+            'mautic_versions' => $compatibleMauticVersions,
+            'mautic_version_labels' => $this->buildMauticVersionLabels($compatibleMauticVersions),
             'filters' => [
                 'limit' => $limit,
                 'offset' => $offset,
@@ -93,7 +100,7 @@ final class MarketplaceController extends AbstractController
                 'orderdir' => $orderDir,
                 'type' => $type,
                 'query' => $query,
-                'mautic' => $mautic,
+                'mautic' => $mauticVersions,
                 'date_range' => $dateRange,
                 'popularity' => $popularity,
             ],
@@ -139,7 +146,7 @@ final class MarketplaceController extends AbstractController
     /**
      * @return array<string, int>
      */
-    private function buildTypeCounts(?string $query, ?string $mautic, ?string $dateRange, ?string $popularity): array
+    private function buildTypeCounts(?string $query, array $mauticVersions, ?string $dateRange, ?string $popularity): array
     {
         $baseResult = $this->apiClient->listPackages(
             1,
@@ -148,7 +155,7 @@ final class MarketplaceController extends AbstractController
             'desc',
             null,
             $query,
-            $mautic,
+            $mauticVersions,
             $dateRange,
             $popularity,
         );
@@ -165,7 +172,7 @@ final class MarketplaceController extends AbstractController
             'desc',
             null,
             $query,
-            $mautic,
+            $mauticVersions,
             $dateRange,
             $popularity,
         );
@@ -188,5 +195,50 @@ final class MarketplaceController extends AbstractController
     private function emptyTypeCounts(): array
     {
         return array_fill_keys(self::PACKAGE_TYPES, 0);
+    }
+
+    /**
+     * @param list<string> $versions
+     *
+     * @return array<string, string>
+     */
+    private function buildMauticVersionLabels(array $versions): array
+    {
+        $labels = [];
+        foreach ($versions as $version) {
+            $labels[$version] = $this->mauticVersionConstraintFormatter->format($version);
+        }
+
+        return $labels;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizeMauticVersions(mixed $value): array
+    {
+        if (\is_string($value)) {
+            $value = [$value];
+        }
+
+        if (!\is_array($value)) {
+            return [];
+        }
+
+        $versions = [];
+        foreach ($value as $item) {
+            if (!\is_string($item)) {
+                continue;
+            }
+
+            $item = trim($item);
+            if ('' === $item) {
+                continue;
+            }
+
+            $versions[] = $item;
+        }
+
+        return array_values(array_unique($versions));
     }
 }

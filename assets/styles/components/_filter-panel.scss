@@ -1,19 +1,20 @@
 .filter-panel--group {
     .form-check {
         position: relative;
-        padding-left: 0;
         transition: var(--transition-all-productive);
         margin-bottom: 0;
         @include outline;
+
+        &:has(.form-check-input[type="radio"]) {
+            padding-left: 0;
+        }
+
+        &:has(.form-check-input[type="checkbox"]) {
+            padding-block: 4px;
+        }
     }
 
-    .form-check-label {
-        display: block;
-        padding: 8px 16px;
-        width: 100%;
-    }
-    
-    .form-check-input {
+    .form-check-input[type="radio"] {
         position: absolute;
         inset: 0;
         z-index: 1;
@@ -22,6 +23,12 @@
         margin: 0;
         opacity: 0;
         cursor: pointer;
+
+        + .form-check-label {
+            display: block;
+            padding: 8px 16px;
+            width: 100%;
+        }
         
         &:hover + .form-check-label {
             background-color: var(--layer-hover);
@@ -29,6 +36,12 @@
 
         &:checked + .form-check-label {
             background-color: var(--highlight);
+        }
+    }
+
+    .form-check-input[type="checkbox"] {
+        &:checked + .form-check-label {
+            color: var(--text-primary);
         }
     }
 }
