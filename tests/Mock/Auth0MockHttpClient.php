@@ -34,7 +34,20 @@ final class Auth0MockHttpClient extends MockHttpClient
             }
 
             if ('GET' === $method && str_contains($url, '/userinfo')) {
-                $authorization = $options['headers']['Authorization'] ?? null;
+                $authorization = null;
+
+                if (isset($options['headers']['Authorization']) && \is_string($options['headers']['Authorization'])) {
+                    $authorization = $options['headers']['Authorization'];
+                } elseif (isset($options['normalized_headers']['authorization'][0]) && \is_array($options['normalized_headers']['authorization'][0])) {
+                    $authorization = $options['normalized_headers']['authorization'][0][1] ?? null;
+                } elseif (isset($options['headers']) && \is_array($options['headers'])) {
+                    foreach ($options['headers'] as $header) {
+                        if (\is_string($header) && str_starts_with(strtolower($header), 'authorization:')) {
+                            $authorization = trim(substr($header, \strlen('authorization:')));
+                            break;
+                        }
+                    }
+                }
 
                 if ('Bearer test-access-token' !== $authorization) {
                     return new MockResponse(

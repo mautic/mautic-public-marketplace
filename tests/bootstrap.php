@@ -22,6 +22,15 @@ if (method_exists(Dotenv::class, 'bootEnv')) {
     (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
 }
 
+$_SERVER['APP_ENV'] ??= $_ENV['APP_ENV'] ?? 'test';
+$_SERVER['APP_DEBUG'] ??= $_ENV['APP_DEBUG'] ?? '1';
+$_SERVER['AUTH0_DOMAIN'] ??= $_ENV['AUTH0_DOMAIN'] ?? 'test.auth0.com';
+$_ENV['AUTH0_DOMAIN'] = $_SERVER['AUTH0_DOMAIN'];
+$_SERVER['AUTH0_CLIENT_ID'] ??= $_ENV['AUTH0_CLIENT_ID'] ?? 'test-client-id';
+$_ENV['AUTH0_CLIENT_ID'] = $_SERVER['AUTH0_CLIENT_ID'];
+$_SERVER['AUTH0_CLIENT_SECRET'] ??= $_ENV['AUTH0_CLIENT_SECRET'] ?? 'test-client-secret';
+$_ENV['AUTH0_CLIENT_SECRET'] = $_SERVER['AUTH0_CLIENT_SECRET'];
+
 if ($_SERVER['APP_DEBUG']) {
     umask(0000);
 }

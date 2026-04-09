@@ -87,7 +87,7 @@ final class AuthControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'Authentication could not be completed. Please try again.');
-        self::assertSelectorExists('a[href="/auth/login?returnTo=%2F"]');
+        self::assertSelectorExists('a[href="/auth/login?returnTo=/"]');
     }
 
     public function testLogoutClearsSessionAndRedirectsToAuth0Logout(): void
@@ -103,7 +103,7 @@ final class AuthControllerTest extends WebTestCase
         $client->request('GET', '/browse');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorExists('a[href="/auth/login?returnTo=%2Fbrowse"]');
+        self::assertSelectorExists('a[href="/auth/login?returnTo=/browse"]');
     }
 
     private function seedPendingLogin(KernelBrowser $client, array $pendingLogin): void

@@ -14,7 +14,7 @@ final class ProfileControllerTest extends WebTestCase
         $client = self::createClient();
         $client->request('GET', '/profile');
 
-        self::assertResponseRedirects('/auth/login?returnTo=%2Fprofile');
+        self::assertResponseRedirects('/auth/login?returnTo=/profile');
     }
 
     public function testAuthenticatedProfileRendersUserReviewsAndPackages(): void

@@ -18,18 +18,19 @@ final class ReviewControllerTest extends WebTestCase
             '_token' => 'invalid',
         ]);
 
-        self::assertResponseRedirects('/auth/login?returnTo=%2F');
+        self::assertResponseRedirects('/auth/login?returnTo=/');
     }
 
     public function testAuthenticatedSubmitSucceeds(): void
     {
         $client = self::createClient();
         $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $token = $this->csrfTokenFromDetailPage($client, 'vendor/package');
 
         $client->request('POST', '/package/vendor/package/review', [
             'rating' => '5',
             'review' => 'Great plugin!',
-            '_token' => $this->csrfToken('review_vendor/package'),
+            '_token' => $token,
         ]);
 
         self::assertResponseRedirects('/package/vendor/package');
@@ -44,11 +45,12 @@ final class ReviewControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $token = $this->csrfTokenFromDetailPage($client, 'vendor/package');
 
         $client->request('POST', '/package/vendor/package/review', [
             'rating' => '0',
             'review' => 'Great plugin!',
-            '_token' => $this->csrfToken('review_vendor/package'),
+            '_token' => $token,
         ]);
 
         self::assertResponseStatusCodeSame(400);
@@ -59,11 +61,12 @@ final class ReviewControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $token = $this->csrfTokenFromDetailPage($client, 'vendor/package');
 
         $client->request('POST', '/package/vendor/package/review', [
             'rating' => '4',
             'review' => '   ',
-            '_token' => $this->csrfToken('review_vendor/package'),
+            '_token' => $token,
         ]);
 
         self::assertResponseStatusCodeSame(400);
@@ -84,8 +87,12 @@ final class ReviewControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    private function csrfToken(string $id): string
+    private function csrfTokenFromDetailPage(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client, string $package): string
     {
-        return self::getContainer()->get('security.csrf.token_manager')->getToken($id)->getValue();
+        $client->request('GET', '/package/'.$package);
+
+        self::assertResponseIsSuccessful();
+
+        return (string) $client->getCrawler()->filter('input[name="_token"]')->attr('value');
     }
 }
