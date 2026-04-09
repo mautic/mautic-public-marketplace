@@ -69,7 +69,7 @@ final class ReviewController extends AbstractController
 
     /**
      * @param array{rating:string,review:string} $reviewForm
-     * @param array<string,string> $reviewErrors
+     * @param array<string,string>               $reviewErrors
      */
     private function renderReviewErrorPage(string $package, array $reviewForm, array $reviewErrors, int $statusCode): Response
     {

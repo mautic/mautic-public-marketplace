@@ -166,7 +166,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         self::assertSame('Alpha Plugin', $titles[0]);
     }
 
@@ -177,7 +177,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(1, count($titles));
+        self::assertGreaterThanOrEqual(1, \count($titles));
         self::assertSame('Zebra Theme', $titles[0]);
     }
 
@@ -196,7 +196,7 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'v4.3+');
         self::assertSelectorTextContains('body', 'v5.0+');
         self::assertSelectorTextContains('time', '2 months ago');
-        self::assertSelectorExists(sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+        self::assertSelectorExists(\sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
         self::assertSelectorExists('a[href="/auth/login?returnTo=%2Fpackage%2Fmautic%2Falpha-plugin"]');
     }
 
@@ -284,7 +284,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         self::assertSame('Zebra Theme', $titles[0]);
     }
 
@@ -295,7 +295,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         // Example Plugin is 5 days old, the most recent
         self::assertSame('Example Plugin', $titles[0]);
     }

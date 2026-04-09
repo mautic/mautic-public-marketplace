@@ -52,7 +52,7 @@ final class Auth0Client
 
             $data = $response->toArray(false);
 
-            if (!isset($data['access_token']) || !\is_string($data['access_token'])) {
+            if (empty($data['access_token'])) {
                 throw new Auth0AuthenticationException('Auth0 did not return an access token.');
             }
 
@@ -86,7 +86,7 @@ final class Auth0Client
 
             $data = $response->toArray(false);
 
-            if (!isset($data['sub']) || !\is_string($data['sub'])) {
+            if (empty($data['sub'])) {
                 throw new Auth0AuthenticationException('Auth0 user info response is missing a user identifier.');
             }
 
@@ -148,12 +148,8 @@ final class Auth0Client
 
         $payload = json_decode($this->base64UrlDecode($segments[1]), true);
 
-        if (!\is_array($payload) || !isset($payload['nonce']) || !\is_string($payload['nonce'])) {
-            throw new Auth0AuthenticationException('Auth0 returned an invalid ID token nonce.');
-        }
-
-        if ($payload['nonce'] !== $expectedNonce) {
-            throw new Auth0AuthenticationException('Auth0 returned an unexpected ID token nonce.');
+        if (!\is_array($payload) || ($payload['nonce'] ?? null) !== $expectedNonce) {
+            throw new Auth0AuthenticationException('Auth0 ID token nonce mismatch.');
         }
     }
 
@@ -169,16 +165,13 @@ final class Auth0Client
         return $decoded;
     }
 
-    /**
-     * @throws Auth0AuthenticationException
-     */
     private function assertConfigured(bool $requiresSecret = false): void
     {
-        if ('' === trim($this->auth0Domain) || '' === trim($this->auth0ClientId)) {
+        if ('' === $this->auth0Domain || '' === $this->auth0ClientId) {
             throw new Auth0AuthenticationException('Auth0 is not configured. Set AUTH0_DOMAIN and AUTH0_CLIENT_ID.');
         }
 
-        if ($requiresSecret && '' === trim($this->auth0ClientSecret)) {
+        if ($requiresSecret && '' === $this->auth0ClientSecret) {
             throw new Auth0AuthenticationException('Auth0 is not configured. Set AUTH0_CLIENT_SECRET.');
         }
     }

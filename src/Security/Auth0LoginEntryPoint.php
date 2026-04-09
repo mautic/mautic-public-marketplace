@@ -29,22 +29,19 @@ final class Auth0LoginEntryPoint implements AuthenticationEntryPointInterface
 
     private function determineReturnTo(Request $request): string
     {
-        if ($request->isMethodSafe(false)) {
+        if ($request->isMethodSafe()) {
             return $request->getRequestUri();
         }
 
-        $referer = $request->headers->get('referer');
-        if (!\is_string($referer) || '' === $referer) {
+        $referer = $request->headers->get('referer', '/');
+        $path = parse_url($referer, \PHP_URL_PATH);
+
+        if (!\is_string($path) || !str_starts_with($path, '/')) {
             return '/';
         }
 
-        $refererPath = parse_url($referer, \PHP_URL_PATH);
-        if (!\is_string($refererPath) || '' === $refererPath || !str_starts_with($refererPath, '/')) {
-            return '/';
-        }
+        $query = parse_url($referer, \PHP_URL_QUERY);
 
-        $refererQuery = parse_url($referer, \PHP_URL_QUERY);
-
-        return null === $refererQuery ? $refererPath : $refererPath.'?'.$refererQuery;
+        return null === $query ? $path : $path.'?'.$query;
     }
 }

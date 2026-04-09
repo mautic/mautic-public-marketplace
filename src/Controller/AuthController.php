@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Auth0\Auth0Client;
 use App\Auth0\Auth0User;
 use App\Auth0\Exception\Auth0AuthenticationException;
+use App\Security\SessionLoginAuthenticator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -14,8 +15,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use App\Security\SessionLoginAuthenticator;
 
 final class AuthController extends AbstractController
 {
@@ -77,10 +76,10 @@ final class AuthController extends AbstractController
             return $this->redirectToRoute('marketplace_homepage');
         }
 
-        $requestState = $request->query->get('state');
-        $requestCode = $request->query->get('code');
+        $requestState = $request->query->getString('state');
+        $requestCode = $request->query->getString('code');
 
-        if (!\is_string($requestState) || !isset($pendingLogin['state']) || $requestState !== $pendingLogin['state'] || !\is_string($requestCode) || '' === $requestCode) {
+        if ('' === $requestCode || $requestState !== ($pendingLogin['state'] ?? '')) {
             $session->remove(self::SESSION_KEY);
             $this->addFlash('error', 'Authentication could not be completed. Please try again.');
 
@@ -106,9 +105,9 @@ final class AuthController extends AbstractController
 
         $user = new Auth0User(
             $userInfo['sub'],
-            isset($userInfo['name']) && \is_string($userInfo['name']) ? $userInfo['name'] : null,
-            isset($userInfo['email']) && \is_string($userInfo['email']) ? $userInfo['email'] : null,
-            isset($userInfo['picture']) && \is_string($userInfo['picture']) ? $userInfo['picture'] : null,
+            $userInfo['name'] ?? null,
+            $userInfo['email'] ?? null,
+            $userInfo['picture'] ?? null,
         );
 
         $this->security->login($user, SessionLoginAuthenticator::class, 'main');
@@ -123,7 +122,7 @@ final class AuthController extends AbstractController
         $this->tokenStorage->setToken(null);
 
         if ($request->hasSession()) {
-            $this->invalidateSession($request->getSession());
+            $request->getSession()->invalidate();
         }
 
         try {
@@ -156,11 +155,5 @@ final class AuthController extends AbstractController
     private function createCodeChallenge(string $codeVerifier): string
     {
         return rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
-    }
-
-    private function invalidateSession(SessionInterface $session): void
-    {
-        $session->clear();
-        $session->invalidate();
     }
 }

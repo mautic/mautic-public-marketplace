@@ -1,38 +1,10 @@
-{% set reviews = package.reviews ?? [] %}
-{% set displayReviews = [] %}
-{% set totalRating = 0 %}
-{% set ratingCount = 0 %}
-
-{% for review in reviews %}
-    {% set reviewRating = review.rating is defined ? review.rating : null %}
-    {% if reviewRating is not null %}
-        {% set totalRating = totalRating + reviewRating %}
-        {% set ratingCount = ratingCount + 1 %}
-    {% endif %}
-{% endfor %}
-
-{% set averageRating = ratingCount > 0 ? totalRating / ratingCount : null %}
-{% set ratingSummary = averageRating is not null
-    ? averageRating|number_format(1, '.', '')
-    : 'marketplace.package.rating.none'|trans
-%}
-
-{% for review in reviews %}
-    {% set reviewText = review.review ?? null %}
-    {% set reviewAuthor = review.user ?? review.name ?? null %}
-    {% set reviewRating = review.rating is defined ? review.rating : null %}
-
-    {% if reviewRating is not null or reviewText %}
-        {% set displayReviews = displayReviews|merge([{
-            text: reviewText,
-            author: reviewAuthor,
-            rating: reviewRating,
-        }]) %}
-    {% endif %}
-{% endfor %}
-
+{% set displayReviews = display_reviews|default([]) %}
 {% set visibleReviews = displayReviews|slice(0, 3) %}
 {% set hasMoreReviews = displayReviews|length > 3 %}
+{% set ratingSummary = average_rating is not null
+    ? average_rating|number_format(1, '.', '')
+    : 'marketplace.package.rating.none'|trans
+%}
 
 {% set contentBlockChild %}
 <hr class="mb-48 mx-md-n32">
