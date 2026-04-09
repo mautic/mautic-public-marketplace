@@ -41,7 +41,7 @@
                         {
                             HeaderGlobalDropdown: {
                                 ariaLabel: 'mautic.marketplace.header.account',
-                                label: app.user.name ?? app.user.email ?? 'Account',
+                                renderDropdownIcon: 'ri-account-circle-line',
                                 renderMenuContent: authMenu
                             }
                         }
@@ -49,7 +49,7 @@
                         {
                             HeaderGlobalAction: {
                                 href: path('auth_login', { returnTo: app.request.requestUri }),
-                                label: 'mautic.marketplace.header.login',
+                                renderActionIcon: 'ri-login-box-line',
                                 ariaLabel: 'mautic.marketplace.header.login'
                             }
                         }
