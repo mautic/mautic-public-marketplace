@@ -17,6 +17,13 @@
 {% endfor %}
 {% set filterGroups = [
     {
+        title: 'marketplace.index.filters.compatibility.label',
+        name: 'mautic',
+        filterGroupItemsType: 'checkbox',
+        filterGroupItems: compatibilityFilterItems,
+        expanded: true
+    },
+    {
         title: 'marketplace.index.filters.type.label',
         filterGroupItemsType: 'select',
         filterGroupItems: [
@@ -24,13 +31,8 @@
             { label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), value: 'mautic-plugin', checked: (filters.type ?? '') == 'mautic-plugin' },
             { label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), value: 'mautic-theme', checked: (filters.type ?? '') == 'mautic-theme' },
             { label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), value: 'mautic-resource', checked: (filters.type ?? '') == 'mautic-resource' }
-        ]
-    },
-    {
-        title: 'marketplace.index.filters.compatibility.label',
-        name: 'mautic',
-        filterGroupItemsType: 'checkbox',
-        filterGroupItems: compatibilityFilterItems
+        ],
+        expanded: true
     }
 ] %}
 {% if languageFilterItems is not empty %}
