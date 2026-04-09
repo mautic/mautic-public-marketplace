@@ -25,72 +25,7 @@
     <form class="mt-4" method="get" id="marketplace-filters" data-autosubmit="true" data-turbo-frame="package-results">
         <div class="row mt-12 mb-32">
             <div class="col-12 col-lg-3 order-2 order-lg-1 mt-24 mt-lg-0">
-                {% set allTypesCount = (type_counts['mautic-plugin'] ?? 0) + (type_counts['mautic-theme'] ?? 0) + (type_counts['mautic-resource'] ?? 0) %}
-                {% set compatibilityFilterItems = [] %}
-                {% for version in mautic_versions %}
-                    {% set compatibilityFilterItems = compatibilityFilterItems|merge([{
-                        label: mautic_version_labels[version] ?? version,
-                        value: version,
-                        checked: version in (filters.mautic ?? [])
-                    }]) %}
-                {% endfor %}
-                {% set languageFilterItems = [] %}
-                {% for value, label in language_options %}
-                    {% set languageFilterItems = languageFilterItems|merge([{
-                        label: label,
-                        value: value,
-                        checked: value in (filters.language ?? [])
-                    }]) %}
-                {% endfor %}
-                {% set filterGroups = [
-                    {
-                        title: 'marketplace.index.filters.type.label',
-                        filterGroupItemsType: 'select',
-                        filterGroupItems: [
-                            { label: 'marketplace.index.filters.type.all_count'|trans({'%count%': allTypesCount}), value: '', checked: (filters.type ?? '') == '' },
-                            { label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), value: 'mautic-plugin', checked: (filters.type ?? '') == 'mautic-plugin' },
-                            { label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), value: 'mautic-theme', checked: (filters.type ?? '') == 'mautic-theme' },
-                            { label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), value: 'mautic-resource', checked: (filters.type ?? '') == 'mautic-resource' }
-                        ]
-                    },
-                    {
-                        title: 'marketplace.index.filters.compatibility.label',
-                        name: 'mautic',
-                        filterGroupItemsType: 'checkbox',
-                        filterGroupItems: compatibilityFilterItems
-                    }
-                ] %}
-                {% if languageFilterItems is not empty %}
-                    {% set filterGroups = filterGroups|merge([{
-                        title: 'marketplace.index.filters.language.label',
-                        name: 'language',
-                        filterGroupItemsType: 'checkbox',
-                        filterGroupItems: languageFilterItems
-                    }]) %}
-                {% endif %}
-                {% set filterGroups = filterGroups|merge([
-                    {
-                        title: 'marketplace.index.filters.date_range.label',
-                        filterGroupItemsType: 'select',
-                        filterGroupItems: [
-                            { label: 'marketplace.index.filters.date_range.7d', value: '7d', checked: (filters.date_range ?? '') == '7d' },
-                            { label: 'marketplace.index.filters.date_range.30d', value: '30d', checked: (filters.date_range ?? '') == '30d' },
-                            { label: 'marketplace.index.filters.date_range.90d', value: '90d', checked: (filters.date_range ?? '') == '90d' },
-                            { label: 'marketplace.index.filters.date_range.365d', value: '365d', checked: (filters.date_range ?? '') == '365d' }
-                        ]
-                    }
-                ]) %}
-                {% include 'components/filter-panel.html.twig' with {
-                    heading: 'marketplace.index.filters.heading',
-                    filterCutoff: 5,
-                    filterGroups: filterGroups
-                } only %}
-                <input type="hidden" name="orderby" value="{{ orderby }}">
-                <input type="hidden" name="orderdir" value="{{ orderdir }}">
-                {% if marketplace_total_pages <= 1 %}
-                <input type="hidden" name="limit" value="{{ filters.limit }}">
-                <input type="hidden" name="offset" value="{{ filters.offset }}">
-                {% endif %}
+                {% include 'marketplace/index/module--browse-filters.html.twig' %}
             </div>
             <div class="col-12 col-lg-9 order-1 order-lg-2">
                 <div class="row justify-content-end">
