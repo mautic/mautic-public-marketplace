@@ -87,6 +87,11 @@
                         {% if item.HeaderGlobalAction.href is defined %}href="{{ item.HeaderGlobalAction.href }}"{% else %}type="button"{% endif %}
                         aria-label="{{ item.HeaderGlobalAction.ariaLabel|default(item.HeaderGlobalAction.label|default(''))|trans }}"
                         class="header__action btn btn--lg layout--size-lg btn-ghost {{ item.HeaderGlobalAction.label is not defined ? 'btn--icon-only' : '' }} {{ item.HeaderGlobalAction.className|default('') }}"
+                        {% if item.HeaderGlobalAction.attributes is defined %}
+                            {% for name, value in item.HeaderGlobalAction.attributes %}
+                                {{- ' ' ~ name }}="{{ value }}"
+                            {% endfor %}
+                        {% endif %}
                         {% if item.HeaderGlobalAction.onClick is defined %}onclick="{{ item.HeaderGlobalAction.onClick }}"{% endif %}>
                         {% if item.HeaderGlobalAction.renderActionIcon is defined %}
                             <i class="{{ item.HeaderGlobalAction.renderActionIcon }} ri-lg"></i>

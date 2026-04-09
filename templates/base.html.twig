@@ -10,7 +10,7 @@
 <body>
       {% set authMenu %}
           <a class="dropdown-item" href="{{ path('profile_page') }}">{{ 'mautic.marketplace.header.my_profile'|trans }}</a>
-          <a class="dropdown-item" href="{{ path('auth_logout') }}">{{ 'mautic.marketplace.header.logout'|trans }}</a>
+          <a class="dropdown-item" href="{{ path('auth_logout') }}" data-turbo="false">{{ 'mautic.marketplace.header.logout'|trans }}</a>
       {% endset %}
 
       {% include 'components/uishell.html.twig' with {
@@ -50,7 +50,10 @@
                             HeaderGlobalAction: {
                                 href: path('auth_login', { returnTo: app.request.requestUri }),
                                 renderActionIcon: 'ri-login-box-line',
-                                ariaLabel: 'mautic.marketplace.header.login'
+                                ariaLabel: 'mautic.marketplace.header.login',
+                                attributes: {
+                                    'data-turbo': 'false'
+                                }
                             }
                         }
                     ]
