@@ -38,7 +38,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('h1');
-        self::assertSelectorExists('a[href="/auth/login?returnTo=%2Fbrowse"]');
+        self::assertSelectorExists('a[href="/auth/login?returnTo=/browse"]');
     }
 
     public function testFilteringByTypeAndMauticVersion(): void
@@ -197,7 +197,7 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'v5.0+');
         self::assertSelectorTextContains('time', '2 months ago');
         self::assertSelectorExists(\sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
-        self::assertSelectorExists('a[href="/auth/login?returnTo=%2Fpackage%2Fmautic%2Falpha-plugin"]');
+        self::assertSelectorExists('a[href="/auth/login?returnTo=/package/mautic/alpha-plugin"]');
     }
 
     public function testAuthenticatedDetailPageShowsAccountMenuAndReviewForm(): void

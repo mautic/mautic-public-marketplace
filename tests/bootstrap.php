@@ -22,6 +22,29 @@ if (method_exists(Dotenv::class, 'bootEnv')) {
     (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
 }
 
+setTestEnvDefault('APP_ENV', 'test');
+setTestEnvDefault('APP_DEBUG', '1');
+setTestEnvDefault('AUTH0_DOMAIN', 'test.auth0.com');
+setTestEnvDefault('AUTH0_CLIENT_ID', 'test-client-id');
+setTestEnvDefault('AUTH0_CLIENT_SECRET', 'test-client-secret');
+
 if ($_SERVER['APP_DEBUG']) {
     umask(0000);
+}
+
+function setTestEnvDefault(string $name, string $default): void
+{
+    $current = $_SERVER[$name] ?? $_ENV[$name] ?? getenv($name);
+
+    if (!is_string($current) || '' === trim($current)) {
+        $_SERVER[$name] = $default;
+        $_ENV[$name] = $default;
+        putenv(sprintf('%s=%s', $name, $default));
+
+        return;
+    }
+
+    $_SERVER[$name] = $current;
+    $_ENV[$name] = $current;
+    putenv(sprintf('%s=%s', $name, $current));
 }
