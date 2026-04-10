@@ -197,14 +197,14 @@
                     {{ common_copy_content }}
                     {{ common_custom_content }}
                     {{ common_tags_content }}
+                    {% if ctaCopy is defined or footerCopy is defined or icon is defined %}
+                    <div class="card__footer">
+                        {{ common_cta_copy_content }}
+                        {{ common_footer_copy_content }}
+                        {{ common_icon_content }}
+                    </div>
+                    {% endif %}
                 </div>
-                {% if cta is defined or footerCopy is defined or icon is defined %}
-                <div class="card__footer">
-                    {{ common_cta_copy_content }}
-                    {{ common_footer_copy_content }}
-                    {{ common_icon_content }}
-                </div>
-                {% endif %}
             </div>
         {% endset %}
         {% include 'components/tile.html.twig' with {
