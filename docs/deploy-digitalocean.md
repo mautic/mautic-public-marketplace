@@ -193,20 +193,36 @@ If you use this deploy user, set `DO_SSH_USER=deploy`.
 - The staging workflow also runs Supabase functions/migrations against the staging Supabase project.
 
 ## Auth0 configuration
-Create an Auth0 **Regular Web Application** and configure it for staging/prod:
 
-- **Application type:** Regular Web Application
-- **Allowed Callback URLs:**
-  - `https://marketplace-staging.mautic.org/auth/callback`
-  - `https://marketplace.mautic.org/auth/callback`
-- **Allowed Logout URLs:**
-  - `https://marketplace-staging.mautic.org/`
-  - `https://marketplace.mautic.org/`
-- **Allowed Web Origins:**
-  - `https://marketplace-staging.mautic.org`
-  - `https://marketplace.mautic.org`
+**Important:** The Auth0 application must be created as a **Regular Web Application**.
 
-Set these env vars in `/etc/marketplace/prod.env` and `/etc/marketplace/staging.env`:
+### Production app
+Create a **Regular Web Application** in the Auth0 dashboard:
+
+- **Allowed Callback URLs:** `https://marketplace.mautic.org/auth/callback`
+- **Allowed Logout URLs:** `https://marketplace.mautic.org`
+
+### Staging app
+Create a separate **Regular Web Application**:
+
+- **Allowed Callback URLs:** `https://marketplace-staging.mautic.org/auth/callback`
+- **Allowed Logout URLs:** `https://marketplace-staging.mautic.org`
+
+### Local development
+Create a separate **Regular Web Application**:
+
+- **Allowed Callback URLs:** `http://localhost:33000/auth/callback`
+- **Allowed Logout URLs:** `http://localhost:33000`
+
+Add the credentials to `.env.local`:
+```
+AUTH0_DOMAIN=your-tenant.us.auth0.com
+AUTH0_CLIENT_ID=your-client-id
+AUTH0_CLIENT_SECRET=your-client-secret
+```
+
+### Environment variables
+Set these in `/etc/marketplace/prod.env` and `/etc/marketplace/staging.env` (each with their own app credentials):
 - `AUTH0_DOMAIN` (e.g., `mautic-dev.us.auth0.com`)
 - `AUTH0_CLIENT_ID` (Regular Web Application client ID)
 - `AUTH0_CLIENT_SECRET` (required for the server-side code exchange)
