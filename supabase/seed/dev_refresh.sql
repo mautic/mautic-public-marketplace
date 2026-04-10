@@ -2,6 +2,14 @@
 ALTER TABLE packages DROP COLUMN IF EXISTS validation_errors;
 ALTER TABLE versions ADD COLUMN IF NOT EXISTS validation_errors TEXT DEFAULT NULL;
 
+UPDATE packages
+SET language = 'English'
+WHERE name IN (
+    'mautic/customer-reengagement-campaign',
+    'mautic/revenue-recovery-campaign'
+)
+  AND language = 'PHP';
+
 -- Drop old get_view overloads to prevent PostgREST conflict
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;

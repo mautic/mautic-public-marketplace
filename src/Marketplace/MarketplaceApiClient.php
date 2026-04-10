@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Marketplace;
 
-use App\Auth0\Auth0Client;
-use App\Auth0\Exception\Auth0AuthenticationException;
 use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\Dto\PackageListResult;
 use App\Marketplace\Dto\PackageSummary;
@@ -17,18 +15,7 @@ final class MarketplaceApiClient
 {
     public function __construct(
         private readonly SupabaseClient $supabaseClient,
-        private readonly Auth0Client $auth0Client,
     ) {
-    }
-
-    /**
-     * @return array<string, mixed>
-     *
-     * @throws Auth0AuthenticationException
-     */
-    public function validateToken(string $token): array
-    {
-        return $this->auth0Client->validateToken($token);
     }
 
     public function listPackages(
@@ -39,6 +26,7 @@ final class MarketplaceApiClient
         ?string $type = null,
         ?string $query = null,
         array $mauticVersions = [],
+        array $languages = [],
         ?string $dateRange = null,
         ?string $popularity = null,
     ): PackageListResult {
@@ -59,6 +47,10 @@ final class MarketplaceApiClient
 
         if ([] !== $mauticVersions) {
             $params['_smv'] = $mauticVersions;
+        }
+
+        if ([] !== $languages) {
+            $params['_language'] = $languages;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
@@ -101,6 +93,54 @@ final class MarketplaceApiClient
         }
 
         return new PackageListResult($items, $limit, $offset, $total);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAvailableLanguages(
+        ?string $type = null,
+        ?string $query = null,
+        array $mauticVersions = [],
+        ?string $dateRange = null,
+        ?string $popularity = null,
+    ): array {
+        $params = [];
+
+        if (null !== $query && '' !== $query) {
+            $params['_query'] = $query;
+        }
+
+        if (null !== $type && '' !== $type) {
+            $params['_type'] = $type;
+        }
+
+        if ([] !== $mauticVersions) {
+            $params['_smv'] = $mauticVersions;
+        }
+
+        if (null !== $dateRange && '' !== $dateRange) {
+            $params['_date_range'] = $dateRange;
+        }
+
+        if (null !== $popularity && '' !== $popularity) {
+            $params['_popularity'] = $popularity;
+        }
+
+        $data = $this->supabaseClient->rpc('/rest/v1/rpc/get_available_languages', $params);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($data as $value) {
+            if (\is_string($value) && '' !== trim($value)) {
+                $values[] = trim($value);
+            }
+        }
+
+        return array_values(array_unique($values));
     }
 
     /**
@@ -227,8 +267,45 @@ final class MarketplaceApiClient
             $data,
             ['Prefer' => 'return=representation,resolution=merge-duplicates'],
         );
-
+      
         return \is_array($result) ? ($result[0] ?? $result) : [];
+
+    }
+  
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getUserReviews(string $auth0UserId): array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/reviews', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
+            'select' => '*',
+            'order' => 'created_at.desc',
+        ]);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getUserUploadedPackages(string $auth0UserId): array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
+            'select' => 'name,displayname,description,type,downloads,favers',
+            'order' => 'name.asc',
+        ]);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        return $data;
     }
 
     public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void

@@ -34,37 +34,56 @@
                         checked: version in (filters.mautic ?? [])
                     }]) %}
                 {% endfor %}
+                {% set languageFilterItems = [] %}
+                {% for value, label in language_options %}
+                    {% set languageFilterItems = languageFilterItems|merge([{
+                        label: label,
+                        value: value,
+                        checked: value in (filters.language ?? [])
+                    }]) %}
+                {% endfor %}
+                {% set filterGroups = [
+                    {
+                        title: 'marketplace.index.filters.type.label',
+                        filterGroupItemsType: 'select',
+                        filterGroupItems: [
+                            { label: 'marketplace.index.filters.type.all_count'|trans({'%count%': allTypesCount}), value: '', checked: (filters.type ?? '') == '' },
+                            { label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), value: 'mautic-plugin', checked: (filters.type ?? '') == 'mautic-plugin' },
+                            { label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), value: 'mautic-theme', checked: (filters.type ?? '') == 'mautic-theme' },
+                            { label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), value: 'mautic-resource', checked: (filters.type ?? '') == 'mautic-resource' }
+                        ]
+                    },
+                    {
+                        title: 'marketplace.index.filters.compatibility.label',
+                        name: 'mautic',
+                        filterGroupItemsType: 'checkbox',
+                        filterGroupItems: compatibilityFilterItems
+                    }
+                ] %}
+                {% if languageFilterItems is not empty %}
+                    {% set filterGroups = filterGroups|merge([{
+                        title: 'marketplace.index.filters.language.label',
+                        name: 'language',
+                        filterGroupItemsType: 'checkbox',
+                        filterGroupItems: languageFilterItems
+                    }]) %}
+                {% endif %}
+                {% set filterGroups = filterGroups|merge([
+                    {
+                        title: 'marketplace.index.filters.date_range.label',
+                        filterGroupItemsType: 'select',
+                        filterGroupItems: [
+                            { label: 'marketplace.index.filters.date_range.7d', value: '7d', checked: (filters.date_range ?? '') == '7d' },
+                            { label: 'marketplace.index.filters.date_range.30d', value: '30d', checked: (filters.date_range ?? '') == '30d' },
+                            { label: 'marketplace.index.filters.date_range.90d', value: '90d', checked: (filters.date_range ?? '') == '90d' },
+                            { label: 'marketplace.index.filters.date_range.365d', value: '365d', checked: (filters.date_range ?? '') == '365d' }
+                        ]
+                    }
+                ]) %}
                 {% include 'components/filter-panel.html.twig' with {
                     heading: 'marketplace.index.filters.heading',
                     filterCutoff: 5,
-                    filterGroups: [
-                        {
-                            title: 'marketplace.index.filters.type.label',
-                            filterGroupItemsType: 'select',
-                            filterGroupItems: [
-                                { label: 'marketplace.index.filters.type.all_count'|trans({'%count%': allTypesCount}), value: '', checked: (filters.type ?? '') == '' },
-                                { label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), value: 'mautic-plugin', checked: (filters.type ?? '') == 'mautic-plugin' },
-                                { label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), value: 'mautic-theme', checked: (filters.type ?? '') == 'mautic-theme' },
-                                { label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), value: 'mautic-resource', checked: (filters.type ?? '') == 'mautic-resource' }
-                            ]
-                        },
-                        {
-                            title: 'marketplace.index.filters.compatibility.label',
-                            name: 'mautic',
-                            filterGroupItemsType: 'checkbox',
-                            filterGroupItems: compatibilityFilterItems
-                        },
-                        {
-                            title: 'marketplace.index.filters.date_range.label',
-                            filterGroupItemsType: 'select',
-                            filterGroupItems: [
-                                { label: 'marketplace.index.filters.date_range.7d', value: '7d', checked: (filters.date_range ?? '') == '7d' },
-                                { label: 'marketplace.index.filters.date_range.30d', value: '30d', checked: (filters.date_range ?? '') == '30d' },
-                                { label: 'marketplace.index.filters.date_range.90d', value: '90d', checked: (filters.date_range ?? '') == '90d' },
-                                { label: 'marketplace.index.filters.date_range.365d', value: '365d', checked: (filters.date_range ?? '') == '365d' }
-                            ]
-                        }
-                    ]
+                    filterGroups: filterGroups
                 } only %}
                 <input type="hidden" name="orderby" value="{{ orderby }}">
                 <input type="hidden" name="orderdir" value="{{ orderdir }}">
@@ -190,7 +209,16 @@
             } only %}
         {% endif %}
     {% else %}
-            <div class="empty-state muted">{{ 'marketplace.index.empty'|trans }}</div>
+    <div class="d-flex flex-column align-items-center my-48">
+        {% include 'components/pictogram.html.twig' with {
+            pictogram: 'design--research',
+            color: 'var(--interactive)',
+            size: 80
+        } only %}
+        <h2 class="type-fluid-heading-05 mt-24 mb-16 text-primary">{{ 'marketplace.index.empty.heading'|trans }}</h2>
+        <div class="type-body-02 mb-16 text-center text-helper">{{ 'marketplace.index.empty.copy'|trans }}</div>
+    </div>
+
     {% endif %}
                 </turbo-frame>
             </div>

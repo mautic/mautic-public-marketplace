@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
-use App\Auth0\Exception\Auth0AuthenticationException;
+use App\Auth0\Auth0User;
 use App\Marketplace\Dto\ReviewRequest;
 use App\Marketplace\Exception\ReviewValidationException;
-use App\Supabase\Exception\SupabaseApiException;
 use App\Marketplace\MarketplaceApiClient;
+use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,16 +23,8 @@ final class ReviewApiController extends AbstractController
 
     public function submit(Request $request, string $package): JsonResponse
     {
-        $authHeader = $request->headers->get('Authorization', '');
-        if (!str_starts_with($authHeader, 'Bearer ')) {
-            return $this->json(['error' => 'Missing or invalid Authorization header.'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        try {
-            $userInfo = $this->apiClient->validateToken(substr($authHeader, 7));
-        } catch (Auth0AuthenticationException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_UNAUTHORIZED);
-        }
+        /** @var Auth0User $user */
+        $user = $this->getUser();
 
         try {
             $reviewRequest = ReviewRequest::fromPayload($request->getPayload());
@@ -43,12 +35,12 @@ final class ReviewApiController extends AbstractController
         try {
             $this->apiClient->submitReview(
                 $package,
-                $userInfo['sub'],
-                $userInfo['name'] ?? $userInfo['email'] ?? 'Anonymous',
-                $userInfo['picture'] ?? null,
+                $user->getUserIdentifier(),
+                $user->getName() ?? $user->getEmail() ?? 'Anonymous',
+                $user->getPicture(),
                 $reviewRequest,
             );
-        } catch (SupabaseApiException $e) {
+        } catch (SupabaseApiException) {
             return $this->json(['error' => 'Failed to submit review.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 

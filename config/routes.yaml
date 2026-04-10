@@ -21,6 +21,15 @@ marketplace_detail:
     requirements:
         package: .+
 
+profile_page:
+    path: /profile
+    controller: App\Controller\ProfileController::index
+
+profile_api:
+    path: /api/profile
+    controller: App\Controller\Api\ProfileApiController::profile
+    methods: [GET]
+
 review_api_submit:
     path: /api/review/{package}
     controller: App\Controller\Api\ReviewApiController::submit
