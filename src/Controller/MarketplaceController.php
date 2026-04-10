@@ -6,6 +6,8 @@ namespace App\Controller;
 
 use App\Formatter\LanguageFilterFormatter;
 use App\Formatter\MauticVersionConstraintFormatter;
+use App\Marketplace\Dto\PackageDetail;
+use App\Marketplace\Dto\PackageListResult;
 use App\Marketplace\MarketplaceApiClient;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -137,8 +139,41 @@ final class MarketplaceController extends AbstractController
             ], new Response('', Response::HTTP_BAD_GATEWAY));
         }
 
-        if (!$detail instanceof \App\Marketplace\Dto\PackageDetail) {
+        if (!$detail instanceof PackageDetail) {
             throw $this->createNotFoundException('Package not found.');
+        }
+
+        $similarPackages = null;
+        if ('' !== ($detail->type ?? '')) {
+            $query = $detail->displayName ?? $detail->name;
+
+            $result = $this->apiClient->listPackages(
+                limit: 4,
+                type: $detail->type,
+                query: $query,
+            );
+            $filtered = array_values(array_filter(
+                $result->items,
+                static fn ($item) => $item->name !== $detail->name,
+            ));
+
+            if (\count($filtered) < 3) {
+                $result = $this->apiClient->listPackages(
+                    limit: 4,
+                    type: $detail->type,
+                );
+                $filtered = array_values(array_filter(
+                    $result->items,
+                    static fn ($item) => $item->name !== $detail->name,
+                ));
+            }
+
+            $similarPackages = new PackageListResult(
+                \array_slice($filtered, 0, 3),
+                3,
+                0,
+                \count($filtered),
+            );
         }
 
         return $this->render('marketplace/detail.html.twig', [
@@ -147,6 +182,7 @@ final class MarketplaceController extends AbstractController
             'name' => $package,
             'auth0_domain' => $this->auth0Domain,
             'auth0_client_id' => $this->auth0ClientId,
+            'similar_packages' => $similarPackages,
         ]);
     }
 
