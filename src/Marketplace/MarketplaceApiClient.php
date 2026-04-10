@@ -10,11 +10,14 @@ use App\Marketplace\Dto\PackageSummary;
 use App\Marketplace\Dto\ReviewRequest;
 use App\Supabase\Exception\SupabaseApiException;
 use App\Supabase\SupabaseClient;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final class MarketplaceApiClient
 {
     public function __construct(
         private readonly SupabaseClient $supabaseClient,
+        #[Autowire(env: 'SUPABASE_API_BASE')]
+        private readonly string $supabaseBaseUrl,
     ) {
     }
 
@@ -89,6 +92,7 @@ final class MarketplaceApiClient
                 $this->toBool($row['latest_mautic_support'] ?? null),
                 $row['validation_errors'] ?? null,
                 $this->toDateTime($row['time'] ?? null),
+                $this->toBannerUrl($row['banner_url'] ?? null),
             );
         }
 
@@ -206,6 +210,7 @@ final class MarketplaceApiClient
             isset($row['time']) ? (string) $row['time'] : null,
             $this->toArray($row['reviews'] ?? null),
             $this->toArray($row['versions'] ?? null),
+            $this->toBannerUrl($row['banner_url'] ?? null),
         );
     }
 
@@ -302,6 +307,15 @@ final class MarketplaceApiClient
     private function toArray(mixed $value): ?array
     {
         return \is_array($value) ? $value : null;
+    }
+
+    private function toBannerUrl(?string $path): ?string
+    {
+        if (null === $path || '' === $path) {
+            return null;
+        }
+
+        return \sprintf('%s/storage/v1/object/public/%s', rtrim($this->supabaseBaseUrl, '/'), ltrim($path, '/'));
     }
 
     private function toDateTime(mixed $value): ?\DateTimeImmutable

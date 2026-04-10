@@ -27,7 +27,8 @@ INSERT INTO packages (
     maintainers,
     latest_mautic_support,
     time,
-    created_at
+    created_at,
+    banner_url
 )
 VALUES (
     'mautic/example-plugin',
@@ -41,7 +42,8 @@ VALUES (
     '[{"name": "escopecz", "avatar_url": "https://www.gravatar.com/avatar/06d22001?d=identicon"}]'::jsonb,
     true,
     NOW() - INTERVAL '5 days',
-    NOW() - INTERVAL '5 days'
+    NOW() - INTERVAL '5 days',
+    'banners/mautic/example-plugin.jpg'
 )
 ON CONFLICT (name) DO UPDATE SET
     description = EXCLUDED.description,
@@ -53,7 +55,8 @@ ON CONFLICT (name) DO UPDATE SET
     displayname = EXCLUDED.displayname,
     maintainers = EXCLUDED.maintainers,
     latest_mautic_support = EXCLUDED.latest_mautic_support,
-    time = EXCLUDED.time;
+    time = EXCLUDED.time,
+    banner_url = EXCLUDED.banner_url;
 
 INSERT INTO versions (
     package_name,
