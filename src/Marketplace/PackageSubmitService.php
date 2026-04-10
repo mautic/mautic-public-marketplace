@@ -157,6 +157,7 @@ final class PackageSubmitService
             'type' => $type,
             'time' => (new \DateTimeImmutable())->format('c'),
             'maintainers' => [['name' => $maintainerName]],
+            'auth0_user_id' => $userInfo['sub'] ?? null,
         ];
 
         if (\is_string($campaignUuid) && '' !== $campaignUuid) {
