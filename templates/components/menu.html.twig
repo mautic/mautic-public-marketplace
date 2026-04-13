@@ -33,6 +33,29 @@
 {% if attrs is defined and attrs is not empty %}{% for name, value in attrs %} {{ name }}="{{ value }}"{% endfor %}{% endif %}
 {% endmacro %}
 
+{% macro menu_trace(nodes) %}
+{% import _self as t %}
+{% for row in nodes|default([]) %}
+{% if row.menuItem is defined %}
+{% set mi = row.menuItem %}
+{% if mi.renderIcon is defined and mi.renderIcon %}i{% endif %}
+{% if mi.children is defined and mi.children|length > 0 %}{{ t.menu_trace(mi.children) }}{% endif %}
+{% elseif row.menuItemRadioGroup is defined %}s
+{% set rg = row.menuItemRadioGroup %}
+{% for raw in rg.children is defined ? rg.children : rg.items|default(rg.options|default([])) %}
+{% set opt = raw.menuItem|default(raw) %}
+{% if opt.renderIcon is defined and opt.renderIcon %}i{% endif %}
+{% endfor %}
+{% elseif row.menuItemGroup is defined %}s
+{% set g = row.menuItemGroup %}
+{% for raw in g.children is defined ? g.children : g.items|default([]) %}
+{% set opt = raw.menuItemSelectable|default(raw) %}
+{% if opt.renderIcon is defined and opt.renderIcon %}i{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endmacro %}
+
 {# ═══════════════════════════════════════════════════════════════════════════ #}
 {#  menu_rows(rows, size)                                                      #}
 {#  Renders ONE <ul>’s children: a list of <li>…</li> rows.                    #}
@@ -41,7 +64,7 @@
 
 {% macro menu_rows(rows, size) %}
 {% import _self as m %}
-{% for row in rows %}
+{% for row in rows|default([]) %}
 
     {# ─────────────────────────────────────────────────────────────────────── #}
     {#  ROW TYPE: menuItem                                                     #}
@@ -84,7 +107,8 @@
                 </button>
 
                 {# —— panel that appears beside this row (same shapes as root) —— #}
-                <ul tabindex="0" class="dropdown-menu menu menu--{{ size }}" role="menu" aria-label="{{ mi.label|trans }}">
+                {% set _sub_sig = m.menu_trace(mi.children) %}
+                <ul tabindex="0" class="dropdown-menu menu menu--{{ size }}{{ ('i' in _sub_sig) ? ' menu--with-icons' : '' }}{{ ('s' in _sub_sig) ? ' menu--with-selectable-items' : '' }}" role="menu" aria-label="{{ mi.label|trans }}">
                     {{ m.menu_rows(mi.children, size) }}
                 </ul>
             </li>
@@ -265,8 +289,9 @@
 {# ═══════════════════════════════════════════════════════════════════════════ #}
 
 {% import _self as menu_macro %}
+{% set _root_sig = menu_macro.menu_trace(children|default([])) %}
 
-<ul class="dropdown-menu menu {{ size_class_map[size|default('sm')] }}{% if open is defined and open %} show{% endif %} {{ menuAlignment|default('start') == 'end' ? 'dropdown-menu-end' : 'dropdown-menu-start' }}{% if backgroundToken is defined and backgroundToken == 'background' %} layer-two{% endif %} {{ className|default('') }}"
+<ul class="dropdown-menu menu {{ size_class_map[size|default('sm')] }}{% if open is defined and open %} show{% endif %}{{ ('i' in _root_sig) ? ' menu--with-icons' : '' }}{{ ('s' in _root_sig) ? ' menu--with-selectable-items' : '' }} {{ menuAlignment|default('start') == 'end' ? 'dropdown-menu-end' : 'dropdown-menu-start' }}{% if backgroundToken is defined and backgroundToken == 'background' %} layer-two{% endif %} {{ className|default('') }}"
     role="menu" tabindex="-1"
     {% if label is defined and label %}aria-label="{{ label|trans }}"{% endif %}
     {% if attributes is defined and attributes is not empty %}{% for attribute, attribute_value in attributes %} {{ attribute }}="{{ attribute_value }}"{% endfor %}{% endif %}>
