@@ -159,13 +159,17 @@
     {% elseif row.menuItemRadioGroup is defined %}
         {% set rg = row.menuItemRadioGroup %}
         {% set rg_items = rg.children is defined ? rg.children : rg.items|default(rg.options|default([])) %}
+        {% set rg_has_icons = false %}
+        {% for raw in rg_items %}
+            {% set opt = raw.menuItem|default(raw) %}
+            {% set rg_has_icons = rg_has_icons or (opt.renderIcon is defined and opt.renderIcon) %}
+        {% endfor %}
         <li class="menu-item-radio-group" role="none">
 
-            <ul class="dropdown-menu show" role="group" aria-label="{{ rg.label|trans }}">
+            <ul class="dropdown-menu show selectable menu--with-selectable-items{{ rg_has_icons ? ' menu--with-icons' : '' }}" role="group" aria-label="{{ rg.label|trans }}">
                 {% for raw in rg_items %}
                     {% set opt = raw.menuItem|default(raw) %}
-                    {% set opt_val = opt.value|default(opt.label) %}
-                    {% set is_checked = rg.defaultSelectedItem is defined and rg.defaultSelectedItem == opt_val %}
+                    {% set is_checked = opt.selected|default(false) %}
                     {% set opt_class = 'menu-item dropdown-item' %}
 
                     {% if opt.href is defined and opt.href %}
@@ -206,12 +210,18 @@
     {# ─────────────────────────────────────────────────────────────────────── #}
     {% elseif row.menuItemGroup is defined %}
         {% set g = row.menuItemGroup %}
+        {% set g_rows = g.children is defined ? g.children : g.items|default([]) %}
+        {% set g_has_icons = false %}
+        {% for raw in g_rows %}
+            {% set opt = raw.menuItemSelectable|default(raw) %}
+            {% set g_has_icons = g_has_icons or (opt.renderIcon is defined and opt.renderIcon) %}
+        {% endfor %}
         <li class="menu-item-group" role="none">
 
-            <ul class="dropdown-menu show" role="group" aria-label="{{ g.label|trans }}">
-                {% for raw in g.children is defined ? g.children : g.items|default([]) %}
+            <ul class="dropdown-menu show selectable menu--with-selectable-items{{ g_has_icons ? ' menu--with-icons' : '' }}" role="group" aria-label="{{ g.label|trans }}">
+                {% for raw in g_rows %}
                     {% set opt = raw.menuItemSelectable|default(raw) %}
-                    {% set is_on = opt.defaultSelected|default(false) %}
+                    {% set is_on = opt.selected|default(opt.defaultSelected|default(false)) %}
                     {% set opt_class = 'menu-item dropdown-item' ~ (is_on ? ' menu-item-selectable--selected' : '') %}
                     {% if opt.href is defined and opt.href %}
                         <li role="none">
