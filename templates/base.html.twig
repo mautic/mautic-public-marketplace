@@ -7,8 +7,12 @@
     <script src="{{ asset('assets/marketplace.js') }}" defer data-turbo-track="reload"></script>
     {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
-<body data-auth0-domain="{{ auth0_domain|default('') }}"
-      data-auth0-client-id="{{ auth0_client_id|default('') }}">
+<body>
+      {% set authMenu %}
+          <a class="dropdown-item" href="{{ path('profile_page') }}">{{ 'mautic.marketplace.header.my_profile'|trans }}</a>
+          <a class="dropdown-item" href="{{ path('auth_logout') }}">{{ 'mautic.marketplace.header.logout'|trans }}</a>
+      {% endset %}
+
       {% include 'components/uishell.html.twig' with {
         Header: {
             ariaLabel: 'mautic.marketplace.header.aria_label',
@@ -31,12 +35,37 @@
                             }
                         }
                     ]
+                },
+                HeaderGlobal: {
+                    children: app.user ? [
+                        {
+                            HeaderGlobalDropdown: {
+                                ariaLabel: 'mautic.marketplace.header.account',
+                                label: app.user.name ?? app.user.email ?? 'Account',
+                                renderMenuContent: authMenu
+                            }
+                        }
+                    ] : [
+                        {
+                            HeaderGlobalAction: {
+                                href: path('auth_login', { returnTo: app.request.requestUri }),
+                                label: 'mautic.marketplace.header.login',
+                                ariaLabel: 'mautic.marketplace.header.login'
+                            }
+                        }
+                    ]
                 }
             }
         }
     } %}
-    <main>
+    <main id="main-content">
         <div class="container mt-48">
+            {% for message in app.flashes('success') %}
+                <div class="alert alert--success mb-16">{{ message }}</div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+                <div class="alert alert--error mb-16">{{ message }}</div>
+            {% endfor %}
             {% block body %}{% endblock %}
         </div>
     </main>

@@ -12,12 +12,13 @@
     {%- for item in items -%}
     {%- set itemId = (item.id ?? _self.generate_id(item.title))|trim -%}
     {%- set padding_inline = item.padding_inline ?? true -%}
+    {%- set isExpanded = item.expanded ?? false -%}
         <li class="panel">
-            <a role="button" id="heading{{- itemId -}}" class="accordion-heading collapsed" data-bs-toggle="collapse" {% if not allowMultiple %}data-bs-parent="#{{ accordionId }}"{% endif %} href="#collapse{{- itemId -}}" aria-expanded="false" aria-controls="collapse{{- itemId -}}">
+            <a role="button" id="heading{{- itemId -}}" class="accordion-heading{% if not isExpanded %} collapsed{% endif %}" data-bs-toggle="collapse" {% if not allowMultiple %}data-bs-parent="#{{ accordionId }}"{% endif %} href="#collapse{{- itemId -}}" aria-expanded="{{ isExpanded ? 'true' : 'false' }}" aria-controls="collapse{{- itemId -}}">
                 <i class="ri-arrow-down-wide-line accordion-arrow"></i>
                 <span class="accordion-title fw-semibold text-break">{{ item.title|trans }}</span>
             </a>
-            <div id="collapse{{- itemId -}}" class="collapse accordion-wrapper" role="tabpanel" aria-labelledby="heading{{- itemId -}}" {% if not allowMultiple %}data-bs-parent="#{{ accordionId }}"{% endif %}>
+            <div id="collapse{{- itemId -}}" class="collapse accordion-wrapper{% if isExpanded %} show{% endif %}" role="tabpanel" aria-labelledby="heading{{- itemId -}}" {% if not allowMultiple %}data-bs-parent="#{{ accordionId }}"{% endif %}>
                 <div class="accordion-content{% if not padding_inline %} accordion-content--slim{% endif %}">
                     {{- item.content|raw -}}
                 </div>

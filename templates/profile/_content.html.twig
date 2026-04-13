@@ -1,10 +1,10 @@
-<div class="profile-user-info">
-    {% if user.picture %}
-        <img src="{{ user.picture }}" alt="User avatar" width="80" height="80" style="border-radius: 50%;">
+<div class="profile-user-info" id="profile-content">
+    {% if app.user.picture %}
+        <img src="{{ app.user.picture }}" alt="User avatar" width="80" height="80" style="border-radius: 50%;">
     {% endif %}
-    <h2>{{ user.name|default('Anonymous') }}</h2>
-    <p>{{ user.email }}</p>
-    <button id="profile-logout-btn" type="button" class="cds--btn cds--btn--tertiary cds--btn--sm">Log out</button>
+    <h2>{{ app.user.name|default('Anonymous') }}</h2>
+    <p>{{ app.user.email }}</p>
+    <a href="{{ path('auth_logout') }}" class="cds--btn cds--btn--tertiary cds--btn--sm">Log out</a>
 </div>
 
 <section class="profile-reviews-section">
@@ -26,5 +26,22 @@
                 <small>{{ review.created_at|date('M j, Y') }}</small>
             </div>
         {% endfor %}
+    {% endif %}
+</section>
+
+<section class="profile-packages-section mt-32">
+    <h3>My Packages</h3>
+    {% if uploaded_packages is empty %}
+        <p>No uploaded packages yet.</p>
+    {% else %}
+        <div class="d-grid gap-16">
+            {% for package in uploaded_packages %}
+                <div class="profile-package-item">
+                    <strong>{{ package.displayname|default(package.name) }}</strong>
+                    <p class="mb-4">{{ package.description|default('No description available.') }}</p>
+                    <a href="{{ path('marketplace_detail', { package: package.name }) }}">{{ package.name }}</a>
+                </div>
+            {% endfor %}
+        </div>
     {% endif %}
 </section>

@@ -14,13 +14,13 @@
 {% set averageRating = ratingCount > 0 ? totalRating / ratingCount : null %}
 {% set ratingSummary = averageRating is not null
     ? averageRating|number_format(1, '.', '')
-    : 'marketplace.package.rating.none'|trans
+    : '--'
 %}
 
 <div class="row">
     <div class="col-6 col-md-12">
         <div class="row gx-16 flex-column justify-content-center align-items-start align-items-md-center flex-md-row rating-summary">
-            <div class="col-auto">
+            <div class="col-auto {{ ratingCount == 0 ? 'd-none' : '' }}">
                 <span class="type-heading-06 text-primary fw-semibold">{{ ratingSummary }}</span>
             </div>
             <div class="col">
@@ -34,17 +34,19 @@
                             )
                             : 'ri-star-line'
                         %}
-                        <i class="{{ starIcon }} text-primary"></i>
+                        <i class="{{ starIcon }} {{ ratingCount == 0 ? 'text-disabled' : 'text-primary' }}"></i>
                     {% endfor %}
                 </div>
                 <div id="total-reviews" class="type-body-compact-01 text-placeholder">
-                    {{ 'mautic.marketplace.detail.reviews.count'|trans({'%value%': ratingCount}) }}
+                    {{ ratingCount == 0
+                        ? 'mautic.marketplace.detail.reviews.empty'|trans
+                        : 'mautic.marketplace.detail.reviews.count'|trans({'%value%': ratingCount}) }}
                 </div>
             </div>
         </div>
 
     </div>
-    <div class="col-6 col-md-12">
+    <div class="col-6 col-md-12 {{ ratingCount == 0 ? 'd-none' : '' }}">
         
         <div id="bars" class="rating-distribution mt-16">
             {% for star in 5..1 %}

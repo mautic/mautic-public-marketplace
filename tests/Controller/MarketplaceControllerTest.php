@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Auth0\Auth0User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class MarketplaceControllerTest extends WebTestCase
@@ -37,6 +38,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('h1');
+        self::assertSelectorExists('a[href="/auth/login?returnTo=/browse"]');
     }
 
     public function testFilteringByTypeAndMauticVersion(): void
@@ -164,7 +166,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         self::assertSame('Alpha Plugin', $titles[0]);
     }
 
@@ -175,7 +177,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(1, count($titles));
+        self::assertGreaterThanOrEqual(1, \count($titles));
         self::assertSame('Zebra Theme', $titles[0]);
     }
 
@@ -194,7 +196,38 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'v4.3+');
         self::assertSelectorTextContains('body', 'v5.0+');
         self::assertSelectorTextContains('time', '2 months ago');
-        self::assertSelectorExists(sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+        self::assertSelectorExists(\sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+        self::assertSelectorExists('a[href="/auth/login?returnTo=/package/mautic/alpha-plugin"]');
+    }
+
+    public function testAuthenticatedDetailPageShowsAccountMenuAndReviewForm(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/package/mautic/alpha-plugin');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form[action="/package/mautic/alpha-plugin/review"]');
+        self::assertSelectorExists('a[href="/profile"]');
+        self::assertSelectorExists('a[href="/auth/logout"]');
+    }
+
+    public function testReviewFormRendersValidationMarkup(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/package/mautic/alpha-plugin');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form#review-form.needs-validation[novalidate]');
+        self::assertSelectorExists('#review-help[data-validation-help]');
+        self::assertSelectorExists('#review-feedback[data-validation-feedback]');
+        self::assertSelectorExists('#rating-feedback[data-validation-feedback]');
+
+        $reviewField = $client->getCrawler()->filter('#review');
+
+        self::assertSame('review-help', $reviewField->attr('aria-describedby'));
+        self::assertSame('review-feedback', $reviewField->attr('data-validation-feedback-id'));
     }
 
     public function testFilterByResourceType(): void
@@ -222,6 +255,19 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertContains('Plugin (2)', $labels);
         self::assertContains('Theme (1)', $labels);
         self::assertSame('', $allTypesValue);
+    }
+
+    public function testGroupedFilterControlsRenderSharedValidationFeedback(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+
+        $typeGroup = $client->getCrawler()->filter('fieldset[data-validation-group][data-validation-name="type"]');
+
+        self::assertSame(1, $typeGroup->count());
+        self::assertSame(1, $typeGroup->filter('[data-validation-feedback]')->count());
     }
 
     public function testTypeCountsAreCustomizedBySearch(): void
@@ -268,7 +314,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         self::assertSame('Zebra Theme', $titles[0]);
     }
 
@@ -279,7 +325,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         // Example Plugin is 5 days old, the most recent
         self::assertSame('Example Plugin', $titles[0]);
     }
