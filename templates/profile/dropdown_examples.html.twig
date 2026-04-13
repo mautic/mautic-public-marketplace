@@ -1,0 +1,246 @@
+<div class="py-64 container">
+    <h2 class="type-heading-03 mb-08">{{ 'mautic.marketplace.menu.examples.page_heading'|trans }}</h2>
+    <p class="type-body-01 muted mb-32">{{ 'mautic.marketplace.menu.examples.intro'|trans }}</p>
+
+    <div class="row g-48">
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_basic'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_basic'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_basic',
+                    size: 'sm',
+                    children: [
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.open_profile', href: '#', renderIcon: 'ri-user-line' } },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.duplicate', renderIcon: 'ri-file-copy-line', shortcut: 'mautic.marketplace.menu.examples.shortcut_duplicate' } },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.rename', renderIcon: 'ri-edit-line' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_danger'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_danger'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_danger',
+                    size: 'sm',
+                    children: [
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.cut', renderIcon: 'ri-scissors-line', shortcut: 'mautic.marketplace.menu.examples.shortcut_cut' } },
+                        { menuItemDivider: true },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.paste', renderIcon: 'ri-clipboard-line', shortcut: 'mautic.marketplace.menu.examples.shortcut_paste', disabled: true } },
+                        { menuItemDivider: true },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.delete', renderIcon: 'ri-delete-bin-line', kind: 'danger' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_submenu'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_submenu'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_submenu',
+                    size: 'sm',
+                    children: [
+                        { menuItem: {
+                            label: 'mautic.marketplace.menu.examples.share_with',
+                            renderIcon: 'ri-share-line',
+                            children: [
+                                { menuItem: { label: 'mautic.marketplace.menu.examples.sub_copy_link', href: '#', renderIcon: 'ri-links-line' } },
+                                { menuItemDivider: true },
+                                { menuItemRadioGroup: {
+                                    label: 'mautic.marketplace.menu.examples.share_with',
+                                    children: [
+                                        { menuItem: { label: 'mautic.marketplace.menu.examples.share_none', selected: false } },
+                                        { menuItem: { label: 'mautic.marketplace.menu.examples.share_team', href: '#', selected: true } },
+                                        { menuItem: { label: 'mautic.marketplace.menu.examples.share_org', selected: false } },
+                                    ],
+                                } },
+                            ],
+                        } },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.duplicate', renderIcon: 'ri-file-copy-line' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_radio'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_radio'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.radio_group_label',
+                    size: 'sm',
+                    children: [
+                        { menuItemRadioGroup: {
+                            label: 'mautic.marketplace.menu.examples.radio_group_label',
+                            children: [
+                                { menuItem: { label: 'mautic.marketplace.menu.examples.fmt_json', href: '#', selected: false } },
+                                { menuItem: { label: 'mautic.marketplace.menu.examples.fmt_yaml', selected: true } },
+                                { menuItem: { label: 'mautic.marketplace.menu.examples.fmt_csv', href: '#', selected: false } },
+                            ],
+                        } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_check'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_check'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.font_group_label',
+                    size: 'sm',
+                    children: [
+                        { menuItemGroup: {
+                            label: 'mautic.marketplace.menu.examples.font_group_label',
+                            children: [
+                                { menuItemSelectable: { label: 'mautic.marketplace.menu.examples.bold', selected: true, renderIcon: 'ri-bold', shortcut: 'mautic.marketplace.menu.examples.shortcut_bold' } },
+                                { menuItemSelectable: { label: 'mautic.marketplace.menu.examples.italic', selected: false, renderIcon: 'ri-italic', shortcut: 'mautic.marketplace.menu.examples.shortcut_italic' } },
+                            ],
+                        } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_full'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_full'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_full',
+                    size: 'md',
+                    children: [
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.edit', href: '#', renderIcon: 'ri-edit-line' } },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.make_copy', renderIcon: 'ri-file-copy-line' } },
+                        { menuItemDivider: true },
+                        { menuItemRadioGroup: {
+                            label: 'mautic.marketplace.menu.examples.radio_group_label',
+                            children: [
+                                { menuItem: { label: 'mautic.marketplace.menu.examples.fmt_json', selected: true } },
+                                { menuItem: { label: 'mautic.marketplace.menu.examples.fmt_yaml', selected: false } },
+                            ],
+                        } },
+                        { menuItemDivider: true },
+                        { menuItemGroup: {
+                            label: 'mautic.marketplace.menu.examples.font_group_label',
+                            children: [
+                                { label: 'mautic.marketplace.menu.examples.bold', selected: true, renderIcon: 'ri-bold', shortcut: 'mautic.marketplace.menu.examples.shortcut_bold' },
+                                { label: 'mautic.marketplace.menu.examples.italic', selected: false, renderIcon: 'ri-italic', shortcut: 'mautic.marketplace.menu.examples.shortcut_italic' },
+                            ],
+                        } },
+                        { menuItemDivider: true },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.delete', kind: 'danger', renderIcon: 'ri-delete-bin-line' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_xs'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_xs'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_basic',
+                    size: 'xs',
+                    children: [
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_one', href: '#' } },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_two' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_lg'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_lg'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_basic',
+                    size: 'lg',
+                    children: [
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_one', href: '#' } },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_two' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_align_end'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_align_end'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_basic',
+                    size: 'sm',
+                    menuAlignment: 'end',
+                    children: [
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_one', href: '#' } },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_two' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_layer'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                    {{ 'mautic.marketplace.menu.examples.trigger_layer'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_layer',
+                    size: 'sm',
+                    backgroundToken: 'background',
+                    children: [
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_one', href: '#' } },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_two' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <h3 class="type-heading-02 mb-16">{{ 'mautic.marketplace.menu.examples.trigger_open'|trans }}</h3>
+            <div class="dropdown">
+                <button type="button" class="btn btn-secondary dropdown-toggle" disabled aria-hidden="true" tabindex="-1">
+                    {{ 'mautic.marketplace.menu.examples.trigger_open'|trans }}
+                </button>
+                {% include 'components/menu.html.twig' with {
+                    label: 'mautic.marketplace.menu.examples.aria_open',
+                    size: 'sm',
+                    open: true,
+                    className: 'position-static',
+                    children: [
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_one', href: '#' } },
+                        { menuItemDivider: true },
+                        { menuItem: { label: 'mautic.marketplace.menu.examples.item_two' } },
+                    ],
+                } only %}
+            </div>
+        </div>
+    </div>
+</div>
