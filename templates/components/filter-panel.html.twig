@@ -99,6 +99,7 @@
             title: groupTitle,
             content: filterGroupContent,
             padding_inline: filterGroupItemsType in ['select', 'custom'] ? false : true,
+            expanded: filterGroup.expanded|default(false),
         }
     ]) %}
 {% endfor %}
