@@ -5,7 +5,7 @@
   ║  backgroundToken   layer | background (extra surface class)              ║
   ║  label             spoken name for the whole menu (screen readers)        ║
   ║  menuAlignment     start | end  → Bootstrap aligns the panel             ║
-  ║  open              true = force visible (layout/debug)                    ║
+  ║  open              true = force visible (adds Bootstrap .show)            ║
   ║  size              xs | sm | md | lg  → Carbon-style menu density        ║
   ║  className         extra classes on the outer <ul>                       ║
   ║  attributes        extra HTML attributes on the outer <ul>               ║
@@ -266,7 +266,7 @@
 
 {% import _self as menu_macro %}
 
-<ul class="dropdown-menu menu {{ size_class_map[size|default('sm')] }}{% if open is defined and open %} menu--shown{% endif %} {{ menuAlignment|default('start') == 'end' ? 'dropdown-menu-end' : 'dropdown-menu-start' }}{% if backgroundToken is defined and backgroundToken == 'background' %} layer-two{% endif %} {{ className|default('') }}"
+<ul class="dropdown-menu menu {{ size_class_map[size|default('sm')] }}{% if open is defined and open %} show{% endif %} {{ menuAlignment|default('start') == 'end' ? 'dropdown-menu-end' : 'dropdown-menu-start' }}{% if backgroundToken is defined and backgroundToken == 'background' %} layer-two{% endif %} {{ className|default('') }}"
     role="menu" tabindex="-1"
     {% if label is defined and label %}aria-label="{{ label|trans }}"{% endif %}
     {% if attributes is defined and attributes is not empty %}{% for attribute, attribute_value in attributes %} {{ attribute }}="{{ attribute_value }}"{% endfor %}{% endif %}>
