@@ -17,7 +17,7 @@ final class RelativeTimeFormatterTest extends TestCase
     {
         $translator = new Translator('en');
         $translator->addLoader('ini', new IniFileLoader());
-        $translator->addResource('ini', dirname(__DIR__, 2).'/translations/messages.en.ini', 'en');
+        $translator->addResource('ini', \dirname(__DIR__, 2).'/translations/messages.en.ini', 'en');
 
         $this->formatter = new RelativeTimeFormatter($translator);
     }

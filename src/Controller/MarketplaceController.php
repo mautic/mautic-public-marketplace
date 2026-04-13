@@ -7,9 +7,9 @@ namespace App\Controller;
 use App\Formatter\LanguageFilterFormatter;
 use App\Formatter\MauticVersionConstraintFormatter;
 use App\Marketplace\MarketplaceApiClient;
+use App\Marketplace\PackageDetailPageContextBuilder;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -23,12 +23,9 @@ final class MarketplaceController extends AbstractController
 
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
+        private readonly PackageDetailPageContextBuilder $detailPageContextBuilder,
         private readonly LanguageFilterFormatter $languageFilterFormatter,
         private readonly MauticVersionConstraintFormatter $mauticVersionConstraintFormatter,
-        #[Autowire(env: 'AUTH0_DOMAIN')]
-        private readonly string $auth0Domain,
-        #[Autowire(env: 'AUTH0_CLIENT_ID')]
-        private readonly string $auth0ClientId,
     ) {
     }
 
@@ -120,34 +117,18 @@ final class MarketplaceController extends AbstractController
                 'date_range' => $dateRange,
                 'popularity' => $popularity,
             ],
-            'auth0_domain' => $this->auth0Domain,
-            'auth0_client_id' => $this->auth0ClientId,
         ]);
     }
 
     public function detail(string $package): Response
     {
-        try {
-            $detail = $this->apiClient->getPackage($package);
-        } catch (SupabaseApiException $exception) {
-            return $this->render('marketplace/detail.html.twig', [
-                'error' => $exception->getMessage(),
-                'package' => null,
-                'name' => $package,
-            ], new Response('', Response::HTTP_BAD_GATEWAY));
+        $page = $this->detailPageContextBuilder->build($package);
+
+        if (Response::HTTP_NOT_FOUND === $page['status_code']) {
+            throw $this->createNotFoundException((string) $page['context']['error']);
         }
 
-        if (!$detail instanceof \App\Marketplace\Dto\PackageDetail) {
-            throw $this->createNotFoundException('Package not found.');
-        }
-
-        return $this->render('marketplace/detail.html.twig', [
-            'error' => null,
-            'package' => $detail,
-            'name' => $package,
-            'auth0_domain' => $this->auth0Domain,
-            'auth0_client_id' => $this->auth0ClientId,
-        ]);
+        return $this->render('marketplace/detail.html.twig', $page['context'], new Response('', $page['status_code']));
     }
 
     private function toInt(mixed $value, int $default): int
