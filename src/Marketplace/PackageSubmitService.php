@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Marketplace;
 
+use App\Auth0\Auth0User;
 use App\Marketplace\Exception\SubmitValidationException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -18,13 +19,11 @@ final class PackageSubmitService
     /**
      * Downloads the zip from assetUrl, reads composer.json, and creates/updates the package.
      *
-     * @param array<string, mixed> $userInfo Auth0 user info
-     *
      * @return array{package_name: string, version: string, created: bool}
      *
      * @throws SubmitValidationException
      */
-    public function submit(string $assetUrl, array $userInfo): array
+    public function submit(string $assetUrl, Auth0User $user): array
     {
         $zipPath = $this->downloadZip($assetUrl);
 
@@ -32,7 +31,7 @@ final class PackageSubmitService
             $composerData = $this->readComposerJson($zipPath);
             $this->validateComposerData($composerData);
 
-            return $this->upsertPackage($composerData, $assetUrl, $userInfo);
+            return $this->upsertPackage($composerData, $assetUrl, $user);
         } finally {
             if (file_exists($zipPath)) {
                 unlink($zipPath);
@@ -134,11 +133,10 @@ final class PackageSubmitService
 
     /**
      * @param array<string, mixed> $composerData
-     * @param array<string, mixed> $userInfo
      *
      * @return array{package_name: string, version: string, created: bool}
      */
-    private function upsertPackage(array $composerData, string $assetUrl, array $userInfo): array
+    private function upsertPackage(array $composerData, string $assetUrl, Auth0User $user): array
     {
         $packageName = (string) $composerData['name'];
         $version = (string) $composerData['version'];
@@ -148,7 +146,7 @@ final class PackageSubmitService
         $existingPackage = $this->apiClient->getPackageByName($packageName);
         $created = null === $existingPackage;
 
-        $maintainerName = $userInfo['name'] ?? $userInfo['email'] ?? 'Anonymous';
+        $maintainerName = $user->getName() ?? $user->getEmail() ?? 'Anonymous';
 
         $packageData = [
             'name' => $packageName,
@@ -157,7 +155,7 @@ final class PackageSubmitService
             'type' => $type,
             'time' => (new \DateTimeImmutable())->format('c'),
             'maintainers' => [['name' => $maintainerName]],
-            'auth0_user_id' => $userInfo['sub'] ?? null,
+            'auth0_user_id' => $user->getUserIdentifier(),
         ];
 
         if (\is_string($campaignUuid) && '' !== $campaignUuid) {
