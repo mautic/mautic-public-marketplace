@@ -1,209 +1,175 @@
 <!-- 
-backgroundToken (layer/background)
-label (string)
-menuAlignment (start/end)
-open (true/false)
+backgroundToken (layer/background) -> default layer
+label (string) -> aria-label on root menu
+menuAlignment (start/end) -> dropdown-menu-start / dropdown-menu-end (default start)
+open (true/false) -> default false
 size (xs/sm/md/lg)
+className (optional)
+attributes (optional key/value)
 items (array of items) { 
     menuItem {
         label
         renderIcon (icon class)
+        href -> if defined, render <a href>; else <button type="button">
         shortcut (string)
         kind (danger/default)
+        disabled (true/false)
+        attributes (optional key/value on control)
+        submenu (optional array) { menuItem, menuItemRadioGroup, menuItemDivider, menuItemGroup }
     },
     menuItemRadioGroup {
         label
-        options (array of options)
-        defaultSelectedItem 
+        items (array of menuItem objects; <a> or <button> per item)
+        defaultSelectedItem (value matching option value/label)
     },
     menuItemDivider,
-    MenuItemGroup (multiple selectable items) {
+    menuItemGroup {
         label
-        items (array of items) {
-            menuItemSelectable {
-                label
-                defaultSelected (true/false)
-                renderIcon (icon class)
-                shortcut (string)
-            }
-        }
+        items (array of menuItemSelectable objects; <a> or <button> per item)
     }
 }
-
 -->
 
-<ul class="dropdown-menu menu menu--sm menu--shown menu--with-icons menu--with-selectable-items"
-    role="menu" tabindex="-1">
-    <li role="menuitem" class="menu-item" tabindex="0" aria-haspopup="true" aria-expanded="false"
-        title="Share with">
-        <div class="menu-item__selection-icon"></div>
-        <div class="menu-item__icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor"
-                width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                <path
-                    d="M28,8H16L12.59,4.59A2,2,0,0,0,11.17,4H4A2,2,0,0,0,2,6V26a2,2,0,0,0,2,2H28a2,2,0,0,0,2-2V10A2,2,0,0,0,28,8ZM22,26H14V25a1,1,0,0,1,1-1h6a1,1,0,0,1,1,1Zm6,0H24V25a3,3,0,0,0-3-3H15a3,3,0,0,0-3,3v1H4V6h7.17l3.42,3.41.58.59H28Z">
-                </path>
-                <path d="M14,17a4,4,0,1,0,4-4A4,4,0,0,0,14,17Zm4-2a2,2,0,1,1-2,2A2,2,0,0,1,18,15Z"></path>
-            </svg></div>
-        <div class="menu-item__label" dir="ltr">Share with</div>
-        <div class="menu-item__shortcut"><svg focusable="false" preserveAspectRatio="xMidYMid meet"
-                fill="currentColor" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 8 22 16 12 24z"></path>
-            </svg></div>
-        <ul tabindex="0" data-floating-ui-focusable="" class="menu menu--sm menu--with-selectable-items"
-            role="menu" aria-label="Share with"
-            style="left: 0px; top: 0px; transform: translate(194px, 6px); will-change: transform; inset-inline-start: 8px; inset-inline-end: initial; inset-block-start: 8px;">
-            <li class="menu-item-radio-group" role="none">
-                <ul role="group" aria-label="Share with">
-                    <li role="menuitemradio" aria-checked="false" class="menu-item" tabindex="0"
-                        aria-haspopup="false" title="None">
-                        <div class="menu-item__selection-icon"></div>
-                        <div class="menu-item__icon"></div>
-                        <div class="menu-item__label" dir="ltr">None</div>
-                    </li>
-                    <li role="menuitemradio" aria-checked="true" class="menu-item" tabindex="0"
-                        aria-haspopup="false" title="Product team">
-                        <div class="menu-item__selection-icon"><svg focusable="false"
-                                preserveAspectRatio="xMidYMid meet" fill="currentColor" width="16" height="16"
-                                viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M13 24 4 15 5.414 13.586 13 21.171 26.586 7.586 28 9 13 24z"></path>
-                            </svg></div>
-                        <div class="menu-item__icon"></div>
-                        <div class="menu-item__label" dir="ltr">Product team</div>
-                    </li>
-                    <li role="menuitemradio" aria-checked="false" class="menu-item" tabindex="0"
-                        aria-haspopup="false" title="Organization">
-                        <div class="menu-item__selection-icon"></div>
-                        <div class="menu-item__icon"></div>
-                        <div class="menu-item__label" dir="ltr">Organization</div>
-                    </li>
-                    <li role="menuitemradio" aria-checked="false" class="menu-item" tabindex="0"
-                        aria-haspopup="false" title="Company">
-                        <div class="menu-item__selection-icon"></div>
-                        <div class="menu-item__icon"></div>
-                        <div class="menu-item__label" dir="ltr">Company</div>
-                    </li>
+{% set size_class_map = {
+    'xs': 'menu--xs',
+    'sm': 'menu--sm',
+    'md': 'menu--md',
+    'lg': 'menu--lg'
+} %}
+
+{% macro control_attributes(attrs) %}
+{% if attrs is defined and attrs is not empty %}{% for name, value in attrs %} {{ name }}="{{ value }}"{% endfor %}{% endif %}
+{% endmacro %}
+
+{% macro menu_rows(items, size) %}
+{% import _self as m %}
+{% for row in items %}
+    {% if row.menuItem is defined %}
+        {% set mi = row.menuItem %}
+        {% set item_class = 'menu-item dropdown-item' ~ (mi.disabled|default(false) ? ' menu-item--disabled' : '') ~ ((mi.kind|default('default')) == 'danger' ? ' menu-item--danger' : '') %}
+        {% if mi.submenu is defined and mi.submenu|length > 0 %}
+            <li role="none">
+                <button type="button" role="menuitem" class="{{ item_class }}" tabindex="0"
+                    aria-haspopup="true" aria-expanded="false"
+                    {% if mi.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                    {{ m.control_attributes(mi.attributes|default({})) }}>
+                    <div class="menu-item__selection-icon"></div>
+                    <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
+                    <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}</div>
+                    {% if mi.kind|default('default') == 'danger' %}
+                        <span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>
+                    {% endif %}
+                    <div class="menu-item__shortcut"><i class="ri-arrow-right-s-line"></i></div>
+                </button>
+                <ul tabindex="0" class="dropdown-menu menu menu--{{ size }}" role="menu" aria-label="{{ mi.label|trans }}">
+                    {{ m.menu_rows(mi.submenu, size) }}
                 </ul>
             </li>
-        </ul>
-    </li>
-    <li class="menu-item-divider" role="separator" data-floating-ui-inert=""></li>
-    <li role="menuitem" class="menu-item" tabindex="0" aria-haspopup="false" title="Cut" data-floating-ui-inert="">
-        <div class="menu-item__selection-icon"></div>
-        <div class="menu-item__icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor"
-                width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                <path
-                    d="M26.5,19.63,20.24,16l6.26-3.63a5,5,0,0,0-1.21-9.2A5.19,5.19,0,0,0,24,3a5,5,0,0,0-4.33,7.53,5,5,0,0,0,2.39,2.1l-3.82,2.21L4,6.6,3,8.34,16.24,16,3,23.68l1,1.74,14.24-8.26,3.82,2.21a5,5,0,0,0-2.39,2.1A5,5,0,0,0,24,29a5.19,5.19,0,0,0,1.29-.17,5,5,0,0,0,1.21-9.2ZM21.4,9.53a3,3,0,0,1,1.1-4.12,3,3,0,0,1,4.1,1.11,3,3,0,0,1-1.1,4.11h0A3,3,0,0,1,21.4,9.53Zm5.2,16a3,3,0,0,1-4.1,1.11,3,3,0,0,1-1.1-4.12,3,3,0,0,1,4.1-1.1h0A3,3,0,0,1,26.6,25.48Z">
-                </path>
-            </svg></div>
-        <div class="menu-item__label" dir="ltr">Cut</div>
-        <div class="menu-item__shortcut">⌘X</div>
-    </li>
-    <li role="menuitem" class="menu-item" tabindex="0" aria-haspopup="false" title="Copy"
-        data-floating-ui-inert="">
-        <div class="menu-item__selection-icon"></div>
-        <div class="menu-item__icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor"
-                width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                <path d="M28,10V28H10V10H28m0-2H10a2,2,0,0,0-2,2V28a2,2,0,0,0,2,2H28a2,2,0,0,0,2-2V10a2,2,0,0,0-2-2Z">
-                </path>
-                <path d="M4,18H2V4A2,2,0,0,1,4,2H18V4H4Z"></path>
-            </svg></div>
-        <div class="menu-item__label" dir="ltr">Copy</div>
-        <div class="menu-item__shortcut">⌘C</div>
-    </li>
-    <li role="menuitem" class="menu-item menu-item--disabled" tabindex="-1" aria-disabled="true"
-        aria-haspopup="false" title="Paste" data-floating-ui-inert="">
-        <div class="menu-item__selection-icon"></div>
-        <div class="menu-item__icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor"
-                width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                <path d="M26,20H17.83l2.58-2.59L19,16l-5,5,5,5,1.41-1.41L17.83,22H26v8h2V22A2,2,0,0,0,26,20Z"></path>
-                <path
-                    d="M23.71,9.29l-7-7A1,1,0,0,0,16,2H6A2,2,0,0,0,4,4V28a2,2,0,0,0,2,2h8V28H6V4h8v6a2,2,0,0,0,2,2h6v2h2V10A1,1,0,0,0,23.71,9.29ZM16,4.41,21.59,10H16Z">
-                </path>
-            </svg></div>
-        <div class="menu-item__label" dir="ltr">Paste</div>
-        <div class="menu-item__shortcut">⌘V</div>
-    </li>
-    <li class="menu-item-divider" role="separator" data-floating-ui-inert=""></li>
-    <li class="menu-item-group" role="none" data-floating-ui-inert="">
-        <ul role="group" aria-label="Font style">
-            <li role="menuitemcheckbox" aria-checked="true" class="menu-item-selectable--selected menu-item"
-                tabindex="0" aria-haspopup="false" title="Bold">
-                <div class="menu-item__selection-icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet"
-                        fill="currentColor" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M13 24 4 15 5.414 13.586 13 21.171 26.586 7.586 28 9 13 24z"></path>
-                    </svg></div>
-                <div class="menu-item__icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet"
-                        fill="currentColor" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M18.25,25H9V7h8.5a5.25,5.25,0,0,1,4,8.65A5.25,5.25,0,0,1,18.25,25ZM12,22h6.23a2.25,2.25,0,1,0,0-4.5H12Zm0-7.5h5.5a2.25,2.25,0,1,0,0-4.5H12Z">
-                        </path>
-                    </svg></div>
-                <div class="menu-item__label" dir="ltr">Bold</div>
-                <div class="menu-item__shortcut">⌘B</div>
+        {% elseif mi.href is defined and mi.href %}
+            <li role="none">
+                <a href="{{ mi.href }}" role="menuitem" class="{{ item_class }}"
+                    {% if mi.disabled|default(false) %}aria-disabled="true" tabindex="-1"{% else %}tabindex="0"{% endif %}
+                    {{ m.control_attributes(mi.attributes|default({})) }}>
+                    <div class="menu-item__selection-icon"></div>
+                    <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
+                    <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}</div>
+                    {% if mi.kind|default('default') == 'danger' %}
+                        <span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>
+                    {% endif %}
+                    <div class="menu-item__shortcut">{% if mi.shortcut is defined and mi.shortcut %}{{ mi.shortcut|trans }}{% endif %}</div>
+                </a>
             </li>
-            <li role="menuitemcheckbox" aria-checked="false" class="menu-item-selectable--selected menu-item"
-                tabindex="0" aria-haspopup="false" title="Italic">
-                <div class="menu-item__selection-icon"></div>
-                <div class="menu-item__icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet"
-                        fill="currentColor" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M25 9 25 7 12 7 12 9 17.14 9 12.77 23 7 23 7 25 20 25 20 23 14.86 23 19.23 9 25 9z">
-                        </path>
-                    </svg></div>
-                <div class="menu-item__label" dir="ltr">Italic</div>
-                <div class="menu-item__shortcut">⌘I</div>
+        {% else %}
+            <li role="none">
+                <button type="button" role="menuitem" class="{{ item_class }}"
+                    tabindex="{% if mi.disabled|default(false) %}-1{% else %}0{% endif %}"
+                    {% if mi.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                    {{ m.control_attributes(mi.attributes|default({})) }}>
+                    <div class="menu-item__selection-icon"></div>
+                    <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
+                    <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}</div>
+                    {% if mi.kind|default('default') == 'danger' %}
+                        <span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>
+                    {% endif %}
+                    <div class="menu-item__shortcut">{% if mi.shortcut is defined and mi.shortcut %}{{ mi.shortcut|trans }}{% endif %}</div>
+                </button>
             </li>
-        </ul>
-    </li>
-    <li class="menu-item-divider" role="separator" data-floating-ui-inert=""></li>
-    <li class="menu-item-radio-group" role="none" data-floating-ui-inert="">
-        <ul role="group" aria-label="Text decoration">
-            <li role="menuitemradio" aria-checked="true" class="menu-item" tabindex="0" aria-haspopup="false"
-                title="None">
-                <div class="menu-item__selection-icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet"
-                        fill="currentColor" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M13 24 4 15 5.414 13.586 13 21.171 26.586 7.586 28 9 13 24z"></path>
-                    </svg></div>
-                <div class="menu-item__icon"></div>
-                <div class="menu-item__label" dir="ltr">None</div>
-            </li>
-            <li role="menuitemradio" aria-checked="false" class="menu-item" tabindex="0" aria-haspopup="false"
-                title="Overline">
-                <div class="menu-item__selection-icon"></div>
-                <div class="menu-item__icon"></div>
-                <div class="menu-item__label" dir="ltr">Overline</div>
-            </li>
-            <li role="menuitemradio" aria-checked="false" class="menu-item" tabindex="0" aria-haspopup="false"
-                title="Line-through">
-                <div class="menu-item__selection-icon"></div>
-                <div class="menu-item__icon"></div>
-                <div class="menu-item__label" dir="ltr">Line-through</div>
-            </li>
-            <li role="menuitemradio" aria-checked="false" class="menu-item" tabindex="0" aria-haspopup="false"
-                title="Underline">
-                <div class="menu-item__selection-icon"></div>
-                <div class="menu-item__icon"></div>
-                <div class="menu-item__label" dir="ltr">Underline</div>
-            </li>
-        </ul>
-    </li>
-    <li class="menu-item-divider" role="separator" data-floating-ui-inert=""></li>
-    <li role="menuitem" class="menu-item menu-item--danger" tabindex="0" aria-haspopup="false" title="Delete"
-        data-floating-ui-inert="">
-        <div class="menu-item__selection-icon"></div>
-        <div class="menu-item__icon"><svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor"
-                width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 12H14V24H12z"></path>
-                <path d="M18 12H20V24H18z"></path>
-                <path d="M4,6V8H6V28a2,2,0,0,0,2,2H24a2,2,0,0,0,2-2V8h2V6ZM8,28V8H24V28Z"></path>
-                <path d="M12 2H20V4H12z"></path>
-            </svg></div>
-        <div class="menu-item__label" dir="ltr">Delete</div><span id="danger-description-_r_1r_"
-            class="visually-hidden">danger</span>
-        <div class="menu-item__shortcut">⌫</div>
-    </li>
+        {% endif %}
+    {% elseif row.menuItemDivider is defined %}
+        <li class="menu-item-divider" role="separator"></li>
+    {% elseif row.menuItemRadioGroup is defined %}
+        {% set rg = row.menuItemRadioGroup %}
+        {% set rg_items = rg.items is defined ? rg.items : rg.options|default([]) %}
+        <li class="menu-item-radio-group" role="none">
+            <ul role="group" aria-label="{{ rg.label|trans }}">
+                {% for raw in rg_items %}
+                    {% set opt = raw.menuItem|default(raw) %}
+                    {% set opt_val = opt.value|default(opt.label) %}
+                    {% set is_checked = rg.defaultSelectedItem is defined and rg.defaultSelectedItem == opt_val %}
+                    {% set opt_class = 'menu-item' %}
+                    {% if opt.href is defined and opt.href %}
+                        <li role="none">
+                            <a href="{{ opt.href }}" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
+                                <div class="menu-item__selection-icon">{% if is_checked %}<i class="ri-check-line"></i>{% endif %}</div>
+                                <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
+                                <div class="menu-item__label" dir="ltr">{{ opt.label|trans }}</div>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li role="none">
+                            <button type="button" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0"
+                                {% if opt.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                                {{ m.control_attributes(opt.attributes|default({})) }}>
+                                <div class="menu-item__selection-icon">{% if is_checked %}<i class="ri-check-line"></i>{% endif %}</div>
+                                <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
+                                <div class="menu-item__label" dir="ltr">{{ opt.label|trans }}</div>
+                            </button>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </li>
+    {% elseif row.menuItemGroup is defined %}
+        {% set g = row.menuItemGroup %}
+        <li class="menu-item-group" role="none">
+            <ul role="group" aria-label="{{ g.label|trans }}">
+                {% for raw in g.items %}
+                    {% set opt = raw.menuItemSelectable|default(raw) %}
+                    {% set is_on = opt.defaultSelected|default(false) %}
+                    {% set opt_class = 'menu-item' ~ (is_on ? ' menu-item-selectable--selected' : '') %}
+                    {% if opt.href is defined and opt.href %}
+                        <li role="none">
+                            <a href="{{ opt.href }}" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
+                                <div class="menu-item__selection-icon">{% if is_on %}<i class="ri-check-line"></i>{% endif %}</div>
+                                <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
+                                <div class="menu-item__label" dir="ltr">{{ opt.label|trans }}</div>
+                                <div class="menu-item__shortcut">{% if opt.shortcut is defined and opt.shortcut %}{{ opt.shortcut|trans }}{% endif %}</div>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li role="none">
+                            <button type="button" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0"
+                                {% if opt.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                                {{ m.control_attributes(opt.attributes|default({})) }}>
+                                <div class="menu-item__selection-icon">{% if is_on %}<i class="ri-check-line"></i>{% endif %}</div>
+                                <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
+                                <div class="menu-item__label" dir="ltr">{{ opt.label|trans }}</div>
+                                <div class="menu-item__shortcut">{% if opt.shortcut is defined and opt.shortcut %}{{ opt.shortcut|trans }}{% endif %}</div>
+                            </button>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </li>
+    {% endif %}
+{% endfor %}
+{% endmacro %}
+
+{% import _self as menu_macro %}
+
+<ul class="dropdown-menu menu {{ size_class_map[size|default('sm')] }}{% if open is defined and open %} menu--shown{% endif %} {{ menuAlignment|default('start') == 'end' ? 'dropdown-menu-end' : 'dropdown-menu-start' }}{% if backgroundToken is defined and backgroundToken == 'background' %} layer-two{% endif %} {{ className|default('') }}"
+    role="menu" tabindex="-1"
+    {% if label is defined and label %}aria-label="{{ label|trans }}"{% endif %}
+    {% if attributes is defined and attributes is not empty %}{% for attribute, attribute_value in attributes %} {{ attribute }}="{{ attribute_value }}"{% endfor %}{% endif %}>
+    {{ menu_macro.menu_rows(items|default([]), size|default('sm')) }}
 </ul>
