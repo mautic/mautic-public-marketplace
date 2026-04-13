@@ -216,6 +216,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testReviewFormRendersValidationMarkup(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/package/mautic/alpha-plugin');
 
         self::assertResponseIsSuccessful();
