@@ -10,6 +10,9 @@
   ║  className         extra classes on the outer <ul>                       ║
   ║  attributes        extra HTML attributes on the outer <ul>               ║
   ║  children          array of rows — see Twig comments in menu_rows below  ║
+  ╠══════════════════════════════════════════════════════════════════════════╣
+  ║  Row keys: menuItem, menuItemDivider, menuItemRadioGroup, menuItemGroup   ║
+  ║  Divider:  use menuItemDivider: true (or any value; not false)           ║
   ╚══════════════════════════════════════════════════════════════════════════╝
 -->
 
@@ -141,7 +144,7 @@
     {#  A horizontal rule between sections — not clickable.                   #}
     {#       <li class="menu-item-divider" role="separator"></li>               #}
     {# ─────────────────────────────────────────────────────────────────────── #}
-    {% elseif row.menuItemDivider is defined %}
+    {% elseif row.menuItemDivider is defined and row.menuItemDivider is not same as(false) %}
         <li class="menu-item-divider" role="separator"></li>
 
     {# ─────────────────────────────────────────────────────────────────────── #}
