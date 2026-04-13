@@ -3,9 +3,11 @@
 {% set id = id|default(name|replace({'[': '-', ']': '', ' ': '-', '.': '-'})) %}
 {% set label = label|default('') %}
 {% set placeholder = placeholder|default(label) %}
-{% set wrapper_class = wrapper_class|default('') %}
+{% set wrapperClass = wrapperClass|default('') %}
 {% set attributes = attributes|default({}) %}
 {% set icon = icon|default(null) %}
+{% set helpText = helpText|default(null) %}
+{% set validation = validation|default({}) %}
 
 
 <div class="form-floating">
@@ -14,7 +16,7 @@
             id: id,
             name: name,
             label: label,
-            label_position: 'bottom',
+            labelPosition: 'bottom',
             icon: icon,
             size: size|default(null),
             options: options|default([]),
@@ -22,9 +24,10 @@
             disabled: disabled|default(false),
             required: required|default(false),
             multiple: multiple|default(false),
-            help_text: null,
-            wrapper_class: '',
-            attributes: attributes
+            helpText: helpText,
+            wrapperClass: '',
+            attributes: attributes,
+            validation: validation
         } only %}
     {% else %}
         {% include 'components/form-control.html.twig' with {
@@ -32,7 +35,7 @@
             name: name,
             type: type|default('text'),
             label: label,
-            label_position: 'bottom',
+            labelPosition: 'bottom',
             icon: icon,
             value: value|default(''),
             placeholder: placeholder,
@@ -42,9 +45,10 @@
             disabled: disabled|default(false),
             readonly: readonly|default(false),
             required: required|default(false),
-            help_text: null,
-            wrapper_class: '',
-            attributes: attributes
+            helpText: helpText,
+            wrapperClass: '',
+            attributes: attributes,
+            validation: validation
         } only %}
     {% endif %}
 </div>

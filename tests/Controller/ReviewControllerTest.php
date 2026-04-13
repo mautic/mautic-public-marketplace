@@ -29,7 +29,7 @@ final class ReviewControllerTest extends WebTestCase
 
         $client->request('POST', '/package/vendor/package/review', [
             'rating' => '5',
-            'review' => 'Great plugin!',
+            'review' => 'Great plugin! '.str_repeat('x', 50),
             '_token' => $token,
         ]);
 
