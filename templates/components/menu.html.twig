@@ -1,34 +1,23 @@
-<!-- 
-backgroundToken (layer/background) -> default layer
-label (string) -> aria-label on root menu
-menuAlignment (start/end) -> dropdown-menu-start / dropdown-menu-end (default start)
-open (true/false) -> default false
-size (xs/sm/md/lg)
-className (optional)
-attributes (optional key/value)
-items (array of items) { 
-    menuItem {
-        label
-        renderIcon (icon class)
-        href -> if defined, render <a href>; else <button type="button">
-        shortcut (string)
-        kind (danger/default)
-        disabled (true/false)
-        attributes (optional key/value on control)
-        submenu (optional array) { menuItem, menuItemRadioGroup, menuItemDivider, menuItemGroup } -> trigger is a Bootstrap dropdown (data-bs-toggle, data-bs-auto-close="outside")
-    },
-    menuItemRadioGroup {
-        label
-        items (array of menuItem objects; <a> or <button> per item)
-        defaultSelectedItem (value matching option value/label)
-    },
-    menuItemDivider,
-    menuItemGroup {
-        label
-        items (array of menuItemSelectable objects; <a> or <button> per item)
-    }
-}
+<!--
+  ╔══════════════════════════════════════════════════════════════════════════╗
+  ║  MENU COMPONENT — API (pass these from the parent include)               ║
+  ╠══════════════════════════════════════════════════════════════════════════╣
+  ║  backgroundToken   layer | background (extra surface class)              ║
+  ║  label             spoken name for the whole menu (screen readers)        ║
+  ║  menuAlignment     start | end  → Bootstrap aligns the panel             ║
+  ║  open              true = force visible (layout/debug)                    ║
+  ║  size              xs | sm | md | lg  → Carbon-style menu density        ║
+  ║  className         extra classes on the outer <ul>                       ║
+  ║  attributes        extra HTML attributes on the outer <ul>               ║
+  ║  items             array of rows — see Twig comments in menu_rows below  ║
+  ╚══════════════════════════════════════════════════════════════════════════╝
 -->
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  SHARED BITS                                                                #}
+{#  • size_class_map → turns "sm" into class "menu--sm"                       #}
+{#  • control_attributes → prints extra data-* / id / etc. on controls       #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
 
 {% set size_class_map = {
     'xs': 'menu--xs',
@@ -41,14 +30,40 @@ items (array of items) {
 {% if attrs is defined and attrs is not empty %}{% for name, value in attrs %} {{ name }}="{{ value }}"{% endfor %}{% endif %}
 {% endmacro %}
 
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  menu_rows(items, size)                                                     #}
+{#  Renders ONE <ul>’s children: a list of <li>…</li> rows.                    #}
+{#  Called from the root <ul>, and again inside a nested submenu <ul>.        #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+
 {% macro menu_rows(items, size) %}
 {% import _self as m %}
 {% for row in items %}
+
+    {# ─────────────────────────────────────────────────────────────────────── #}
+    {#  ROW TYPE: menuItem                                                     #}
+    {#  One clickable line: either opens a child menu, links away, or fires    #}
+    {#  a button action (no URL).                                              #}
+    {# ─────────────────────────────────────────────────────────────────────── #}
     {% if row.menuItem is defined %}
         {% set mi = row.menuItem %}
         {% set item_class = 'menu-item dropdown-item' ~ (mi.disabled|default(false) ? ' menu-item--disabled' : '') ~ ((mi.kind|default('default')) == 'danger' ? ' menu-item--danger' : '') %}
+
+        {# ···································································· #}
+        {#  CASE A — This row OPENS ANOTHER MENU (chevron / “Share with…”)      #}
+        {#  • The visible row is a <button> that Bootstrap treats as a second  #}
+        {#    dropdown trigger (nested panel opens to the side).               #}
+        {#  • The next sibling is a <ul> — we call menu_rows again on it.      #}
+        {#                                                                      #}
+        {#       <li class="dropend">                                           #}
+        {#         ┌── <button>  label + arrow  (opens child)                  #}
+        {#         └── <ul> …child rows…                                        #}
+        {#       </li>                                                          #}
+        {# ···································································· #}
         {% if mi.submenu is defined and mi.submenu|length > 0 %}
             <li class="dropend" role="none">
+
+                {# —— the only focusable control on this row: expand child —— #}
                 <button type="button" role="menuitem" class="{{ item_class }}" tabindex="0"
                     data-bs-toggle="dropdown"
                     data-bs-auto-close="outside"
@@ -64,12 +79,24 @@ items (array of items) {
                     {% endif %}
                     <div class="menu-item__shortcut"><i class="ri-arrow-right-s-line"></i></div>
                 </button>
+
+                {# —— panel that appears beside this row (same shapes as root) —— #}
                 <ul tabindex="0" class="dropdown-menu menu menu--{{ size }}" role="menu" aria-label="{{ mi.label|trans }}">
                     {{ m.menu_rows(mi.submenu, size) }}
                 </ul>
             </li>
+
+        {# ···································································· #}
+        {#  CASE B — This row is a NORMAL LINK (user goes to another page/URL) #}
+        {#  • Use when menuItem has `href` set.                                #}
+        {#                                                                      #}
+        {#       <li>                                                           #}
+        {#         └── <a href="…">  icon + label + optional shortcut           #}
+        {#       </li>                                                        #}
+        {# ···································································· #}
         {% elseif mi.href is defined and mi.href %}
             <li role="none">
+
                 <a href="{{ mi.href }}" role="menuitem" class="{{ item_class }}"
                     {% if mi.disabled|default(false) %}aria-disabled="true" tabindex="-1"{% else %}tabindex="0"{% endif %}
                     {{ m.control_attributes(mi.attributes|default({})) }}>
@@ -82,8 +109,18 @@ items (array of items) {
                     <div class="menu-item__shortcut">{% if mi.shortcut is defined and mi.shortcut %}{{ mi.shortcut|trans }}{% endif %}</div>
                 </a>
             </li>
+
+        {# ···································································· #}
+        {#  CASE C — This row is a BUTTON (no URL — you wire click in JS)      #}
+        {#  • Use when there is no `href` and no `submenu`.                   #}
+        {#                                                                      #}
+        {#       <li>                                                           #}
+        {#         └── <button>  icon + label + optional shortcut               #}
+        {#       </li>                                                        #}
+        {# ···································································· #}
         {% else %}
             <li role="none">
+
                 <button type="button" role="menuitem" class="{{ item_class }}"
                     tabindex="{% if mi.disabled|default(false) %}-1{% else %}0{% endif %}"
                     {% if mi.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
@@ -98,20 +135,42 @@ items (array of items) {
                 </button>
             </li>
         {% endif %}
+
+    {# ─────────────────────────────────────────────────────────────────────── #}
+    {#  ROW TYPE: menuItemDivider                                              #}
+    {#  A horizontal rule between sections — not clickable.                   #}
+    {#       <li class="menu-item-divider" role="separator"></li>               #}
+    {# ─────────────────────────────────────────────────────────────────────── #}
     {% elseif row.menuItemDivider is defined %}
         <li class="menu-item-divider" role="separator"></li>
+
+    {# ─────────────────────────────────────────────────────────────────────── #}
+    {#  ROW TYPE: menuItemRadioGroup                                           #}
+    {#  “Pick exactly one” list (like export format).                         #}
+    {#  • Outer <li> wraps an inner <ul role="group"> with radio-style rows.   #}
+    {#  • Each option is either <a> or <button> depending on href.             #}
+    {#                                                                      #}
+    {#       <li class="menu-item-radio-group">                               #}
+    {#         <ul role="group">                                              #}
+    {#           <li><a or button>  radio row</li>  …                         #}
+    {#         </ul>                                                          #}
+    {#       </li>                                                            #}
+    {# ─────────────────────────────────────────────────────────────────────── #}
     {% elseif row.menuItemRadioGroup is defined %}
         {% set rg = row.menuItemRadioGroup %}
         {% set rg_items = rg.items is defined ? rg.items : rg.options|default([]) %}
         <li class="menu-item-radio-group" role="none">
+
             <ul class="dropdown-menu show" role="group" aria-label="{{ rg.label|trans }}">
                 {% for raw in rg_items %}
                     {% set opt = raw.menuItem|default(raw) %}
                     {% set opt_val = opt.value|default(opt.label) %}
                     {% set is_checked = rg.defaultSelectedItem is defined and rg.defaultSelectedItem == opt_val %}
                     {% set opt_class = 'menu-item dropdown-item' %}
+
                     {% if opt.href is defined and opt.href %}
                         <li role="none">
+
                             <a href="{{ opt.href }}" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
                                 <div class="menu-item__selection-icon">{% if is_checked %}<i class="ri-check-line"></i>{% endif %}</div>
                                 <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
@@ -120,6 +179,7 @@ items (array of items) {
                         </li>
                     {% else %}
                         <li role="none">
+
                             <button type="button" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0"
                                 {% if opt.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
                                 {{ m.control_attributes(opt.attributes|default({})) }}>
@@ -132,9 +192,22 @@ items (array of items) {
                 {% endfor %}
             </ul>
         </li>
+
+    {# ─────────────────────────────────────────────────────────────────────── #}
+    {#  ROW TYPE: menuItemGroup                                                #}
+    {#  “Turn features on/off” — multiple can be active (Bold + Italic).      #}
+    {#  • Same idea as radio group, but role=menuitemcheckbox + checkmarks.   #}
+    {#                                                                      #}
+    {#       <li class="menu-item-group">                                   #}
+    {#         <ul role="group">                                              #}
+    {#           <li><a or button>  checkbox row + optional shortcut</li>     #}
+    {#         </ul>                                                          #}
+    {#       </li>                                                            #}
+    {# ─────────────────────────────────────────────────────────────────────── #}
     {% elseif row.menuItemGroup is defined %}
         {% set g = row.menuItemGroup %}
         <li class="menu-item-group" role="none">
+
             <ul class="dropdown-menu show" role="group" aria-label="{{ g.label|trans }}">
                 {% for raw in g.items %}
                     {% set opt = raw.menuItemSelectable|default(raw) %}
@@ -142,6 +215,7 @@ items (array of items) {
                     {% set opt_class = 'menu-item dropdown-item' ~ (is_on ? ' menu-item-selectable--selected' : '') %}
                     {% if opt.href is defined and opt.href %}
                         <li role="none">
+
                             <a href="{{ opt.href }}" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
                                 <div class="menu-item__selection-icon">{% if is_on %}<i class="ri-check-line"></i>{% endif %}</div>
                                 <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
@@ -151,6 +225,7 @@ items (array of items) {
                         </li>
                     {% else %}
                         <li role="none">
+
                             <button type="button" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0"
                                 {% if opt.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
                                 {{ m.control_attributes(opt.attributes|default({})) }}>
@@ -167,6 +242,14 @@ items (array of items) {
     {% endif %}
 {% endfor %}
 {% endmacro %}
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  ROOT: the visible floating panel Bootstrap positions under the trigger     #}
+{#                                                                      #}
+{#    <ul class="dropdown-menu menu …">   ← this file ends here            #}
+{#      …menu_rows…                                                       #}
+{#    </ul>                                                               #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
 
 {% import _self as menu_macro %}
 
