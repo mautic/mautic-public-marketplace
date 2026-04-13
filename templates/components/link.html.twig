@@ -1,16 +1,3 @@
-<!-- 
-disabled (true/false)
-visited (true/false)
-className (optional)
-href
-size (sm/md/lg)
-target
-renderIcon (icon class)
-iconPosition (left/right)
-iconHoverAnimation (true/false)
-stretched (true/false)
--->
-
 {% set common_icon_content %}
     {% if renderIcon is defined and renderIcon %}
         <i class="{{ renderIcon }}"></i>
@@ -23,7 +10,7 @@ stretched (true/false)
     'lg': 'type-body-compact-02'
 } %}
 
-<a {% if href is defined and href %}href="{{ href }}"{% else %}role="button" tabindex="0"{% endif %} class="link {{ className|default('') }}{% if renderIcon is defined and renderIcon %} icon-link{% endif %}{% if iconHoverAnimation is defined and iconHoverAnimation and (iconPosition is not defined or iconPosition != 'left') %} icon-link-hover{% endif %}{% if stretched is defined and stretched %} stretched-link{% endif %} {{ size_class_map[size|default('md')] }}" {% if disabled is defined and disabled %}disabled{% endif %} {% if visited is defined and visited %}visited{% endif %} {% if target is defined and target %}target="{{ target }}" rel="{{ target == '_blank' ? 'noopener noreferrer' : 'noreferrer' }}"{% endif %} {% for attribute, attribute_value in attributes %} {{ attribute }}="{{ attribute_value }}"{% endfor %} >
+<a {% if href is defined and href %}href="{{ href }}"{% else %}role="button" tabindex="0"{% endif %} class="link {{ className|default('') }}{% if renderIcon is defined and renderIcon %} icon-link{% endif %}{% if iconHoverAnimation is defined and iconHoverAnimation and (iconPosition is not defined or iconPosition != 'left') %} icon-link-hover{% endif %}{% if stretched is defined and stretched %} stretched-link{% endif %} {{ size_class_map[size|default('md')] }}" {% if disabled is defined and disabled %}disabled{% endif %} {% if visited is defined and visited %}visited{% endif %} {% if target is defined and target %}target="{{ target }}" rel="{{ target == '_blank' ? 'noopener noreferrer' : 'noreferrer' }}"{% endif %} {% if attributes is defined and attributes is not empty %}{% for attribute, attribute_value in attributes %} {{ attribute }}="{{ attribute_value }}"{% endfor %}{% endif %} >
     {% if iconPosition is defined and iconPosition == 'left' %}
         {{ common_icon_content }}
     {% endif %}

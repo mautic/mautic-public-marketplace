@@ -37,7 +37,7 @@
     {% set groupId = filterPanel.generate_id(groupTitle ?: 'filter-group-' ~ loop.index)|trim %}
     {% set filterGroupItemsType = filterGroup.filterGroupItemsType|default('checkbox') %}
     {% set filterGroupItems = filterGroup.filterGroupItems|default(filterGroup.content|default([])) %}
-    {% set groupNameBase = filterPanel.generate_name(groupTitle ?: 'filter_group_' ~ loop.index)|trim %}
+    {% set groupNameBase = filterGroup.name|default(filterPanel.generate_name(groupTitle ?: 'filter_group_' ~ loop.index))|trim %}
     {% set groupName = groupNameBase ~ (filterGroupItemsType == 'checkbox' ? '[]' : '') %}
     {% set visibleItems = filterGroupItemsType == 'custom' ? filterGroupItems : (filterCutoff > 0 ? filterGroupItems|slice(0, filterCutoff) : filterGroupItems) %}
     {% set hiddenItems = filterGroupItemsType == 'custom' ? [] : (filterCutoff > 0 ? filterGroupItems|slice(filterCutoff) : []) %}
@@ -99,6 +99,7 @@
             title: groupTitle,
             content: filterGroupContent,
             padding_inline: filterGroupItemsType in ['select', 'custom'] ? false : true,
+            expanded: filterGroup.expanded|default(false),
         }
     ]) %}
 {% endfor %}

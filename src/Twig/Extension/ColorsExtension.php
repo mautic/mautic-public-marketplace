@@ -20,7 +20,7 @@ final class ColorsExtension extends AbstractExtension
     {
         $hexColor = ltrim($hexColor, '#');
 
-        if (3 === strlen($hexColor)) {
+        if (3 === \strlen($hexColor)) {
             $hexColor = str_repeat($hexColor[0], 2).str_repeat($hexColor[1], 2).str_repeat($hexColor[2], 2);
         }
 

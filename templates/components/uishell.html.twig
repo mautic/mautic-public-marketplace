@@ -83,11 +83,18 @@
             {% if item.HeaderGlobalAction is defined %}
             <span data-toggle="tooltip" data-placement="{{ item.HeaderGlobalAction.tooltipAlignment|default('bottom') }}" title="{{ item.HeaderGlobalAction.ariaLabel|default('')|trans }}">
                 <div class="tooltip-trigger__wrapper">
-                    <button aria-label="{{ item.HeaderGlobalAction.ariaLabel|default('')|trans }}"
-                        class="header__action btn btn--lg layout--size-lg btn-ghost btn--icon-only {{ item.HeaderGlobalAction.className|default('') }}"
-                        type="button" onclick="{{ item.HeaderGlobalAction.onClick|default('') }}">
-                        <i class="{{ item.HeaderGlobalAction.renderActionIcon }} fs-20"></i>
-                    </button>
+                    <{{ item.HeaderGlobalAction.href is defined ? 'a' : 'button' }}
+                        {% if item.HeaderGlobalAction.href is defined %}href="{{ item.HeaderGlobalAction.href }}"{% else %}type="button"{% endif %}
+                        aria-label="{{ item.HeaderGlobalAction.ariaLabel|default(item.HeaderGlobalAction.label|default(''))|trans }}"
+                        class="header__action btn btn--lg layout--size-lg btn-ghost {{ item.HeaderGlobalAction.label is not defined ? 'btn--icon-only' : '' }} {{ item.HeaderGlobalAction.className|default('') }}"
+                        {% if item.HeaderGlobalAction.onClick is defined %}onclick="{{ item.HeaderGlobalAction.onClick }}"{% endif %}>
+                        {% if item.HeaderGlobalAction.renderActionIcon is defined %}
+                            <i class="{{ item.HeaderGlobalAction.renderActionIcon }} fs-20"></i>
+                        {% endif %}
+                        {% if item.HeaderGlobalAction.label is defined %}
+                            <span>{{ item.HeaderGlobalAction.label|trans }}</span>
+                        {% endif %}
+                    </{{ item.HeaderGlobalAction.href is defined ? 'a' : 'button' }}>
                 </div>
             </span>
             {% elseif item.HeaderGlobalDropdown is defined %}
@@ -95,12 +102,17 @@
                 <span data-toggle="tooltip" data-placement="{{ item.HeaderGlobalDropdown.tooltipAlignment|default('bottom') }}" title="{{ item.HeaderGlobalDropdown.ariaLabel|default('')|trans }}">
                     <div class="tooltip-trigger__wrapper">
                         <button aria-label="{{ item.HeaderGlobalDropdown.ariaLabel|default('')|trans }}"
-                            class="header__action btn btn--lg layout--size-lg btn-ghost btn--icon-only btn-nospin {{ item.HeaderGlobalDropdown.className|default('') }} dropdown-toggle"
+                            class="header__action btn btn--lg layout--size-lg btn-ghost {{ item.HeaderGlobalDropdown.label is not defined ? 'btn--icon-only' : '' }} btn-nospin {{ item.HeaderGlobalDropdown.className|default('') }} dropdown-toggle"
                             type="button" 
                             data-toggle="dropdown" 
                             aria-haspopup="true" 
                             aria-expanded="false">
-                            <i class="{{ item.HeaderGlobalDropdown.renderDropdownIcon }} fs-20"></i>
+                            {% if item.HeaderGlobalDropdown.renderDropdownIcon is defined %}
+                                <i class="{{ item.HeaderGlobalDropdown.renderDropdownIcon }} fs-20"></i>
+                            {% endif %}
+                            {% if item.HeaderGlobalDropdown.label is defined %}
+                                <span>{{ item.HeaderGlobalDropdown.label }}</span>
+                            {% endif %}
                         </button>
                         <div class="dropdown-menu dropdown-menu-right">
                             {{ item.HeaderGlobalDropdown.renderMenuContent|raw }}

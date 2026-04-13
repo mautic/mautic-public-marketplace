@@ -15,15 +15,19 @@ marketplace_index:
     path: /browse
     controller: App\Controller\MarketplaceController::index
 
-marketplace_detail:
-    path: /package/{package}
-    controller: App\Controller\MarketplaceController::detail
+profile_page:
+    path: /profile
+    controller: App\Controller\ProfileController::index
+
+review_submit:
+    path: /package/{package}/review
+    controller: App\Controller\ReviewController::submit
+    methods: [POST]
     requirements:
         package: .+
 
-review_api_submit:
-    path: /api/review/{package}
-    controller: App\Controller\Api\ReviewApiController::submit
-    methods: [POST]
+marketplace_detail:
+    path: /package/{package}
+    controller: App\Controller\MarketplaceController::detail
     requirements:
         package: .+

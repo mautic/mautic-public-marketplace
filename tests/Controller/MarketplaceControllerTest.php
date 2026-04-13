@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Auth0\Auth0User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class MarketplaceControllerTest extends WebTestCase
@@ -37,16 +38,125 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('h1');
+        self::assertSelectorExists('a[href="/auth/login?returnTo=/browse"]');
     }
 
     public function testFilteringByTypeAndMauticVersion(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/browse?type=mautic-theme&mautic=^4.4');
+        $client->request('GET', '/browse?type=mautic-theme&mautic[]=%5E4.4');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.card-group', 'Zebra Theme');
         self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+    }
+
+    public function testMauticVersionFilterRendersCheckboxOptionsAndShowAllToggle(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+
+        $labels = $client->getCrawler()->filter('input[name="mautic[]"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertContains('v4.2+', $labels);
+        self::assertContains('v4.3+', $labels);
+        self::assertContains('v4.4+', $labels);
+        self::assertContains('v5.0+', $labels);
+        self::assertContains('v5.1+', $labels);
+        self::assertContains('v5.2+', $labels);
+        self::assertContains('v5.3+', $labels);
+        self::assertSelectorTextContains('[data-view-all-toggle]', 'View all');
+    }
+
+    public function testLanguageFilterRendersOnlyLanguagesPresentInMatchingResults(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+
+        $labels = $client->getCrawler()->filter('input[name="language[]"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertSame(['Dutch', 'English'], $labels);
+        self::assertNotContains('French', $labels);
+    }
+
+    public function testLanguageFilterNarrowsOptionsToCurrentFilteredResultSet(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?type=mautic-plugin');
+
+        self::assertResponseIsSuccessful();
+
+        $labels = $client->getCrawler()->filter('input[name="language[]"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertSame(['English'], $labels);
+        self::assertNotContains('Dutch', $labels);
+    }
+
+    public function testFilteringByMultipleMauticVersions(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?mautic[]=%5E4.2&mautic[]=%5E4.4');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+    }
+
+    public function testFilteringByLanguage(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?language[]=english');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFilteringByMultipleLanguages(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?language[]=english&language[]=dutch');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testLanguageFilterKeepsSiblingOptionsWhenSelected(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?query=escopecz&language[]=english');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+
+        $labels = $client->getCrawler()->filter('input[name="language[]"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertSame(['Dutch', 'English'], $labels);
+    }
+
+    public function testLanguageFilterIsHiddenWhenNoMatchingResultsExist(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?query=no-such-package');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('input[name="language[]"]');
     }
 
     public function testSortingByNameAsc(): void
@@ -56,7 +166,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         self::assertSame('Alpha Plugin', $titles[0]);
     }
 
@@ -67,7 +177,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(1, count($titles));
+        self::assertGreaterThanOrEqual(1, \count($titles));
         self::assertSame('Zebra Theme', $titles[0]);
     }
 
@@ -79,8 +189,28 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Alpha Plugin');
         self::assertSelectorTextContains('body', 'Alpha plugin for sorting.');
+        self::assertSelectorExists('a#tag-v4-3[href$="/browse?mautic%5B0%5D=%5E4.3"]');
+        self::assertSelectorExists('a#tag-v5-0[href$="/browse?mautic%5B0%5D=%5E5.0"]');
+        self::assertSelectorExists('a#tag-v4-3 span[data-bs-toggle="tooltip"][title="Supported Mautic version"]');
+        self::assertSelectorExists('a#tag-v5-0 span[data-bs-toggle="tooltip"][title="Supported Mautic version"]');
+        self::assertSelectorTextContains('body', 'v4.3+');
+        self::assertSelectorTextContains('body', 'v5.0+');
         self::assertSelectorTextContains('time', '2 months ago');
-        self::assertSelectorExists(sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+        self::assertSelectorExists(\sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+        self::assertSelectorExists('a[href="/auth/login?returnTo=/package/mautic/alpha-plugin"]');
+    }
+
+    public function testAuthenticatedDetailPageShowsAccountMenuAndReviewForm(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/package/mautic/alpha-plugin');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Logged in as');
+        self::assertSelectorExists('form[action="/package/mautic/alpha-plugin/review"]');
+        self::assertSelectorExists('a[href="/profile"]');
+        self::assertSelectorExists('a[href="/auth/logout"]');
     }
 
     public function testReviewFormRendersValidationMarkup(): void
@@ -184,7 +314,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         self::assertSame('Zebra Theme', $titles[0]);
     }
 
@@ -195,7 +325,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $titles = $this->packageCardTitles($client);
-        self::assertGreaterThanOrEqual(2, count($titles));
+        self::assertGreaterThanOrEqual(2, \count($titles));
         // Example Plugin is 5 days old, the most recent
         self::assertSame('Example Plugin', $titles[0]);
     }

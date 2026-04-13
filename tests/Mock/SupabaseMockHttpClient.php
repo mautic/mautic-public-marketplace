@@ -11,16 +11,32 @@ final class SupabaseMockHttpClient extends MockHttpClient
 {
     public function __construct()
     {
-        parent::__construct(static function (string $method, string $url): MockResponse {
-            if ('POST' === $method) {
+        parent::__construct(static function (string $method, string $url, array $options = []): MockResponse {
+            if ('POST' === $method && !str_contains($url, '/rpc/')) {
                 return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
+            if ('GET' === $method && str_contains($url, '/rest/v1/reviews') && !str_contains($url, '/rpc/')) {
+                return self::userReviewsResponse($url);
+            }
+
+            if ('GET' === $method && str_contains($url, '/rest/v1/packages') && !str_contains($url, '/rpc/')) {
+                return self::userPackagesResponse($url);
             }
 
             if (str_contains($url, 'get_pack')) {
                 return self::packageDetailResponse($url);
             }
 
-            return self::packageListResponse($url);
+            if (str_contains($url, 'get_compatible_mautic_versions')) {
+                return self::compatibleMauticVersionsResponse();
+            }
+
+            if (str_contains($url, 'get_available_languages')) {
+                return self::availableLanguagesResponse($method, $options);
+            }
+
+            return self::packageListResponse($url, $method, $options);
         });
     }
 
@@ -40,7 +56,8 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'favers' => 10,
                 'time' => (new \DateTimeImmutable('-5 days'))->format('c'),
                 'maintainers' => 'escopecz',
-                'smv' => '^5.0',
+                'smv' => '^5.0 || ^5.1',
+                'language' => 'en',
                 'average_rating' => 0,
                 'total_review' => 0,
             ],
@@ -54,7 +71,8 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'favers' => 2,
                 'time' => (new \DateTimeImmutable('-60 days'))->format('c'),
                 'maintainers' => 'rcheesley',
-                'smv' => '^5.0',
+                'smv' => '^4.3 || ^5.0',
+                'language' => 'English',
                 'average_rating' => 0,
                 'total_review' => 0,
             ],
@@ -68,7 +86,8 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'favers' => 5,
                 'time' => (new \DateTimeImmutable('-200 days'))->format('c'),
                 'maintainers' => 'escopecz',
-                'smv' => '^4.4 || ^5.0',
+                'smv' => '^4.4 || ^5.0 || ^5.2',
+                'language' => 'nl',
                 'average_rating' => 0,
                 'total_review' => 0,
             ],
@@ -82,16 +101,17 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'favers' => 3,
                 'time' => (new \DateTimeImmutable('-10 days'))->format('c'),
                 'maintainers' => 'rcheesley',
-                'smv' => '^5.0',
+                'smv' => '^4.2 || ^5.3',
+                'language' => 'Nederlands',
                 'average_rating' => 0,
                 'total_review' => 0,
             ],
         ];
     }
 
-    private static function packageListResponse(string $url): MockResponse
+    private static function packageListResponse(string $url, string $method, array $options): MockResponse
     {
-        $params = self::parseQueryParams($url);
+        $params = self::parseParams($url, $method, $options);
         $rows = array_values(self::allPackages());
 
         // Filter by type
@@ -108,9 +128,21 @@ final class SupabaseMockHttpClient extends MockHttpClient
         }
 
         // Filter by SMV
-        if (isset($params['_smv']) && '' !== $params['_smv']) {
-            $smv = $params['_smv'];
-            $rows = array_values(array_filter($rows, static fn (array $r): bool => str_contains($r['smv'] ?? '', $smv)));
+        $selectedVersions = self::normalizeSelectedVersions($params['_smv'] ?? null);
+        if ([] !== $selectedVersions) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => [] !== array_intersect(
+                self::splitSmvValues($r['smv'] ?? null),
+                $selectedVersions,
+            )));
+        }
+
+        $selectedLanguages = self::normalizeSelectedLanguages($params['_language'] ?? null);
+        if ([] !== $selectedLanguages) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => \in_array(
+                self::canonicalizeLanguage($r['language'] ?? null),
+                $selectedLanguages,
+                true,
+            )));
         }
 
         // Filter by date range
@@ -164,9 +196,45 @@ final class SupabaseMockHttpClient extends MockHttpClient
         );
     }
 
+    private static function compatibleMauticVersionsResponse(): MockResponse
+    {
+        $versions = [];
+
+        foreach (self::allPackages() as $package) {
+            $versions = [...$versions, ...self::splitSmvValues($package['smv'] ?? null)];
+        }
+
+        $versions = array_values(array_unique($versions));
+        sort($versions);
+
+        return new MockResponse(
+            json_encode($versions),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    private static function availableLanguagesResponse(string $method, array $options): MockResponse
+    {
+        $params = self::parseParams('', $method, $options);
+        $rows = self::filteredRowsForAvailableLanguages($params);
+        $languages = [];
+
+        foreach ($rows as $row) {
+            $language = $row['language'] ?? null;
+            if (\is_string($language) && '' !== trim($language)) {
+                $languages[] = trim($language);
+            }
+        }
+
+        return new MockResponse(
+            json_encode(array_values(array_unique($languages))),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
     private static function packageDetailResponse(string $url): MockResponse
     {
-        $params = self::parseQueryParams($url);
+        $params = self::parseParams($url, 'GET', []);
         $packageName = $params['packag_name'] ?? '';
 
         $all = self::allPackages();
@@ -182,7 +250,12 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'downloads' => ['total' => $pkg['downloads']],
                 'favers' => $pkg['favers'],
                 'time' => $pkg['time'],
-                'versions' => [],
+                'language' => $pkg['language'],
+                'versions' => [
+                    '1.0.0' => [
+                        'smv' => $pkg['smv'],
+                    ],
+                ],
                 'reviews' => [],
                 'maintainers' => [],
             ],
@@ -190,6 +263,97 @@ final class SupabaseMockHttpClient extends MockHttpClient
 
         return new MockResponse(
             json_encode($data),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    private static function userReviewsResponse(string $url): MockResponse
+    {
+        $params = self::parseParams($url, 'GET', []);
+        $userId = $params['auth0_user_id'] ?? '';
+        $userId = str_replace('eq.', '', $userId);
+
+        $allReviews = [
+            [
+                'id' => 1,
+                'objectId' => 'mautic/example-plugin',
+                'auth0_user_id' => 'auth0|test123',
+                'user' => 'Test User',
+                'rating' => 5,
+                'review' => 'Great plugin!',
+                'picture' => null,
+                'created_at' => (new \DateTimeImmutable('-2 days'))->format('c'),
+            ],
+            [
+                'id' => 2,
+                'objectId' => 'mautic/zebra-theme',
+                'auth0_user_id' => 'auth0|test123',
+                'user' => 'Test User',
+                'rating' => 4,
+                'review' => 'Nice theme.',
+                'picture' => null,
+                'created_at' => (new \DateTimeImmutable('-5 days'))->format('c'),
+            ],
+            [
+                'id' => 3,
+                'objectId' => 'mautic/alpha-plugin',
+                'auth0_user_id' => 'auth0|other',
+                'user' => 'Other User',
+                'rating' => 3,
+                'review' => 'OK plugin.',
+                'picture' => null,
+                'created_at' => (new \DateTimeImmutable('-1 day'))->format('c'),
+            ],
+        ];
+
+        $filtered = array_values(array_filter($allReviews, static fn (array $r): bool => $r['auth0_user_id'] === $userId));
+
+        return new MockResponse(
+            json_encode($filtered),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    private static function userPackagesResponse(string $url): MockResponse
+    {
+        $params = self::parseParams($url, 'GET', []);
+        $userId = $params['auth0_user_id'] ?? '';
+        $userId = str_replace('eq.', '', $userId);
+
+        $allPackages = [
+            [
+                'name' => 'mautic/example-plugin',
+                'displayname' => 'Example Plugin',
+                'description' => 'Example package for local development.',
+                'type' => 'mautic-plugin',
+                'downloads' => 1234,
+                'favers' => 10,
+                'auth0_user_id' => 'auth0|test123',
+            ],
+            [
+                'name' => 'mautic/welcome-campaign',
+                'displayname' => 'Welcome Campaign',
+                'description' => 'Welcome drip campaign resource template.',
+                'type' => 'mautic-resource',
+                'downloads' => 500,
+                'favers' => 3,
+                'auth0_user_id' => 'auth0|test123',
+            ],
+            [
+                'name' => 'mautic/zebra-theme',
+                'displayname' => 'Zebra Theme',
+                'description' => 'Zebra theme for sorting.',
+                'type' => 'mautic-theme',
+                'downloads' => 5000,
+                'favers' => 5,
+                'auth0_user_id' => 'auth0|other',
+            ],
+        ];
+
+        $filtered = array_values(array_filter($allPackages, static fn (array $package): bool => $package['auth0_user_id'] === $userId));
+
+        return new MockResponse(
+            json_encode($filtered),
             ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
         );
     }
@@ -219,15 +383,142 @@ final class SupabaseMockHttpClient extends MockHttpClient
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
-    private static function parseQueryParams(string $url): array
+    private static function parseParams(string $url, string $method, array $options): array
     {
+        if ('POST' === $method) {
+            $body = $options['body'] ?? null;
+            if (\is_string($body) && '' !== $body) {
+                $decoded = json_decode($body, true);
+
+                return \is_array($decoded) ? $decoded : [];
+            }
+
+            return [];
+        }
+
         $parts = parse_url($url);
         $query = $parts['query'] ?? '';
         $params = [];
         parse_str($query, $params);
 
         return $params;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function normalizeSelectedVersions(mixed $value): array
+    {
+        if (\is_string($value)) {
+            $value = [$value];
+        }
+
+        if (!\is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter($value, static fn (mixed $item): bool => \is_string($item) && '' !== $item));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function splitSmvValues(mixed $value): array
+    {
+        if (!\is_string($value) || '' === $value) {
+            return [];
+        }
+
+        $parts = preg_split('/\s*\|\|\s*/', $value) ?: [];
+        $parts = array_map(static fn (string $part): string => trim($part), $parts);
+
+        return array_values(array_filter($parts, static fn (string $part): bool => '' !== $part));
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function filteredRowsForAvailableLanguages(array $params): array
+    {
+        $rows = array_values(self::allPackages());
+
+        if (isset($params['_type']) && '' !== $params['_type']) {
+            $type = $params['_type'];
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['type'] ?? '') === $type));
+        }
+
+        if (isset($params['_query']) && '' !== $params['_query']) {
+            $q = strtolower($params['_query']);
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => str_contains(strtolower($r['name']), $q)
+                || str_contains(strtolower($r['maintainers'] ?? ''), $q)));
+        }
+
+        $selectedVersions = self::normalizeSelectedVersions($params['_smv'] ?? null);
+        if ([] !== $selectedVersions) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => [] !== array_intersect(
+                self::splitSmvValues($r['smv'] ?? null),
+                $selectedVersions,
+            )));
+        }
+
+        $dateRange = $params['_date_range'] ?? null;
+        if (null !== $dateRange && '' !== $dateRange) {
+            $rows = self::filterByDateRange($rows, $dateRange);
+        }
+
+        $popularity = $params['_popularity'] ?? null;
+        if ('rising' === $popularity) {
+            $rows = self::filterByDateRange($rows, '30d');
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function normalizeSelectedLanguages(mixed $value): array
+    {
+        if (\is_string($value)) {
+            $value = [$value];
+        }
+
+        if (!\is_array($value)) {
+            return [];
+        }
+
+        $languages = [];
+        foreach ($value as $item) {
+            $canonical = self::canonicalizeLanguage($item);
+            if (null === $canonical) {
+                continue;
+            }
+
+            $languages[] = $canonical;
+        }
+
+        return array_values(array_unique($languages));
+    }
+
+    private static function canonicalizeLanguage(mixed $language): ?string
+    {
+        if (!\is_string($language)) {
+            return null;
+        }
+
+        $language = strtolower(trim($language));
+        if ('' === $language) {
+            return null;
+        }
+
+        return match ($language) {
+            'en', 'en-us', 'en-gb', 'english' => 'english',
+            'nl', 'nl-nl', 'dutch', 'nederlands' => 'dutch',
+            default => $language,
+        };
     }
 }
