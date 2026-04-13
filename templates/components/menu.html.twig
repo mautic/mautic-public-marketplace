@@ -9,7 +9,7 @@
   ║  size              xs | sm | md | lg  → Carbon-style menu density        ║
   ║  className         extra classes on the outer <ul>                       ║
   ║  attributes        extra HTML attributes on the outer <ul>               ║
-  ║  items             array of rows — see Twig comments in menu_rows below  ║
+  ║  children          array of rows — see Twig comments in menu_rows below  ║
   ╚══════════════════════════════════════════════════════════════════════════╝
 -->
 
@@ -31,14 +31,14 @@
 {% endmacro %}
 
 {# ═══════════════════════════════════════════════════════════════════════════ #}
-{#  menu_rows(items, size)                                                     #}
+{#  menu_rows(rows, size)                                                      #}
 {#  Renders ONE <ul>’s children: a list of <li>…</li> rows.                    #}
 {#  Called from the root <ul>, and again inside a nested submenu <ul>.        #}
 {# ═══════════════════════════════════════════════════════════════════════════ #}
 
-{% macro menu_rows(items, size) %}
+{% macro menu_rows(rows, size) %}
 {% import _self as m %}
-{% for row in items %}
+{% for row in rows %}
 
     {# ─────────────────────────────────────────────────────────────────────── #}
     {#  ROW TYPE: menuItem                                                     #}
@@ -60,7 +60,7 @@
         {#         └── <ul> …child rows…                                        #}
         {#       </li>                                                          #}
         {# ···································································· #}
-        {% if mi.submenu is defined and mi.submenu|length > 0 %}
+        {% if mi.children is defined and mi.children|length > 0 %}
             <li class="dropend" role="none">
 
                 {# —— the only focusable control on this row: expand child —— #}
@@ -82,7 +82,7 @@
 
                 {# —— panel that appears beside this row (same shapes as root) —— #}
                 <ul tabindex="0" class="dropdown-menu menu menu--{{ size }}" role="menu" aria-label="{{ mi.label|trans }}">
-                    {{ m.menu_rows(mi.submenu, size) }}
+                    {{ m.menu_rows(mi.children, size) }}
                 </ul>
             </li>
 
@@ -112,7 +112,7 @@
 
         {# ···································································· #}
         {#  CASE C — This row is a BUTTON (no URL — you wire click in JS)      #}
-        {#  • Use when there is no `href` and no `submenu`.                   #}
+        {#  • Use when there is no `href` and no nested `children` menu.       #}
         {#                                                                      #}
         {#       <li>                                                           #}
         {#         └── <button>  icon + label + optional shortcut               #}
@@ -158,7 +158,7 @@
     {# ─────────────────────────────────────────────────────────────────────── #}
     {% elseif row.menuItemRadioGroup is defined %}
         {% set rg = row.menuItemRadioGroup %}
-        {% set rg_items = rg.items is defined ? rg.items : rg.options|default([]) %}
+        {% set rg_items = rg.children is defined ? rg.children : rg.items|default(rg.options|default([])) %}
         <li class="menu-item-radio-group" role="none">
 
             <ul class="dropdown-menu show" role="group" aria-label="{{ rg.label|trans }}">
@@ -209,7 +209,7 @@
         <li class="menu-item-group" role="none">
 
             <ul class="dropdown-menu show" role="group" aria-label="{{ g.label|trans }}">
-                {% for raw in g.items %}
+                {% for raw in g.children is defined ? g.children : g.items|default([]) %}
                     {% set opt = raw.menuItemSelectable|default(raw) %}
                     {% set is_on = opt.defaultSelected|default(false) %}
                     {% set opt_class = 'menu-item dropdown-item' ~ (is_on ? ' menu-item-selectable--selected' : '') %}
@@ -257,5 +257,5 @@
     role="menu" tabindex="-1"
     {% if label is defined and label %}aria-label="{{ label|trans }}"{% endif %}
     {% if attributes is defined and attributes is not empty %}{% for attribute, attribute_value in attributes %} {{ attribute }}="{{ attribute_value }}"{% endfor %}{% endif %}>
-    {{ menu_macro.menu_rows(items|default([]), size|default('sm')) }}
+    {{ menu_macro.menu_rows(children|default([]), size|default('sm')) }}
 </ul>
