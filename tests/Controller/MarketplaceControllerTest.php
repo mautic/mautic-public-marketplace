@@ -207,7 +207,6 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/package/mautic/alpha-plugin');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('body', 'Logged in as');
         self::assertSelectorExists('form[action="/package/mautic/alpha-plugin/review"]');
         self::assertSelectorExists('a[href="/profile"]');
         self::assertSelectorExists('a[href="/auth/logout"]');

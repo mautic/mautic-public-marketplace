@@ -53,9 +53,6 @@
         <h2 class="type-heading-03 mb-16">{{ 'mautic.marketplace.detail.review_form.heading'|trans }}</h2>
 
         {% if app.user %}
-            <p class="muted">{{ 'mautic.marketplace.detail.review_form.logged_in_as'|trans }} <strong>{{ app.user.name ?? app.user.email ?? 'Anonymous' }}</strong>
-                (<a href="{{ path('auth_logout') }}">{{ 'mautic.marketplace.detail.review_form.logout'|trans }}</a>)
-            </p>
             {% if review_errors.form is defined %}
                 <div class="alert alert--error mb-16">{{ review_errors.form }}</div>
             {% endif %}
