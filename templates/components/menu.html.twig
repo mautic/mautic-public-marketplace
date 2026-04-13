@@ -15,7 +15,7 @@ items (array of items) {
         kind (danger/default)
         disabled (true/false)
         attributes (optional key/value on control)
-        submenu (optional array) { menuItem, menuItemRadioGroup, menuItemDivider, menuItemGroup }
+        submenu (optional array) { menuItem, menuItemRadioGroup, menuItemDivider, menuItemGroup } -> trigger is a Bootstrap dropdown (data-bs-toggle, data-bs-auto-close="outside")
     },
     menuItemRadioGroup {
         label
@@ -48,9 +48,12 @@ items (array of items) {
         {% set mi = row.menuItem %}
         {% set item_class = 'menu-item dropdown-item' ~ (mi.disabled|default(false) ? ' menu-item--disabled' : '') ~ ((mi.kind|default('default')) == 'danger' ? ' menu-item--danger' : '') %}
         {% if mi.submenu is defined and mi.submenu|length > 0 %}
-            <li role="none">
+            <li class="dropend" role="none">
                 <button type="button" role="menuitem" class="{{ item_class }}" tabindex="0"
-                    aria-haspopup="true" aria-expanded="false"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside"
+                    aria-haspopup="true"
+                    aria-expanded="false"
                     {% if mi.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
                     {{ m.control_attributes(mi.attributes|default({})) }}>
                     <div class="menu-item__selection-icon"></div>
