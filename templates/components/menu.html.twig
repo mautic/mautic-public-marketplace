@@ -101,12 +101,12 @@ items (array of items) {
         {% set rg = row.menuItemRadioGroup %}
         {% set rg_items = rg.items is defined ? rg.items : rg.options|default([]) %}
         <li class="menu-item-radio-group" role="none">
-            <ul role="group" aria-label="{{ rg.label|trans }}">
+            <ul class="dropdown-menu show" role="group" aria-label="{{ rg.label|trans }}">
                 {% for raw in rg_items %}
                     {% set opt = raw.menuItem|default(raw) %}
                     {% set opt_val = opt.value|default(opt.label) %}
                     {% set is_checked = rg.defaultSelectedItem is defined and rg.defaultSelectedItem == opt_val %}
-                    {% set opt_class = 'menu-item' %}
+                    {% set opt_class = 'menu-item dropdown-item' %}
                     {% if opt.href is defined and opt.href %}
                         <li role="none">
                             <a href="{{ opt.href }}" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
@@ -132,11 +132,11 @@ items (array of items) {
     {% elseif row.menuItemGroup is defined %}
         {% set g = row.menuItemGroup %}
         <li class="menu-item-group" role="none">
-            <ul role="group" aria-label="{{ g.label|trans }}">
+            <ul class="dropdown-menu show" role="group" aria-label="{{ g.label|trans }}">
                 {% for raw in g.items %}
                     {% set opt = raw.menuItemSelectable|default(raw) %}
                     {% set is_on = opt.defaultSelected|default(false) %}
-                    {% set opt_class = 'menu-item' ~ (is_on ? ' menu-item-selectable--selected' : '') %}
+                    {% set opt_class = 'menu-item dropdown-item' ~ (is_on ? ' menu-item-selectable--selected' : '') %}
                     {% if opt.href is defined and opt.href %}
                         <li role="none">
                             <a href="{{ opt.href }}" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
