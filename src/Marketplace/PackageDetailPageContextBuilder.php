@@ -66,32 +66,19 @@ final class PackageDetailPageContextBuilder
             return null;
         }
 
-        $query = $detail->displayName ?? $detail->name;
-
         try {
             $result = $this->apiClient->listPackages(
                 limit: 4,
                 type: $detail->type,
-                query: $query,
             );
-            $filtered = array_values(array_filter(
-                $result->items,
-                static fn ($item) => $item->name !== $detail->name,
-            ));
-
-            if (\count($filtered) < 3) {
-                $result = $this->apiClient->listPackages(
-                    limit: 4,
-                    type: $detail->type,
-                );
-                $filtered = array_values(array_filter(
-                    $result->items,
-                    static fn ($item) => $item->name !== $detail->name,
-                ));
-            }
         } catch (SupabaseApiException) {
             return null;
         }
+
+        $filtered = array_values(array_filter(
+            $result->items,
+            static fn ($item) => $item->name !== $detail->name,
+        ));
 
         return new PackageListResult(
             \array_slice($filtered, 0, 3),
