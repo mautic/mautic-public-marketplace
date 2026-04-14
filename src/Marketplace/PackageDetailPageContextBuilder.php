@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Marketplace;
 
 use App\Marketplace\Dto\PackageDetail;
+use App\Marketplace\Dto\PackageListResult;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -53,9 +54,38 @@ final class PackageDetailPageContextBuilder
                 'review_errors' => $reviewErrors,
                 'display_reviews' => $displayReviews,
                 'average_rating' => $averageRating,
+                'similar_packages' => $this->buildSimilarPackages($detail),
             ],
             'status_code' => $statusCode,
         ];
+    }
+
+    private function buildSimilarPackages(?PackageDetail $detail): ?PackageListResult
+    {
+        if (!$detail instanceof PackageDetail || '' === ($detail->type ?? '')) {
+            return null;
+        }
+
+        try {
+            $result = $this->apiClient->listPackages(
+                limit: 4,
+                type: $detail->type,
+            );
+        } catch (SupabaseApiException) {
+            return null;
+        }
+
+        $filtered = array_values(array_filter(
+            $result->items,
+            static fn ($item) => $item->name !== $detail->name,
+        ));
+
+        return new PackageListResult(
+            \array_slice($filtered, 0, 3),
+            3,
+            0,
+            \count($filtered),
+        );
     }
 
     /**

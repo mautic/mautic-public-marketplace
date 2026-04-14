@@ -161,19 +161,21 @@
 
             <div class="tile mt-12">
                 {% include 'marketplace/detail/module--review-summary.html.twig' %}
+                {% if package.reviews|length > 0 %}
                 <div class="mt-12">
-                {% include 'components/button.html.twig' with {
-                    buttons: [{
-                        label: 'mautic.marketplace.detail.reviews.show_all',
-                        variant: 'link',
-                        attributes: {
-                            'data-bs-toggle': 'modal',
-                            'data-bs-target': '#' ~ reviewsModalId,
-                            'class': 'justify-content-start p-0'
-                        }
-                    }]
-                } only %}
-                </div>
+                        {% include 'components/button.html.twig' with {
+                            buttons: [{
+                                label: 'mautic.marketplace.detail.reviews.show_all',
+                                variant: 'link',
+                                attributes: {
+                                    'data-bs-toggle': 'modal',
+                                    'data-bs-target': '#' ~ reviewsModalId,
+                                    'class': 'justify-content-start p-0'
+                                }
+                            }]
+                        } only %}
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>

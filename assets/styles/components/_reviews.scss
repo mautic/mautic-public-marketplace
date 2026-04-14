@@ -90,3 +90,35 @@
         min-inline-size: unset;
     }
 }
+
+.review-form__star-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--text-placeholder);
+    cursor: pointer;
+    padding: 0;
+    transition: var(--transition-all-productive);
+}
+
+.review-form__star-button:focus-visible {
+    border-radius: 0.125rem;
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 0.25rem;
+}
+
+.review-form__star-button--active,
+.review-form__star-button--hover {
+    color: var(--bs-warning);
+}
+
+.review-form__star-button--active .review-form__star-icon,
+.review-form__star-button--hover .review-form__star-icon {
+    color: inherit;
+}
+
+.review-form__stars.is-invalid #rating-stars {
+    border-radius: 0.25rem;
+    box-shadow: 0 0 0 1px var(--bs-danger);
+    padding: 0.25rem;
+}
