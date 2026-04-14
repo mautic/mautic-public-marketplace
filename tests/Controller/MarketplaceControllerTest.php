@@ -31,6 +31,17 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertPageTitleContains('Mautic Marketplace');
     }
 
+    public function testPackageUploadPageLoads(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/upload/package');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Upload a package');
+        self::assertSelectorExists('#package-upload-form-placeholder');
+        self::assertPageTitleContains('Upload package');
+    }
+
     public function testBrowsePageLoads(): void
     {
         $client = self::createClient();
