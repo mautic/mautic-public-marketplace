@@ -28,6 +28,10 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 return self::userReviewsResponse($url);
             }
 
+            if ('GET' === $method && str_contains($url, '/rest/v1/packages') && !str_contains($url, '/rpc/')) {
+                return self::userPackagesResponse($url);
+            }
+
             if (str_contains($url, 'get_pack')) {
                 return self::packageDetailResponse($url);
             }
@@ -341,6 +345,50 @@ final class SupabaseMockHttpClient extends MockHttpClient
         ];
 
         $filtered = array_values(array_filter($allReviews, static fn (array $r): bool => $r['auth0_user_id'] === $userId));
+
+        return new MockResponse(
+            json_encode($filtered),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    private static function userPackagesResponse(string $url): MockResponse
+    {
+        $params = self::parseParams($url, 'GET', []);
+        $userId = $params['auth0_user_id'] ?? '';
+        $userId = str_replace('eq.', '', $userId);
+
+        $allPackages = [
+            [
+                'name' => 'mautic/example-plugin',
+                'displayname' => 'Example Plugin',
+                'description' => 'Example package for local development.',
+                'type' => 'mautic-plugin',
+                'downloads' => 1234,
+                'favers' => 10,
+                'auth0_user_id' => 'auth0|test123',
+            ],
+            [
+                'name' => 'mautic/welcome-campaign',
+                'displayname' => 'Welcome Campaign',
+                'description' => 'Welcome drip campaign resource template.',
+                'type' => 'mautic-resource',
+                'downloads' => 500,
+                'favers' => 3,
+                'auth0_user_id' => 'auth0|test123',
+            ],
+            [
+                'name' => 'mautic/zebra-theme',
+                'displayname' => 'Zebra Theme',
+                'description' => 'Zebra theme for sorting.',
+                'type' => 'mautic-theme',
+                'downloads' => 5000,
+                'favers' => 5,
+                'auth0_user_id' => 'auth0|other',
+            ],
+        ];
+
+        $filtered = array_values(array_filter($allPackages, static fn (array $package): bool => $package['auth0_user_id'] === $userId));
 
         return new MockResponse(
             json_encode($filtered),

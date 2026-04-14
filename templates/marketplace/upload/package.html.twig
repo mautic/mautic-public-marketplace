@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'mautic.marketplace.upload.package.title'|trans }}{% endblock %}
+
+{% block body %}
+    {% include 'components/lead-space.html.twig' with {
+        variant: 'short',
+        heading: 'mautic.marketplace.upload.package.heading',
+        description: 'mautic.marketplace.upload.package.description',
+        gradientStyleScheme: 'without-gradient',
+        gradientStyleSchemeColor: '#f1edea',
+    } %}
+
+    <div class="row mt-32">
+        <div class="col-12 col-lg-8 offset-lg-2">
+            <div id="package-upload-form-placeholder" class="p-32 border rounded text-center text-helper">
+                {{ 'mautic.marketplace.upload.package.form_placeholder'|trans }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
