@@ -3,11 +3,7 @@
 {% block title %}Publish to Marketplace{% endblock %}
 
 {% block body %}
-    <section id="publish-container"
-        data-auth0-domain="{{ auth0_domain }}"
-        data-auth0-client-id="{{ auth0_client_id }}"
-        data-api-url="/api/package/submit"
-        data-asset-url="{{ asset_url }}">
+    <section id="publish-container" data-asset-url="{{ asset_url }}">
 
         {% include 'components/lead-space.html.twig' with {
             variant: 'short',
@@ -19,68 +15,62 @@
 
         {% if asset_url %}
             <div class="mt-48">
-                <div id="auth-loading">
-                    {% include 'components/content-block.html.twig' with {
-                        subheading: 'Loading authentication...',
-                    } %}
-                </div>
-
-                <div id="publish-login" style="display:none">
+                {% if app.user is null %}
                     {% set loginContent %}
                         <p class="type-body-02 mb-24">You need to log in to publish a campaign to the marketplace.</p>
                         {% include 'components/button.html.twig' with { buttons: [{
                             label: 'Log in to publish',
                             variant: 'primary',
                             icon: 'ri-login-box-line',
-                            attributes: { type: 'button', id: 'publish-login-btn' },
+                            link: path('auth_login', { returnTo: app.request.requestUri }),
                         }]} %}
                     {% endset %}
                     {% include 'components/content-block.html.twig' with {
                         heading: 'Authentication required',
                         childContainer: loginContent,
                     } %}
-                </div>
+                {% else %}
+                    <div id="publish-form">
+                        <div class="row">
+                            <div class="col-xs-12 col-md-8">
+                                {% set formContent %}
+                                    <p class="type-body-02 mb-24">
+                                        Logged in as <strong>{{ app.user.name ?? app.user.email }}</strong>
+                                        (<a href="{{ path('auth_logout') }}">Log out</a>)
+                                    </p>
 
-                <div id="publish-form" style="display:none">
-                    <div class="row">
-                        <div class="col-xs-12 col-md-8">
-                            {% set formContent %}
-                                <p class="type-body-02 mb-24">
-                                    Logged in as <strong id="publish-user-name"></strong>
-                                    (<a href="#" id="publish-logout-btn">Log out</a>)
-                                </p>
+                                    <div class="mb-24">
+                                        <dt class="type-heading-01 mb-4">Asset URL</dt>
+                                        <dd class="type-body-02" style="word-break: break-all;">
+                                            <code>{{ asset_url }}</code>
+                                        </dd>
+                                    </div>
 
-                                <div class="mb-24">
-                                    <dt class="type-heading-01 mb-4">Asset URL</dt>
-                                    <dd class="type-body-02" style="word-break: break-all;">
-                                        <code>{{ asset_url }}</code>
-                                    </dd>
-                                </div>
+                                    <p class="type-body-02 text-helper mb-32">
+                                        The campaign ZIP will be downloaded from the URL above.
+                                        It must contain a <code>composer.json</code> with the package metadata.
+                                    </p>
 
-                                <p class="type-body-02 text-helper mb-32">
-                                    The campaign ZIP will be downloaded from the URL above.
-                                    It must contain a <code>composer.json</code> with the package metadata.
-                                </p>
-
-                                {% include 'components/button.html.twig' with { buttons: [{
-                                    label: 'Publish to Marketplace',
-                                    variant: 'primary',
-                                    size: 'lg',
-                                    wide: true,
-                                    icon: 'ri-upload-cloud-2-line',
-                                    attributes: { type: 'button', id: 'publish-submit-btn' },
-                                }]} %}
-                            {% endset %}
-                            {% include 'components/content-block.html.twig' with {
-                                heading: 'Campaign details',
-                                childContainer: formContent,
-                            } %}
+                                    {% include 'components/button.html.twig' with { buttons: [{
+                                        label: 'Publish to Marketplace',
+                                        variant: 'primary',
+                                        size: 'lg',
+                                        wide: true,
+                                        icon: 'ri-upload-cloud-2-line',
+                                        attributes: { type: 'button', id: 'publish-submit-btn' },
+                                    }]} %}
+                                {% endset %}
+                                {% include 'components/content-block.html.twig' with {
+                                    heading: 'Campaign details',
+                                    childContainer: formContent,
+                                } %}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="publish-error" class="alert alert--error mt-24" style="display:none"></div>
-                <div id="publish-success" class="alert alert--success mt-24" style="display:none"></div>
+                    <div id="publish-error" class="alert alert--error mt-24" style="display:none"></div>
+                    <div id="publish-success" class="alert alert--success mt-24" style="display:none"></div>
+                {% endif %}
             </div>
         {% else %}
             <div class="mt-48">

@@ -13,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class SubmitApiController extends AbstractController
 {
@@ -21,6 +22,7 @@ final class SubmitApiController extends AbstractController
     ) {
     }
 
+    #[IsGranted('ROLE_USER')]
     public function submit(#[MapRequestPayload] SubmitRequest $submitRequest): JsonResponse
     {
         /** @var Auth0User $user */
