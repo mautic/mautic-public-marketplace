@@ -4,4 +4,3 @@ import 'bootstrap';
 import './validation.js';
 import './rating.js';
 import './publish.js';
-import './profile.js';
