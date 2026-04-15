@@ -12,8 +12,16 @@ final class PublishController extends AbstractController
 {
     public function index(Request $request): Response
     {
+        $assetUrl = $request->query->getString('asset_url');
+
+        if ('' === $assetUrl) {
+            $this->addFlash('error', 'This page is used when sharing a campaign from Mautic.');
+
+            return $this->redirectToRoute('marketplace_index');
+        }
+
         return $this->render('publish/index.html.twig', [
-            'asset_url' => $request->query->getString('asset_url'),
+            'asset_url' => $assetUrl,
         ]);
     }
 }
