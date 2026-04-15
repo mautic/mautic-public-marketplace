@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Auth0\Auth0User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class SubmitApiControllerTest extends WebTestCase
@@ -123,18 +124,27 @@ final class SubmitApiControllerTest extends WebTestCase
     public function testPublishPageRendersWithAssetUrl(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/publish?asset_url=https://example.com/asset/campaign.zip');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Publish Campaign to Marketplace');
     }
 
-    public function testPublishPageRendersWithoutAssetUrl(): void
+    public function testPublishPageWithoutAssetUrlRedirectsToMarketplace(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/publish');
 
-        self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.content-block__subheading', 'No asset URL provided');
+        self::assertResponseRedirects('/browse');
+    }
+
+    public function testPublishPageAnonymousRedirectsToLogin(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/publish?asset_url=https://example.com/asset/campaign.zip');
+
+        self::assertResponseRedirects('/auth/login?returnTo=/publish?asset_url%3Dhttps://example.com/asset/campaign.zip');
     }
 }
