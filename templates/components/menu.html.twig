@@ -29,6 +29,19 @@
     'lg': 'menu--lg'
 } %}
 
+{% macro menu_item_content(mi) %}
+<span class="menu-item__content">
+    <div class="menu-item__selection-icon"></div>
+    <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
+    <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}{% if mi.kind|default('default') == 'danger' %}<span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>{% endif %}</div>
+    {% if mi.children is defined and mi.children|length > 0 %}
+        <div class="menu-item__shortcut"><i class="ri-arrow-right-s-line"></i></div>
+    {% else %}
+        <div class="menu-item__shortcut">{% if mi.shortcut is defined and mi.shortcut %}{{ mi.shortcut }}{% endif %}</div>
+    {% endif %}
+</span>
+{% endmacro %}
+
 {% macro control_attributes(attrs) %}
 {% if attrs is defined and attrs is not empty %}{% for name, value in attrs %} {{ name }}="{{ value }}"{% endfor %}{% endif %}
 {% endmacro %}
@@ -74,12 +87,8 @@
                     aria-expanded="false"
                     {% if mi.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
                     {{ m.control_attributes(mi.attributes|default({})) }}>
-                    <span class="menu-item__content">
-                        <div class="menu-item__selection-icon"></div>
-                        <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
-                        <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}{% if mi.kind|default('default') == 'danger' %}<span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>{% endif %}</div>
-                        <div class="menu-item__shortcut"><i class="ri-arrow-right-s-line"></i></div>
-                    </span>
+
+                    {{ m.menu_item_content(mi) }}
                 </button>
 
                 {# —— panel that appears beside this row (same shapes as root) —— #}
@@ -102,12 +111,7 @@
                 <a href="{{ mi.href }}" role="menuitem" class="{{ item_class }}"
                     {% if mi.disabled|default(false) %}aria-disabled="true" tabindex="-1"{% else %}tabindex="0"{% endif %}
                     {{ m.control_attributes(mi.attributes|default({})) }}>
-                    <span class="menu-item__content">
-                        <div class="menu-item__selection-icon"></div>
-                        <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
-                        <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}{% if mi.kind|default('default') == 'danger' %}<span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>{% endif %}</div>
-                        <div class="menu-item__shortcut">{% if mi.shortcut is defined and mi.shortcut %}{{ mi.shortcut|trans }}{% endif %}</div>
-                    </span>
+                    {{ m.menu_item_content(mi) }}
                 </a>
             </li>
 
@@ -126,12 +130,7 @@
                     tabindex="{% if mi.disabled|default(false) %}-1{% else %}0{% endif %}"
                     {% if mi.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
                     {{ m.control_attributes(mi.attributes|default({})) }}>
-                    <span class="menu-item__content">
-                        <div class="menu-item__selection-icon"></div>
-                        <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
-                        <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}{% if mi.kind|default('default') == 'danger' %}<span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>{% endif %}</div>
-                        <div class="menu-item__shortcut">{% if mi.shortcut is defined and mi.shortcut %}{{ mi.shortcut|trans }}{% endif %}</div>
-                    </span>
+                    {{ m.menu_item_content(mi) }}
                 </button>
             </li>
         {% endif %}
