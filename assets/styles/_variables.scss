@@ -1265,12 +1265,12 @@ $dropdown-link-color:               var(--text-secondary) !default;
 $dropdown-link-hover-color:         var(--text-primary) !default;
 $dropdown-link-hover-bg:            var(--layer-hover) !default;
 
-$dropdown-link-active-color:        $component-active-color !default;
+$dropdown-link-active-color:        var(--text-primary) !default;
 $dropdown-link-active-bg:           var(--layer-active) !default;
 
 $dropdown-link-disabled-color:      var(--#{$prefix}tertiary-color) !default;
 
-$dropdown-item-padding-y:           .5rem !default;
+$dropdown-item-padding-y:           .35rem !default;
 $dropdown-item-padding-x:           $spacer !default;
 
 $dropdown-header-color:             $gray-600 !default;
