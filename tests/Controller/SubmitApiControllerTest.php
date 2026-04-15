@@ -9,7 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class SubmitApiControllerTest extends WebTestCase
 {
-    public function testSubmitWithoutAuthorizationHeader(): void
+    public function testAnonymousSubmitRedirectsToLogin(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit', server: [
@@ -18,20 +18,7 @@ final class SubmitApiControllerTest extends WebTestCase
             'asset_url' => 'https://example.com/asset/campaign.zip',
         ]));
 
-        self::assertResponseStatusCodeSame(401);
-    }
-
-    public function testSubmitWithNonBearerAuthorization(): void
-    {
-        $client = self::createClient();
-        $client->request('POST', '/api/package/submit', server: [
-            'CONTENT_TYPE' => 'application/json',
-            'HTTP_AUTHORIZATION' => 'Basic abc123',
-        ], content: json_encode([
-            'asset_url' => 'https://example.com/asset/campaign.zip',
-        ]));
-
-        self::assertResponseStatusCodeSame(401);
+        self::assertResponseRedirects();
     }
 
     public function testGetMethodNotAllowed(): void
@@ -45,9 +32,9 @@ final class SubmitApiControllerTest extends WebTestCase
     public function testSubmitWithEmptyAssetUrl(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('POST', '/api/package/submit', server: [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([
             'asset_url' => '',
         ]));
@@ -58,9 +45,9 @@ final class SubmitApiControllerTest extends WebTestCase
     public function testSubmitWithInvalidUrl(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('POST', '/api/package/submit', server: [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([
             'asset_url' => 'not-a-url',
         ]));
@@ -71,9 +58,9 @@ final class SubmitApiControllerTest extends WebTestCase
     public function testSubmitWithHttpUrl(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('POST', '/api/package/submit', server: [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([
             'asset_url' => 'http://example.com/asset/campaign.zip',
         ]));
@@ -84,9 +71,9 @@ final class SubmitApiControllerTest extends WebTestCase
     public function testSubmitWithMissingAssetUrl(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('POST', '/api/package/submit', server: [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([]));
 
         self::assertResponseStatusCodeSame(422);
@@ -95,9 +82,9 @@ final class SubmitApiControllerTest extends WebTestCase
     public function testSuccessfulSubmit(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('POST', '/api/package/submit', server: [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: json_encode([
             'asset_url' => 'https://example.com/asset/campaign.zip',
         ]));
@@ -113,9 +100,9 @@ final class SubmitApiControllerTest extends WebTestCase
     public function testSubmitWithInvalidJson(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('POST', '/api/package/submit', server: [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_AUTHORIZATION' => 'Bearer valid-token',
         ], content: 'not-json');
 
         self::assertResponseStatusCodeSame(400);
