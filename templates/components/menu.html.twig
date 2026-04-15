@@ -31,7 +31,7 @@
 
 {% macro menu_item_content(mi) %}
 <span class="menu-item__content">
-    <div class="menu-item__selection-icon"></div>
+    <div class="menu-item__selection-icon">{% if mi.selected|default(mi.defaultSelected|default(false)) %}<i class="ri-check-line"></i>{% endif %}</div>
     <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
     <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}{% if mi.kind|default('default') == 'danger' %}<span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>{% endif %}</div>
     {% if mi.children is defined and mi.children|length > 0 %}
@@ -170,17 +170,13 @@
                     {% set opt = raw.menuItem|default(raw) %}
                     {% set is_checked = opt.selected|default(false) %}
                     {% set opt_class = 'menu-item dropdown-item' %}
+                    {% set render_opt = opt|merge({ selected: is_checked }) %}
 
                     {% if opt.href is defined and opt.href %}
                         <li role="none">
 
                             <a href="{{ opt.href }}" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
-                                <span class="menu-item__content">
-                                    <div class="menu-item__selection-icon">{% if is_checked %}<i class="ri-check-line"></i>{% endif %}</div>
-                                    <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
-                                    <div class="menu-item__label" dir="ltr">{{ opt.label|trans }}</div>
-                                    <div class="menu-item__shortcut"></div>
-                                </span>
+                                {{ m.menu_item_content(render_opt) }}
                             </a>
                         </li>
                     {% else %}
@@ -189,12 +185,7 @@
                             <button type="button" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0"
                                 {% if opt.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
                                 {{ m.control_attributes(opt.attributes|default({})) }}>
-                                <span class="menu-item__content">
-                                    <div class="menu-item__selection-icon">{% if is_checked %}<i class="ri-check-line"></i>{% endif %}</div>
-                                    <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
-                                    <div class="menu-item__label" dir="ltr">{{ opt.label|trans }}</div>
-                                    <div class="menu-item__shortcut"></div>
-                                </span>
+                                {{ m.menu_item_content(render_opt) }}
                             </button>
                         </li>
                     {% endif %}
@@ -228,16 +219,15 @@
                     {% set opt = raw.menuItemSelectable|default(raw) %}
                     {% set is_on = opt.selected|default(opt.defaultSelected|default(false)) %}
                     {% set opt_class = 'menu-item dropdown-item' ~ (is_on ? ' menu-item-selectable--selected' : '') %}
+                    {% set render_opt = opt|merge({
+                        selected: is_on,
+                        shortcut: opt.shortcut is defined and opt.shortcut ? opt.shortcut|trans : null
+                    }) %}
                     {% if opt.href is defined and opt.href %}
                         <li role="none">
 
                             <a href="{{ opt.href }}" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
-                                <span class="menu-item__content">
-                                    <div class="menu-item__selection-icon">{% if is_on %}<i class="ri-check-line"></i>{% endif %}</div>
-                                    <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
-                                    <div class="menu-item__label" dir="ltr">{{ opt.label|trans }}</div>
-                                    <div class="menu-item__shortcut">{% if opt.shortcut is defined and opt.shortcut %}{{ opt.shortcut|trans }}{% endif %}</div>
-                                </span>
+                                {{ m.menu_item_content(render_opt) }}
                             </a>
                         </li>
                     {% else %}
@@ -246,12 +236,7 @@
                             <button type="button" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0"
                                 {% if opt.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
                                 {{ m.control_attributes(opt.attributes|default({})) }}>
-                                <span class="menu-item__content">
-                                    <div class="menu-item__selection-icon">{% if is_on %}<i class="ri-check-line"></i>{% endif %}</div>
-                                    <div class="menu-item__icon">{% if opt.renderIcon is defined and opt.renderIcon %}<i class="{{ opt.renderIcon }}"></i>{% endif %}</div>
-                                    <div class="menu-item__label" dir="ltr">{{ opt.label|trans }}</div>
-                                    <div class="menu-item__shortcut">{% if opt.shortcut is defined and opt.shortcut %}{{ opt.shortcut|trans }}{% endif %}</div>
-                                </span>
+                                {{ m.menu_item_content(render_opt) }}
                             </button>
                         </li>
                     {% endif %}
