@@ -29,15 +29,15 @@
     'lg': 'menu--lg'
 } %}
 
-{% macro menu_item_content(mi) %}
+{% macro menu_item_content(menuItem) %}
 <span class="menu-item__content">
-    <div class="menu-item__selection-icon">{% if mi.selected|default(mi.defaultSelected|default(false)) %}<i class="ri-check-line"></i>{% endif %}</div>
-    <div class="menu-item__icon">{% if mi.renderIcon is defined and mi.renderIcon %}<i class="{{ mi.renderIcon }}"></i>{% endif %}</div>
-    <div class="menu-item__label" dir="ltr">{{ mi.label|trans }}{% if mi.kind|default('default') == 'danger' %}<span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>{% endif %}</div>
-    {% if mi.children is defined and mi.children|length > 0 %}
+    <div class="menu-item__selection-icon">{% if menuItem.selected|default(menuItem.defaultSelected|default(false)) %}<i class="ri-check-line"></i>{% endif %}</div>
+    <div class="menu-item__icon">{% if menuItem.renderIcon is defined and menuItem.renderIcon %}<i class="{{ menuItem.renderIcon }}"></i>{% endif %}</div>
+    <div class="menu-item__label" dir="ltr">{{ menuItem.label|trans }}{% if menuItem.kind|default('default') == 'danger' %}<span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>{% endif %}</div>
+    {% if menuItem.children is defined and menuItem.children|length > 0 %}
         <div class="menu-item__shortcut"><i class="ri-arrow-right-s-line"></i></div>
     {% else %}
-        <div class="menu-item__shortcut">{% if mi.shortcut is defined and mi.shortcut %}{{ mi.shortcut }}{% endif %}</div>
+        <div class="menu-item__shortcut">{% if menuItem.shortcut is defined and menuItem.shortcut %}{{ menuItem.shortcut }}{% endif %}</div>
     {% endif %}
 </span>
 {% endmacro %}
@@ -62,8 +62,8 @@
     {#  a button action (no URL).                                              #}
     {# ─────────────────────────────────────────────────────────────────────── #}
     {% if row.menuItem is defined %}
-        {% set mi = row.menuItem %}
-        {% set item_class = 'menu-item dropdown-item' ~ (mi.disabled|default(false) ? ' menu-item--disabled' : '') ~ ((mi.kind|default('default')) == 'danger' ? ' menu-item--danger' : '') %}
+        {% set menuItem = row.menuItem %}
+        {% set itemClass = 'menu-item dropdown-item' ~ (menuItem.disabled|default(false) ? ' menu-item--disabled' : '') ~ ((menuItem.kind|default('default')) == 'danger' ? ' menu-item--danger' : '') %}
 
         {# ···································································· #}
         {#  CASE A — This row OPENS ANOTHER MENU (chevron / “Share with…”)      #}
@@ -76,24 +76,24 @@
         {#         └── <ul> …child rows…                                        #}
         {#       </li>                                                          #}
         {# ···································································· #}
-        {% if mi.children is defined and mi.children|length > 0 %}
+        {% if menuItem.children is defined and menuItem.children|length > 0 %}
             <li class="dropend" role="none">
 
                 {# —— the only focusable control on this row: expand child —— #}
-                <button type="button" role="menuitem" class="{{ item_class }}" tabindex="0"
+                <button type="button" role="menuitem" class="{{ itemClass }}" tabindex="0"
                     data-bs-toggle="dropdown"
                     data-bs-auto-close="outside"
                     aria-haspopup="true"
                     aria-expanded="false"
-                    {% if mi.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
-                    {{ m.control_attributes(mi.attributes|default({})) }}>
+                    {% if menuItem.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                    {{ m.control_attributes(menuItem.attributes|default({})) }}>
 
-                    {{ m.menu_item_content(mi) }}
+                    {{ m.menu_item_content(menuItem) }}
                 </button>
 
                 {# —— panel that appears beside this row (same shapes as root) —— #}
-                <ul tabindex="0" class="dropdown-menu menu menu--{{ size }}" role="menu" aria-label="{{ mi.label|trans }}">
-                    {{ m.menu_rows(mi.children, size) }}
+                <ul tabindex="0" class="dropdown-menu menu menu--{{ size }}" role="menu" aria-label="{{ menuItem.label|trans }}">
+                    {{ m.menu_rows(menuItem.children, size) }}
                 </ul>
             </li>
 
@@ -105,13 +105,13 @@
         {#         └── <a href="…">  icon + label + optional shortcut           #}
         {#       </li>                                                        #}
         {# ···································································· #}
-        {% elseif mi.href is defined and mi.href %}
+        {% elseif menuItem.href is defined and menuItem.href %}
             <li role="none">
 
-                <a href="{{ mi.href }}" role="menuitem" class="{{ item_class }}"
-                    {% if mi.disabled|default(false) %}aria-disabled="true" tabindex="-1"{% else %}tabindex="0"{% endif %}
-                    {{ m.control_attributes(mi.attributes|default({})) }}>
-                    {{ m.menu_item_content(mi) }}
+                <a href="{{ menuItem.href }}" role="menuitem" class="{{ itemClass }}"
+                    {% if menuItem.disabled|default(false) %}aria-disabled="true" tabindex="-1"{% else %}tabindex="0"{% endif %}
+                    {{ m.control_attributes(menuItem.attributes|default({})) }}>
+                    {{ m.menu_item_content(menuItem) }}
                 </a>
             </li>
 
@@ -126,11 +126,11 @@
         {% else %}
             <li role="none">
 
-                <button type="button" role="menuitem" class="{{ item_class }}"
-                    tabindex="{% if mi.disabled|default(false) %}-1{% else %}0{% endif %}"
-                    {% if mi.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
-                    {{ m.control_attributes(mi.attributes|default({})) }}>
-                    {{ m.menu_item_content(mi) }}
+                <button type="button" role="menuitem" class="{{ itemClass }}"
+                    tabindex="{% if menuItem.disabled|default(false) %}-1{% else %}0{% endif %}"
+                    {% if menuItem.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                    {{ m.control_attributes(menuItem.attributes|default({})) }}>
+                    {{ m.menu_item_content(menuItem) }}
                 </button>
             </li>
         {% endif %}
@@ -156,36 +156,36 @@
     {#       </li>                                                            #}
     {# ─────────────────────────────────────────────────────────────────────── #}
     {% elseif row.menuItemRadioGroup is defined %}
-        {% set rg = row.menuItemRadioGroup %}
-        {% set rg_items = rg.children is defined ? rg.children : rg.items|default(rg.options|default([])) %}
-        {% set rg_has_icons = false %}
-        {% for raw in rg_items %}
-            {% set opt = raw.menuItem|default(raw) %}
-            {% set rg_has_icons = rg_has_icons or (opt.renderIcon is defined and opt.renderIcon) %}
+        {% set menuItemRadioGroup = row.menuItemRadioGroup %}
+        {% set menuItemRadioGroupItems = menuItemRadioGroup.children is defined ? menuItemRadioGroup.children : menuItemRadioGroup.items|default(menuItemRadioGroup.options|default([])) %}
+        {% set menuItemRadioGroupHasIcons = false %}
+        {% for menuItemRadioGroupRow in menuItemRadioGroupItems %}
+            {% set menuItem = menuItemRadioGroupRow.menuItem|default(menuItemRadioGroupRow) %}
+            {% set menuItemRadioGroupHasIcons = menuItemRadioGroupHasIcons or (menuItem.renderIcon is defined and menuItem.renderIcon) %}
         {% endfor %}
         <li class="menu-item-radio-group" role="none">
 
-            <ul class="dropdown-menu show selectable menu--with-selectable-items{{ rg_has_icons ? ' menu--with-icons' : '' }}" role="group" aria-label="{{ rg.label|trans }}">
-                {% for raw in rg_items %}
-                    {% set opt = raw.menuItem|default(raw) %}
-                    {% set is_checked = opt.selected|default(false) %}
-                    {% set opt_class = 'menu-item dropdown-item' %}
-                    {% set render_opt = opt|merge({ selected: is_checked }) %}
+            <ul class="dropdown-menu show selectable menu--with-selectable-items{{ menuItemRadioGroupHasIcons ? ' menu--with-icons' : '' }}" role="group" aria-label="{{ menuItemRadioGroup.label|trans }}">
+                {% for menuItemRadioGroupRow in menuItemRadioGroupItems %}
+                    {% set menuItem = menuItemRadioGroupRow.menuItem|default(menuItemRadioGroupRow) %}
+                    {% set isChecked = menuItem.selected|default(false) %}
+                    {% set itemClass = 'menu-item dropdown-item' %}
+                    {% set renderedMenuItem = menuItem|merge({ selected: isChecked }) %}
 
-                    {% if opt.href is defined and opt.href %}
+                    {% if menuItem.href is defined and menuItem.href %}
                         <li role="none">
 
-                            <a href="{{ opt.href }}" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
-                                {{ m.menu_item_content(render_opt) }}
+                            <a href="{{ menuItem.href }}" role="menuitemradio" class="{{ itemClass }}" aria-checked="{{ isChecked ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(menuItem.attributes|default({})) }}>
+                                {{ m.menu_item_content(renderedMenuItem) }}
                             </a>
                         </li>
                     {% else %}
                         <li role="none">
 
-                            <button type="button" role="menuitemradio" class="{{ opt_class }}" aria-checked="{{ is_checked ? 'true' : 'false' }}" tabindex="0"
-                                {% if opt.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
-                                {{ m.control_attributes(opt.attributes|default({})) }}>
-                                {{ m.menu_item_content(render_opt) }}
+                            <button type="button" role="menuitemradio" class="{{ itemClass }}" aria-checked="{{ isChecked ? 'true' : 'false' }}" tabindex="0"
+                                {% if menuItem.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                                {{ m.control_attributes(menuItem.attributes|default({})) }}>
+                                {{ m.menu_item_content(renderedMenuItem) }}
                             </button>
                         </li>
                     {% endif %}
@@ -205,38 +205,38 @@
     {#       </li>                                                            #}
     {# ─────────────────────────────────────────────────────────────────────── #}
     {% elseif row.menuItemGroup is defined %}
-        {% set g = row.menuItemGroup %}
-        {% set g_rows = g.children is defined ? g.children : g.items|default([]) %}
-        {% set g_has_icons = false %}
-        {% for raw in g_rows %}
-            {% set opt = raw.menuItemSelectable|default(raw) %}
-            {% set g_has_icons = g_has_icons or (opt.renderIcon is defined and opt.renderIcon) %}
+        {% set menuItemGroup = row.menuItemGroup %}
+        {% set menuItemGroupRows = menuItemGroup.children is defined ? menuItemGroup.children : menuItemGroup.items|default([]) %}
+        {% set menuItemGroupHasIcons = false %}
+        {% for menuItemGroupRow in menuItemGroupRows %}
+            {% set menuItemSelectable = menuItemGroupRow.menuItemSelectable|default(menuItemGroupRow) %}
+            {% set menuItemGroupHasIcons = menuItemGroupHasIcons or (menuItemSelectable.renderIcon is defined and menuItemSelectable.renderIcon) %}
         {% endfor %}
         <li class="menu-item-group" role="none">
 
-            <ul class="dropdown-menu show selectable menu--with-selectable-items{{ g_has_icons ? ' menu--with-icons' : '' }}" role="group" aria-label="{{ g.label|trans }}">
-                {% for raw in g_rows %}
-                    {% set opt = raw.menuItemSelectable|default(raw) %}
-                    {% set is_on = opt.selected|default(opt.defaultSelected|default(false)) %}
-                    {% set opt_class = 'menu-item dropdown-item' ~ (is_on ? ' menu-item-selectable--selected' : '') %}
-                    {% set render_opt = opt|merge({
-                        selected: is_on,
-                        shortcut: opt.shortcut is defined and opt.shortcut ? opt.shortcut|trans : null
+            <ul class="dropdown-menu show selectable menu--with-selectable-items{{ menuItemGroupHasIcons ? ' menu--with-icons' : '' }}" role="group" aria-label="{{ menuItemGroup.label|trans }}">
+                {% for menuItemGroupRow in menuItemGroupRows %}
+                    {% set menuItemSelectable = menuItemGroupRow.menuItemSelectable|default(menuItemGroupRow) %}
+                    {% set isSelected = menuItemSelectable.selected|default(menuItemSelectable.defaultSelected|default(false)) %}
+                    {% set itemClass = 'menu-item dropdown-item' ~ (isSelected ? ' menu-item-selectable--selected' : '') %}
+                    {% set renderedMenuItemSelectable = menuItemSelectable|merge({
+                        selected: isSelected,
+                        shortcut: menuItemSelectable.shortcut is defined and menuItemSelectable.shortcut ? menuItemSelectable.shortcut|trans : null
                     }) %}
-                    {% if opt.href is defined and opt.href %}
+                    {% if menuItemSelectable.href is defined and menuItemSelectable.href %}
                         <li role="none">
 
-                            <a href="{{ opt.href }}" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(opt.attributes|default({})) }}>
-                                {{ m.menu_item_content(render_opt) }}
+                            <a href="{{ menuItemSelectable.href }}" role="menuitemcheckbox" class="{{ itemClass }}" aria-checked="{{ isSelected ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(menuItemSelectable.attributes|default({})) }}>
+                                {{ m.menu_item_content(renderedMenuItemSelectable) }}
                             </a>
                         </li>
                     {% else %}
                         <li role="none">
 
-                            <button type="button" role="menuitemcheckbox" class="{{ opt_class }}" aria-checked="{{ is_on ? 'true' : 'false' }}" tabindex="0"
-                                {% if opt.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
-                                {{ m.control_attributes(opt.attributes|default({})) }}>
-                                {{ m.menu_item_content(render_opt) }}
+                            <button type="button" role="menuitemcheckbox" class="{{ itemClass }}" aria-checked="{{ isSelected ? 'true' : 'false' }}" tabindex="0"
+                                {% if menuItemSelectable.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                                {{ m.control_attributes(menuItemSelectable.attributes|default({})) }}>
+                                {{ m.menu_item_content(renderedMenuItemSelectable) }}
                             </button>
                         </li>
                     {% endif %}
