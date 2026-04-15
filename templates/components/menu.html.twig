@@ -30,31 +30,36 @@
 } %}
 
 {% macro menu_layout_classes(rows) %}
-{% set menuHasIcons = false %}
-{% set menuHasSelectableItems = false %}
-{% for row in rows %}
-    {% if row.menuItem is defined %}
-        {% set menuItem = row.menuItem %}
-        {% set menuHasIcons = menuHasIcons or (menuItem.renderIcon is defined and menuItem.renderIcon) %}
-    {% elseif row.menuItemRadioGroup is defined %}
-        {% set menuItemRadioGroup = row.menuItemRadioGroup %}
-        {% set menuItemRadioGroupItems = menuItemRadioGroup.children is defined ? menuItemRadioGroup.children : menuItemRadioGroup.items|default(menuItemRadioGroup.options|default([])) %}
-        {% set menuHasSelectableItems = true %}
-        {% for menuItemRadioGroupRow in menuItemRadioGroupItems %}
-            {% set menuItem = menuItemRadioGroupRow.menuItem|default(menuItemRadioGroupRow) %}
-            {% set menuHasIcons = menuHasIcons or (menuItem.renderIcon is defined and menuItem.renderIcon) %}
-        {% endfor %}
-    {% elseif row.menuItemGroup is defined %}
-        {% set menuItemGroup = row.menuItemGroup %}
-        {% set menuItemGroupRows = menuItemGroup.children is defined ? menuItemGroup.children : menuItemGroup.items|default([]) %}
-        {% set menuHasSelectableItems = true %}
-        {% for menuItemGroupRow in menuItemGroupRows %}
-            {% set menuItemSelectable = menuItemGroupRow.menuItemSelectable|default(menuItemGroupRow) %}
-            {% set menuHasIcons = menuHasIcons or (menuItemSelectable.renderIcon is defined and menuItemSelectable.renderIcon) %}
-        {% endfor %}
-    {% endif %}
-{% endfor %}
-{{- menuHasSelectableItems ? 'menu--with-selectable-items' : '' -}}{{- menuHasSelectableItems and menuHasIcons ? ' ' : '' -}}{{- menuHasIcons ? 'menu--with-icons' : '' -}}
+    {% set menuHasIcons = false %}
+    {% set menuHasSelectableItems = false %}
+    {% for row in rows %}
+        {% set radioItems = row.menuItemRadioGroup is defined
+            ? (row.menuItemRadioGroup.children is defined
+                ? row.menuItemRadioGroup.children
+                : row.menuItemRadioGroup.items|default(row.menuItemRadioGroup.options|default([])))
+            : [] %}
+        {% set groupItems = row.menuItemGroup is defined
+            ? (row.menuItemGroup.children is defined
+                ? row.menuItemGroup.children
+                : row.menuItemGroup.items|default([]))
+            : [] %}
+        {% if row.menuItem is defined %}
+            {% set menuHasIcons = menuHasIcons or (row.menuItem.renderIcon is defined and row.menuItem.renderIcon) %}
+        {% elseif row.menuItemRadioGroup is defined %}
+            {% set menuHasSelectableItems = true %}
+            {% for item in radioItems %}
+                {% set current = item.menuItem|default(item) %}
+                {% set menuHasIcons = menuHasIcons or (current.renderIcon is defined and current.renderIcon) %}
+            {% endfor %}
+        {% elseif row.menuItemGroup is defined %}
+            {% set menuHasSelectableItems = true %}
+            {% for item in groupItems %}
+                {% set current = item.menuItemSelectable|default(item) %}
+                {% set menuHasIcons = menuHasIcons or (current.renderIcon is defined and current.renderIcon) %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+    {{- menuHasSelectableItems ? 'menu--with-selectable-items' : '' -}}{{- menuHasSelectableItems and menuHasIcons ? ' ' : '' -}}{{- menuHasIcons ? 'menu--with-icons' : '' -}}
 {% endmacro %}
 
 {% macro menu_item_content(menuItem, menuLayoutClasses) %}
