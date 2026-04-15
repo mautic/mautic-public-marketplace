@@ -119,9 +119,15 @@
                                 <span>{{ item.HeaderGlobalDropdown.label }}</span>
                             {% endif %}
                         </button>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            {{ item.HeaderGlobalDropdown.renderMenuContent|raw }}
-                        </div>
+                        {% if item.HeaderGlobalDropdown.renderMenuContent is defined and item.HeaderGlobalDropdown.renderMenuContent is iterable %}
+                            {% include 'components/menu.html.twig' with {
+                                label: item.HeaderGlobalDropdown.ariaLabel|default(''),
+                                size: 'md',
+                                menuAlignment: 'end',
+                                className: 'header__menu',
+                                children: item.HeaderGlobalDropdown.renderMenuContent
+                            } only %}
+                        {% endif %}
                     </div>
                 </span>
             </div>
