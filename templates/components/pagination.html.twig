@@ -42,7 +42,7 @@
                 options: pageSizes,
                 value: pageSize,
                 disabled: disabled or pageSizeInputDisabled,
-                wrapper_class: '',
+                wrapperClass: '',
                 attributes: {
                     class: 'select-input',
                     title: pageSize,
@@ -63,7 +63,7 @@
                 options: range(1, totalPages)|map(n => { value: (n - 1) * pageSize, label: n }),
                 value: (page - 1) * pageSize,
                 disabled: disabled or pageInputDisabled,
-                wrapper_class: '',
+                wrapperClass: '',
                 attributes: {
                     class: 'select-input',
                     title: pageText is not empty ? pageText|trans : page,

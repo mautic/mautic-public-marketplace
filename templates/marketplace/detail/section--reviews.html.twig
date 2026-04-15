@@ -59,32 +59,87 @@
             {% if review_errors.form is defined %}
                 <div class="alert alert--error mb-16">{{ review_errors.form }}</div>
             {% endif %}
-            <form id="review-form" class="review-form" method="post" action="{{ path('review_submit', { package: name }) }}">
+            <form id="review-form" class="review-form needs-validation" novalidate method="post" action="{{ path('review_submit', { package: name }) }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('review_' ~ name) }}">
-                <div class="review-form__stars">
-                    <label>{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
-                    <div id="rating-stars" class="star-rating">
-                        {% for ratingValue in 1..5 %}
-                            <button type="button"
-                                class="star-icon{{ review_form.rating|default('0') == ratingValue ? ' star-active' : '' }}"
-                                data-rating="{{ ratingValue }}"
-                                aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': ratingValue }) }}">
-                                &#9733;
+                <div
+                    class="review-form__stars mb-24"
+                    data-validation-group="true"
+                    data-validation-name="rating"
+                    data-validation-type="custom"
+                    data-validation-label="{{ 'mautic.marketplace.detail.review_form.rating'|trans }}"
+                    data-validation-rules="{{ ['ratingSelected']|json_encode|e('html_attr') }}"
+                    data-validation-messages="{{ {
+                        ratingSelected: 'mautic.marketplace.detail.review_form.rating_required'|trans
+                    }|json_encode|e('html_attr') }}"
+                    data-validation-feedback-id="rating-feedback"
+                    data-validation-focus-selector="#rating-option-1"
+                >
+                    <label id="rating-label" class="review-form__label type-label-01 text-secondary mb-8">{{ 'mautic.marketplace.detail.review_form.rating'|trans }}</label>
+                    <div id="rating-stars" class="review-form__star-rating ri-xl" role="radiogroup" aria-labelledby="rating-label" tabindex="-1">
+                        {% for rating in 1..5 %}
+                            <button
+                                type="button"
+                                class="review-form__star-button"
+                                id="rating-option-{{ rating }}"
+                                role="radio"
+                                aria-checked="false"
+                                aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': rating }) }}"
+                                data-rating-option
+                                data-rating="{{ rating }}"
+                                tabindex="{{ loop.first ? '0' : '-1' }}"
+                            >
+                                <i class="ri-star-fill review-form__star-icon" aria-hidden="true"></i>
                             </button>
                         {% endfor %}
                     </div>
-                    <input type="hidden" id="rating" name="rating" value="{{ review_form.rating|default('0') }}">
+                    <input type="hidden" id="rating" name="rating" value="{{ review_form.rating|default('0') }}" class="review-form__rating-input">
+                    <div id="rating-feedback" class="invalid-feedback" data-validation-feedback hidden aria-live="polite"></div>
                 </div>
-                <div class="review-form__text">
-                    <label for="review">{{ 'mautic.marketplace.detail.review_form.review'|trans }}</label>
-                    <textarea id="review" name="review" class="bx--text-area" rows="4" placeholder="{{ 'mautic.marketplace.detail.review_form.review_placeholder'|trans }}">{{ review_form.review|default('') }}</textarea>
-                </div>
-                <button type="submit" id="submit-btn" class="bx--btn bx--btn--primary">{{ 'mautic.marketplace.detail.review_form.submit'|trans }}</button>
+
+                {% include 'components/form-control.html.twig' with {
+                    type: 'textarea',
+                    name: 'review',
+                    value: review_form.review|default(''),
+                    label: 'mautic.marketplace.detail.review_form.review',
+                    placeholder: 'mautic.marketplace.detail.review_form.review_placeholder',
+                    helpText: 'mautic.marketplace.detail.review_form.review_help',
+                    required: true,
+                    rows: 4,
+                    wrapperClass: 'review-form__text my-24',
+                    attributes: {
+                        minlength: 50
+                    },
+                    validation: {
+                        rules: ['notBlank'],
+                        messages: {
+                            notBlank: 'mautic.marketplace.detail.review_form.review_required'|trans,
+                            tooShort: 'mautic.marketplace.detail.review_form.review_min_length'|trans({'%count%': 50}),
+                        }
+                    }
+                } only %}
+
+                {% include 'components/button.html.twig' with {
+                    buttons: [{
+                        label: 'mautic.marketplace.detail.review_form.submit',
+                        variant: 'tertiary',
+                        size: 'sm',
+                        icon: 'ri-arrow-right-line',
+                        attributes: {
+                            id: 'submit-btn',
+                            type: 'submit'
+                        }
+                    }]
+                } only %}
             </form>
         {% else %}
-            <a class="bx--btn bx--btn--primary" href="{{ path('auth_login', { returnTo: app.request.requestUri }) }}" data-turbo="false">
-                {{ 'mautic.marketplace.detail.review_form.login'|trans }}
-            </a>
+            {% include 'components/button.html.twig' with {
+                buttons: [{
+                    label: 'mautic.marketplace.detail.review_form.login',
+                    variant: 'tertiary',
+                    icon: 'ri-login-box-line',
+                    href: path('auth_login', { returnTo: app.request.requestUri }),
+                }]
+            } only %}
         {% endif %}
     </section>
 {% endset %}
@@ -105,10 +160,10 @@
                               <i class="ri-star-fill {{ i <= reviewData.rating ? 'text-primary' : 'text-disabled' }}" aria-hidden="true"></i>
                               {% endfor %}
                             </div>
-                            {% endif %}
-                            {% if reviewData.author is not empty %}
+                          {% endif %}
+                          {% if reviewData.author is not empty %}
                               <div class="type-legal-01 text-disabled">{{ reviewData.author }}</div>
-                            {% endif %}
+                          {% endif %}
                       </div>
 
                     <div class="review__copy pb-8 mb-48 type-body-compact-02 text-break">{{ reviewData.text }}</div>

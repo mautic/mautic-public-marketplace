@@ -7,41 +7,88 @@ function initRating() {
         return;
     }
 
-    const stars = starsContainer.querySelectorAll('.star-icon');
+    const stars = starsContainer.querySelectorAll('button[data-rating]');
+
+    function setRating(nextRating) {
+        ratingInput.value = String(nextRating);
+        updateStars(nextRating);
+        ratingInput.dispatchEvent(new Event('input', { bubbles: true }));
+        ratingInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 
     stars.forEach(function (star) {
         star.addEventListener('click', function () {
-            const rating = this.getAttribute('data-rating') || '0';
-            ratingInput.value = rating;
-            updateStars(rating);
+            setRating(this.getAttribute('data-rating') || '0');
         });
 
         star.addEventListener('mouseenter', function () {
-            const rating = this.getAttribute('data-rating');
-            highlightStars(rating);
+            highlightStars(this.getAttribute('data-rating'));
         });
 
         star.addEventListener('mouseleave', function () {
             highlightStars(ratingInput.value);
         });
+
+        star.addEventListener('keydown', function (event) {
+            const currentIndex = Number.parseInt(this.getAttribute('data-rating'), 10) - 1;
+
+            if (['ArrowLeft', 'ArrowDown'].includes(event.key)) {
+                event.preventDefault();
+                stars[Math.max(0, currentIndex - 1)]?.focus();
+                setRating(Math.max(1, currentIndex));
+            }
+
+            if (['ArrowRight', 'ArrowUp'].includes(event.key)) {
+                event.preventDefault();
+                stars[Math.min(stars.length - 1, currentIndex + 1)]?.focus();
+                setRating(Math.min(stars.length, currentIndex + 2));
+            }
+
+            if ('Home' === event.key) {
+                event.preventDefault();
+                stars[0]?.focus();
+                setRating(1);
+            }
+
+            if ('End' === event.key) {
+                event.preventDefault();
+                stars[stars.length - 1]?.focus();
+                setRating(stars.length);
+            }
+
+            if (['Enter', ' '].includes(event.key)) {
+                event.preventDefault();
+                setRating(this.getAttribute('data-rating') || '0');
+            }
+        });
     });
 
     function updateStars(rating) {
+        const normalizedRating = Number.parseInt(String(rating), 10) || 0;
+
         stars.forEach(function (s, index) {
-            if (index < Number(rating)) {
-                s.classList.add('star-active');
+            const isActive = index < normalizedRating;
+            const isSelected = index + 1 === normalizedRating;
+
+            s.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+            s.setAttribute('tabindex', index === Math.max(0, normalizedRating - 1) ? '0' : (0 === normalizedRating && 0 === index ? '0' : '-1'));
+
+            if (isActive) {
+                s.classList.add('review-form__star-button--active');
             } else {
-                s.classList.remove('star-active');
+                s.classList.remove('review-form__star-button--active');
             }
         });
     }
 
     function highlightStars(rating) {
+        const n = Number.parseInt(String(rating), 10) || 0;
+
         stars.forEach(function (s, index) {
-            if (index < Number(rating)) {
-                s.classList.add('star-hover');
+            if (index < n) {
+                s.classList.add('review-form__star-button--hover');
             } else {
-                s.classList.remove('star-hover');
+                s.classList.remove('review-form__star-button--hover');
             }
         });
     }

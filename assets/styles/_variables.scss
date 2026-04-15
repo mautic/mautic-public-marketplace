@@ -941,7 +941,7 @@ $input-height:                          add($input-line-height * 1em, add($input
 $input-height-sm:                       add($input-line-height * 1em, add($input-padding-y-sm * 2, $input-height-border, false)) !default;
 $input-height-lg:                       add($input-line-height * 1em, add($input-padding-y-lg * 2, $input-height-border, false)) !default;
 
-$input-transition:                      $transition-all-productive;
+$input-transition:                      background-color var(--duration-productive) var(--easing-standard-productive), border-color var(--duration-productive) var(--easing-standard-productive), box-shadow var(--duration-productive) var(--easing-standard-productive);
 
 $form-color-width:                      3rem !default;
 // scss-docs-end form-input-variables

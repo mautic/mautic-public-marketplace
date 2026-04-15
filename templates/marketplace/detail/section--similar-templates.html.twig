@@ -24,6 +24,7 @@
             </div>
             {% endset %}
             {% set card = {
+                href: path('marketplace_detail', { package: item.name }),
                 heading: item.displayName ?: item.name,
                 copy: (
                 (item.headline is defined and item.headline is not empty

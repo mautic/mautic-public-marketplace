@@ -34,6 +34,11 @@ final class MarketplaceController extends AbstractController
         return $this->render('marketplace/homepage.html.twig');
     }
 
+    public function uploadPackage(): Response
+    {
+        return $this->render('marketplace/upload/package.html.twig');
+    }
+
     public function index(Request $request): Response
     {
         $limit = $this->toInt($request->query->get('limit'), 10);

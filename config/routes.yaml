@@ -15,6 +15,10 @@ marketplace_index:
     path: /browse
     controller: App\Controller\MarketplaceController::index
 
+marketplace_upload_package:
+    path: /upload/package
+    controller: App\Controller\MarketplaceController::uploadPackage
+
 profile_page:
     path: /profile
     controller: App\Controller\ProfileController::index
