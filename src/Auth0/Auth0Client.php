@@ -132,6 +132,22 @@ final class Auth0Client
         return \sprintf('https://%s/v2/logout?%s', $this->auth0Domain, $query);
     }
 
+    public function createUserDashboardUrl(string $userId): string
+    {
+        $this->assertConfigured();
+
+        if (preg_match('/^(?<tenant>[^.]+)\.(?<region>[^.]+)\.auth0\.com$/', $this->auth0Domain, $matches)) {
+            return \sprintf(
+                'https://manage.auth0.com/dashboard/%s/%s/users/%s',
+                $matches['region'],
+                $matches['tenant'],
+                rawurlencode($userId),
+            );
+        }
+
+        return \sprintf('https://%s', $this->auth0Domain);
+    }
+
     /**
      * @throws Auth0AuthenticationException
      */
