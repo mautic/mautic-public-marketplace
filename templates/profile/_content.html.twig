@@ -4,7 +4,7 @@
     {% endif %}
     <h2>{{ app.user.name|default('Anonymous') }}</h2>
     <p>{{ app.user.email }}</p>
-    <a href="{{ path('auth_logout') }}" class="cds--btn cds--btn--tertiary cds--btn--sm">Log out</a>
+    <a href="{{ path('auth_logout') }}" class="cds--btn cds--btn--tertiary cds--btn--sm" data-turbo="false">Log out</a>
 </div>
 
 <section class="profile-reviews-section">
