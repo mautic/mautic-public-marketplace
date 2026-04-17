@@ -287,9 +287,6 @@
 
 .card__pictogram-wrapper {
     display: flex;
-    position: absolute;
-    inset-block-end: 16px;
-    inset-inline-start: 16px;
 }
 
 .card__footer {
@@ -301,7 +298,7 @@
 }
 
 .card__footer-wrapper {
-        -webkit-margin-before: auto;
+    -webkit-margin-before: auto;
     margin-block-start: auto;
 }
 
