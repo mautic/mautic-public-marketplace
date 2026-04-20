@@ -30,6 +30,12 @@ review_submit:
     requirements:
         package: .+
 
+marketplace_download:
+    path: /package/{name}/download
+    controller: App\Controller\MarketplaceController::download
+    requirements:
+        name: .+
+
 marketplace_detail:
     path: /package/{package}
     controller: App\Controller\MarketplaceController::detail

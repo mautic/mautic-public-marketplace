@@ -61,6 +61,7 @@ INSERT INTO versions (
     version,
     version_normalized,
     type,
+    dist,
     smv,
     time
 )
@@ -70,10 +71,11 @@ VALUES (
     '1.0.0',
     '1.0.0.0',
     'mautic-plugin',
+    '{"type": "zip", "url": "https://mautic-marketplace.ddev.site/dev-fixtures/sample-package.zip", "reference": "dev"}'::jsonb,
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET dist = EXCLUDED.dist;
 
 INSERT INTO packages (
     name,
@@ -121,6 +123,7 @@ INSERT INTO versions (
     version,
     version_normalized,
     type,
+    dist,
     smv,
     time
 )
@@ -130,10 +133,11 @@ VALUES (
     '0.1.0',
     '0.1.0.0',
     'mautic-plugin',
+    '{"type": "zip", "url": "https://mautic-marketplace.ddev.site/dev-fixtures/sample-package.zip", "reference": "dev"}'::jsonb,
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET dist = EXCLUDED.dist;
 
 INSERT INTO packages (
     name,
@@ -181,6 +185,7 @@ INSERT INTO versions (
     version,
     version_normalized,
     type,
+    dist,
     smv,
     time
 )
@@ -190,10 +195,11 @@ VALUES (
     '2.0.0',
     '2.0.0.0',
     'mautic-theme',
+    '{"type": "zip", "url": "https://mautic-marketplace.ddev.site/dev-fixtures/sample-package.zip", "reference": "dev"}'::jsonb,
     '^4.4 || ^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET dist = EXCLUDED.dist;
 
 INSERT INTO packages (
     name,
@@ -241,6 +247,7 @@ INSERT INTO versions (
     version,
     version_normalized,
     type,
+    dist,
     smv,
     time
 )
@@ -250,10 +257,11 @@ VALUES (
     '1.0.0',
     '1.0.0.0',
     'mautic-resource',
+    '{"type": "zip", "url": "https://mautic-marketplace.ddev.site/dev-fixtures/sample-package.zip", "reference": "dev"}'::jsonb,
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET dist = EXCLUDED.dist;
 
 INSERT INTO packages (
     name,
@@ -346,7 +354,7 @@ VALUES (
     '["GPL-3.0-or-later"]'::jsonb,
     '[{"name": "Mautic Community Team"}]'::jsonb,
     '{"type": "git", "url": "https://github.com/mautic/customer-reengagement-campaign.git", "reference": "8d3f2aa"}'::jsonb,
-    '{"type": "zip", "url": "https://example.test/customer-reengagement-campaign-1.1.0.zip", "reference": "8d3f2aa"}'::jsonb,
+    '{"type": "zip", "url": "https://mautic-marketplace.ddev.site/dev-fixtures/sample-package.zip", "reference": "8d3f2aa"}'::jsonb,
     'mautic-resource',
     '{"issues": "https://github.com/mautic/customer-reengagement-campaign/issues"}'::jsonb,
     '[{"type": "github", "url": "https://github.com/sponsors/mautic"}]'::jsonb,
@@ -404,9 +412,9 @@ VALUES (
     '["GPL-3.0-or-later"]'::jsonb,
     '[{"name": "Mautic Community Team"}]'::jsonb,
     '{"type": "git", "url": "https://github.com/mautic/customer-reengagement-campaign.git", "reference": "a91bc4e"}'::jsonb,
-    '{"type": "zip", "url": "https://example.test/customer-reengagement-campaign-1.2.0.zip", "reference": "a91bc4e"}'::jsonb,
+    '{"type": "zip", "url": "https://mautic-marketplace.ddev.site/dev-fixtures/sample-package.zip", "reference": "a91bc4e"}'::jsonb,
     'mautic-resource',
-    '{"issues": "https://github.com/mautic/customer-reengagement-campaign/issues", "docs": "https://example.test/docs/customer-reengagement-campaign"}'::jsonb,
+    '{"issues": "https://github.com/mautic/customer-reengagement-campaign/issues"}'::jsonb,
     '[{"type": "github", "url": "https://github.com/sponsors/mautic"}]'::jsonb,
     NOW() - INTERVAL '3 days',
     '{"mautic_resource_type": "campaign", "import_format": "zip", "estimated_import_time": "2 minutes"}'::jsonb,
