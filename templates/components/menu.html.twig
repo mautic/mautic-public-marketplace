@@ -1,0 +1,194 @@
+{% set size_class_map = {
+    'xs': 'menu--xs',
+    'sm': 'menu--sm',
+    'md': 'menu--md',
+    'lg': 'menu--lg'
+} %}
+
+{% macro menu_layout_classes(rows) %}
+    {% set menuHasIcons = false %}
+    {% set menuHasSelectableItems = false %}
+    {% for row in rows %}
+        {% set radioItems = row.menuItemRadioGroup is defined
+            ? (row.menuItemRadioGroup.children is defined
+                ? row.menuItemRadioGroup.children
+                : row.menuItemRadioGroup.items|default(row.menuItemRadioGroup.options|default([])))
+            : [] %}
+        {% set groupItems = row.menuItemGroup is defined
+            ? (row.menuItemGroup.children is defined
+                ? row.menuItemGroup.children
+                : row.menuItemGroup.items|default([]))
+            : [] %}
+        {% if row.menuItem is defined %}
+            {% set menuHasIcons = menuHasIcons or (row.menuItem.renderIcon is defined and row.menuItem.renderIcon) %}
+        {% elseif row.menuItemRadioGroup is defined %}
+            {% set menuHasSelectableItems = true %}
+            {% for item in radioItems %}
+                {% set current = item.menuItem|default(item) %}
+                {% set menuHasIcons = menuHasIcons or (current.renderIcon is defined and current.renderIcon) %}
+            {% endfor %}
+        {% elseif row.menuItemGroup is defined %}
+            {% set menuHasSelectableItems = true %}
+            {% for item in groupItems %}
+                {% set current = item.menuItemSelectable|default(item) %}
+                {% set menuHasIcons = menuHasIcons or (current.renderIcon is defined and current.renderIcon) %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+    {{- menuHasSelectableItems ? 'menu--with-selectable-items' : '' -}}{{- menuHasSelectableItems and menuHasIcons ? ' ' : '' -}}{{- menuHasIcons ? 'menu--with-icons' : '' -}}
+{% endmacro %}
+
+{% macro menu_item_content(menuItem, menuLayoutClasses) %}
+<span class="menu-item__content">
+    {% if 'menu--with-selectable-items' in menuLayoutClasses %}
+        <div class="menu-item__selection-icon">{% if menuItem.selected|default(menuItem.defaultSelected|default(false)) %}<i class="ri-check-line"></i>{% endif %}</div>
+    {% endif %}
+    {% if 'menu--with-icons' in menuLayoutClasses %}
+        <div class="menu-item__icon">{% if menuItem.renderIcon is defined and menuItem.renderIcon %}<i class="{{ menuItem.renderIcon }}"></i>{% endif %}</div>
+    {% endif %}
+    <div class="menu-item__label" dir="ltr">{{ menuItem.label|trans }}{% if menuItem.kind|default('default') == 'danger' %}<span class="visually-hidden">{{ 'mautic.marketplace.menu.danger_hint'|trans }}</span>{% endif %}</div>
+    {% if menuItem.children is defined and menuItem.children|length > 0 %}
+        <div class="menu-item__shortcut"><i class="ri-arrow-right-s-line"></i></div>
+    {% else %}
+        <div class="menu-item__shortcut">{% if menuItem.shortcut is defined and menuItem.shortcut %}{{ menuItem.shortcut }}{% endif %}</div>
+    {% endif %}
+</span>
+{% endmacro %}
+
+{% macro control_attributes(attrs) %}
+{% if attrs is defined and attrs is not empty %}{% for name, value in attrs %} {{ name }}="{{ value }}"{% endfor %}{% endif %}
+{% endmacro %}
+
+{% macro menu_rows(rows, size, menuLayoutClasses) %}
+{% import _self as m %}
+{% for row in rows %}
+
+    {% if row.menuItem is defined %}
+        {% set menuItem = row.menuItem %}
+        {% set itemClass = 'menu-item dropdown-item' ~ (menuItem.disabled|default(false) ? ' menu-item--disabled' : '') ~ ((menuItem.kind|default('default')) == 'danger' ? ' menu-item--danger' : '') %}
+
+        {% if menuItem.children is defined and menuItem.children|length > 0 %}
+            <li class="dropend" role="none">
+
+                <button type="button" role="menuitem" class="{{ itemClass }}" tabindex="0"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    {% if menuItem.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                    {{ m.control_attributes(menuItem.attributes|default({})) }}>
+
+                    {{ m.menu_item_content(menuItem, menuLayoutClasses) }}
+                </button>
+
+                {% set submenuLayoutClasses = m.menu_layout_classes(menuItem.children)|trim %}
+                <ul tabindex="0" class="dropdown-menu menu menu--{{ size }}{% if submenuLayoutClasses %} {{ submenuLayoutClasses }}{% endif %}" role="menu" aria-label="{{ menuItem.label|trans }}">
+                    {{ m.menu_rows(menuItem.children, size, submenuLayoutClasses) }}
+                </ul>
+            </li>
+
+        {% elseif menuItem.href is defined and menuItem.href %}
+            <li role="none">
+
+                <a href="{{ menuItem.href }}" role="menuitem" class="{{ itemClass }}"
+                    {% if menuItem.disabled|default(false) %}aria-disabled="true" tabindex="-1"{% else %}tabindex="0"{% endif %}
+                    {{ m.control_attributes(menuItem.attributes|default({})) }}>
+                    {{ m.menu_item_content(menuItem, menuLayoutClasses) }}
+                </a>
+            </li>
+
+        {% else %}
+            <li role="none">
+
+                <button type="button" role="menuitem" class="{{ itemClass }}"
+                    tabindex="{% if menuItem.disabled|default(false) %}-1{% else %}0{% endif %}"
+                    {% if menuItem.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                    {{ m.control_attributes(menuItem.attributes|default({})) }}>
+                    {{ m.menu_item_content(menuItem, menuLayoutClasses) }}
+                </button>
+            </li>
+        {% endif %}
+
+    {% elseif row.menuItemDivider is defined and row.menuItemDivider is not same as(false) %}
+        <li class="menu-item-divider" role="separator"></li>
+
+    {% elseif row.menuItemRadioGroup is defined %}
+        {% set menuItemRadioGroup = row.menuItemRadioGroup %}
+        {% set menuItemRadioGroupItems = menuItemRadioGroup.children is defined ? menuItemRadioGroup.children : menuItemRadioGroup.items|default(menuItemRadioGroup.options|default([])) %}
+        <li class="menu-item-radio-group" role="none">
+
+            <ul class="dropdown-menu show selectable{% if menuLayoutClasses %} {{ menuLayoutClasses }}{% endif %}" role="group" aria-label="{{ menuItemRadioGroup.label|trans }}">
+                {% for menuItemRadioGroupRow in menuItemRadioGroupItems %}
+                    {% set menuItem = menuItemRadioGroupRow.menuItem|default(menuItemRadioGroupRow) %}
+                    {% set isChecked = menuItem.selected|default(false) %}
+                    {% set itemClass = 'menu-item dropdown-item' %}
+                    {% set renderedMenuItem = menuItem|merge({ selected: isChecked }) %}
+
+                    {% if menuItem.href is defined and menuItem.href %}
+                        <li role="none">
+
+                            <a href="{{ menuItem.href }}" role="menuitemradio" class="{{ itemClass }}" aria-checked="{{ isChecked ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(menuItem.attributes|default({})) }}>
+                                {{ m.menu_item_content(renderedMenuItem, menuLayoutClasses) }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li role="none">
+
+                            <button type="button" role="menuitemradio" class="{{ itemClass }}" aria-checked="{{ isChecked ? 'true' : 'false' }}" tabindex="0"
+                                {% if menuItem.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                                {{ m.control_attributes(menuItem.attributes|default({})) }}>
+                                {{ m.menu_item_content(renderedMenuItem, menuLayoutClasses) }}
+                            </button>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </li>
+
+    {% elseif row.menuItemGroup is defined %}
+        {% set menuItemGroup = row.menuItemGroup %}
+        {% set menuItemGroupRows = menuItemGroup.children is defined ? menuItemGroup.children : menuItemGroup.items|default([]) %}
+        <li class="menu-item-group" role="none">
+
+            <ul class="dropdown-menu show selectable{% if menuLayoutClasses %} {{ menuLayoutClasses }}{% endif %}" role="group" aria-label="{{ menuItemGroup.label|trans }}">
+                {% for menuItemGroupRow in menuItemGroupRows %}
+                    {% set menuItemSelectable = menuItemGroupRow.menuItemSelectable|default(menuItemGroupRow) %}
+                    {% set isSelected = menuItemSelectable.selected|default(menuItemSelectable.defaultSelected|default(false)) %}
+                    {% set itemClass = 'menu-item dropdown-item' ~ (isSelected ? ' menu-item-selectable--selected' : '') %}
+                    {% set renderedMenuItemSelectable = menuItemSelectable|merge({
+                        selected: isSelected,
+                        shortcut: menuItemSelectable.shortcut is defined and menuItemSelectable.shortcut ? menuItemSelectable.shortcut|trans : null
+                    }) %}
+                    {% if menuItemSelectable.href is defined and menuItemSelectable.href %}
+                        <li role="none">
+
+                            <a href="{{ menuItemSelectable.href }}" role="menuitemcheckbox" class="{{ itemClass }}" aria-checked="{{ isSelected ? 'true' : 'false' }}" tabindex="0" {{ m.control_attributes(menuItemSelectable.attributes|default({})) }}>
+                                {{ m.menu_item_content(renderedMenuItemSelectable, menuLayoutClasses) }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li role="none">
+
+                            <button type="button" role="menuitemcheckbox" class="{{ itemClass }}" aria-checked="{{ isSelected ? 'true' : 'false' }}" tabindex="0"
+                                {% if menuItemSelectable.disabled|default(false) %}disabled aria-disabled="true"{% endif %}
+                                {{ m.control_attributes(menuItemSelectable.attributes|default({})) }}>
+                                {{ m.menu_item_content(renderedMenuItemSelectable, menuLayoutClasses) }}
+                            </button>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </li>
+    {% endif %}
+{% endfor %}
+{% endmacro %}
+
+{% import _self as menu_macro %}
+{% set menuLayoutClasses = menu_macro.menu_layout_classes(children|default([]))|trim %}
+
+<ul class="dropdown-menu menu {{ size_class_map[size|default('sm')] }}{% if menuLayoutClasses %} {{ menuLayoutClasses }}{% endif %}{% if open is defined and open %} show{% endif %} {{ menuAlignment|default('start') == 'end' ? 'dropdown-menu-end' : 'dropdown-menu-start' }}{% if backgroundToken is defined and backgroundToken == 'background' %} layer-two{% endif %} {{ className|default('') }}"
+    role="menu" tabindex="-1"
+    {% if label is defined and label %}aria-label="{{ label|trans }}"{% endif %}
+    {% if attributes is defined and attributes is not empty %}{% for attribute, attribute_value in attributes %} {{ attribute }}="{{ attribute_value }}"{% endfor %}{% endif %}>
+    {{ menu_macro.menu_rows(children|default([]), size|default('sm'), menuLayoutClasses) }}
+</ul>

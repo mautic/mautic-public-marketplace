@@ -8,11 +8,6 @@
     {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
 <body>
-      {% set authMenu %}
-          <a class="dropdown-item" href="{{ path('profile_page') }}">{{ 'mautic.marketplace.header.my_profile'|trans }}</a>
-          <a class="dropdown-item" href="{{ path('auth_logout') }}">{{ 'mautic.marketplace.header.logout'|trans }}</a>
-      {% endset %}
-
       {% include 'components/uishell.html.twig' with {
         Header: {
             ariaLabel: 'mautic.marketplace.header.aria_label',
@@ -41,16 +36,35 @@
                         {
                             HeaderGlobalDropdown: {
                                 ariaLabel: 'mautic.marketplace.header.account',
-                                label: app.user.name ?? app.user.email ?? 'Account',
-                                renderMenuContent: authMenu
+                                renderDropdownIcon: 'ri-account-circle-line',
+                                renderMenuContent: [
+                                    {
+                                        menuItem: {
+                                            href: path('profile_page'),
+                                            label: 'mautic.marketplace.header.my_profile'
+                                        }
+                                    },
+                                    {
+                                        menuItem: {
+                                            href: path('auth_logout'),
+                                            label: 'mautic.marketplace.header.logout',
+                                            attributes: {
+                                                'data-turbo': 'false'
+                                            }
+                                        }
+                                    }
+                                ]
                             }
                         }
                     ] : [
                         {
                             HeaderGlobalAction: {
                                 href: path('auth_login', { returnTo: app.request.requestUri }),
-                                label: 'mautic.marketplace.header.login',
-                                ariaLabel: 'mautic.marketplace.header.login'
+                                renderActionIcon: 'ri-login-box-line',
+                                ariaLabel: 'mautic.marketplace.header.login',
+                                attributes: {
+                                    'data-turbo': 'false'
+                                }
                             }
                         }
                     ]
