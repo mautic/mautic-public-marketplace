@@ -6,15 +6,12 @@ namespace App\Controller;
 
 use App\Formatter\LanguageFilterFormatter;
 use App\Formatter\MauticVersionConstraintFormatter;
-use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\MarketplaceApiClient;
 use App\Marketplace\PackageDetailPageContextBuilder;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class MarketplaceController extends AbstractController
 {
@@ -29,7 +26,6 @@ final class MarketplaceController extends AbstractController
         private readonly PackageDetailPageContextBuilder $detailPageContextBuilder,
         private readonly LanguageFilterFormatter $languageFilterFormatter,
         private readonly MauticVersionConstraintFormatter $mauticVersionConstraintFormatter,
-        private readonly HttpClientInterface $httpClient,
     ) {
     }
 
@@ -138,69 +134,6 @@ final class MarketplaceController extends AbstractController
         }
 
         return $this->render('marketplace/detail.html.twig', $page['context'], new Response('', $page['status_code']));
-    }
-
-    public function download(string $name): Response
-    {
-        try {
-            $package = $this->apiClient->getPackage($name);
-        } catch (SupabaseApiException) {
-            throw $this->createNotFoundException();
-        }
-
-        if (null === $package) {
-            throw $this->createNotFoundException();
-        }
-
-        $distUrl = $this->resolveDistUrl($package);
-
-        if (null === $distUrl) {
-            throw $this->createNotFoundException('No downloadable file is available for this package.');
-        }
-
-        $httpClient = $this->httpClient;
-        $upstream = $httpClient->request('GET', $distUrl);
-        $headers = $upstream->getHeaders(false);
-
-        $filename = str_replace('/', '--', $name).'.zip';
-        $streamed = new StreamedResponse(function () use ($upstream, $httpClient): void {
-            foreach ($httpClient->stream($upstream) as $chunk) {
-                echo $chunk->getContent();
-                flush();
-            }
-        });
-
-        $streamed->headers->set('Content-Disposition', 'attachment; filename="'.$filename.'"');
-        $streamed->headers->set('Content-Type', 'application/zip');
-
-        if (isset($headers['content-length'][0])) {
-            $streamed->headers->set('Content-Length', $headers['content-length'][0]);
-        }
-
-        return $streamed;
-    }
-
-    private function resolveDistUrl(PackageDetail $package): ?string
-    {
-        if (null === $package->versions) {
-            return null;
-        }
-
-        $versions = $package->versions;
-        krsort($versions);
-
-        foreach ($versions as $data) {
-            if (!\is_array($data)) {
-                continue;
-            }
-
-            $dist = $data['dist'] ?? null;
-            if (\is_array($dist) && isset($dist['url']) && \is_string($dist['url']) && '' !== $dist['url']) {
-                return $dist['url'];
-            }
-        }
-
-        return null;
     }
 
     private function toInt(mixed $value, int $default): int
