@@ -64,6 +64,12 @@
                 label: 'marketplace.index.filters.packages_rated_by_me',
                 value: '1',
                 checked: filters.things_i_rated ?? false
+            },
+            {
+                label: 'marketplace.index.filters.my_submitted_packages',
+                name: 'my_submitted_packages[]',
+                value: '1',
+                checked: filters.my_submitted_packages ?? false
             }
         ]
     }]) %}

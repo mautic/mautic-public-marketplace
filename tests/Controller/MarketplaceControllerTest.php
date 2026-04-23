@@ -199,6 +199,7 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextNotContains('body', 'Tied to my account');
         self::assertSelectorNotExists('input[name="things_i_rated[]"]');
+        self::assertSelectorNotExists('input[name="my_submitted_packages[]"]');
     }
 
     public function testAccountFilterGroupRendersForAuthenticatedUsers(): void
@@ -210,7 +211,9 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'Tied to my account');
         self::assertSelectorTextContains('body', 'Packages rated by me');
+        self::assertSelectorTextContains('body', 'My submitted packages');
         self::assertSelectorExists('input[name="things_i_rated[]"][value="1"]');
+        self::assertSelectorExists('input[name="my_submitted_packages[]"][value="1"]');
         self::assertSelectorNotExists('input[name="rated_by"]');
     }
 
@@ -261,6 +264,19 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('.card-group', 'Zebra Theme');
         self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
         self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFilteringByMySubmittedPackages(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/browse?my_submitted_packages%5B%5D=1');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
     }
 
     public function testSortingByNameAsc(): void

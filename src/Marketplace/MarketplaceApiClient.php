@@ -34,6 +34,7 @@ final class MarketplaceApiClient
         ?int $minimumRating = null,
         bool $unratedOnly = false,
         ?string $ratedBy = null,
+        ?string $submittedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
     ): PackageListResult {
@@ -70,6 +71,10 @@ final class MarketplaceApiClient
 
         if (null !== $ratedBy && '' !== $ratedBy) {
             $params['_rated_by'] = $ratedBy;
+        }
+
+        if (null !== $submittedBy && '' !== $submittedBy) {
+            $params['_submitted_by'] = $submittedBy;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
@@ -126,6 +131,7 @@ final class MarketplaceApiClient
         ?int $minimumRating = null,
         bool $unratedOnly = false,
         ?string $ratedBy = null,
+        ?string $submittedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
     ): array {
@@ -153,6 +159,10 @@ final class MarketplaceApiClient
 
         if (null !== $ratedBy && '' !== $ratedBy) {
             $params['_rated_by'] = $ratedBy;
+        }
+
+        if (null !== $submittedBy && '' !== $submittedBy) {
+            $params['_submitted_by'] = $submittedBy;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {

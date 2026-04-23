@@ -60,6 +60,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'language' => 'en',
                 'average_rating' => 4.7,
                 'total_review' => 2,
+                'auth0_user_id' => 'auth0|test123',
             ],
             'mautic/alpha-plugin' => [
                 'name' => 'mautic/alpha-plugin',
@@ -75,6 +76,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'language' => 'English',
                 'average_rating' => 3.0,
                 'total_review' => 1,
+                'auth0_user_id' => null,
             ],
             'mautic/zebra-theme' => [
                 'name' => 'mautic/zebra-theme',
@@ -90,6 +92,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'language' => 'nl',
                 'average_rating' => 4.0,
                 'total_review' => 1,
+                'auth0_user_id' => 'auth0|other',
             ],
             'mautic/welcome-campaign' => [
                 'name' => 'mautic/welcome-campaign',
@@ -105,6 +108,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'language' => 'Nederlands',
                 'average_rating' => 0,
                 'total_review' => 0,
+                'auth0_user_id' => 'auth0|test123',
             ],
         ];
     }
@@ -162,6 +166,11 @@ final class SupabaseMockHttpClient extends MockHttpClient
         if (null !== $ratedBy && '' !== $ratedBy) {
             $reviewedObjectIds = array_column(array_filter(self::allReviews(), static fn (array $review): bool => $review['auth0_user_id'] === $ratedBy), 'objectId');
             $rows = array_values(array_filter($rows, static fn (array $r): bool => \in_array($r['name'], $reviewedObjectIds, true)));
+        }
+
+        $submittedBy = isset($params['_submitted_by']) && \is_string($params['_submitted_by']) ? trim($params['_submitted_by']) : null;
+        if (null !== $submittedBy && '' !== $submittedBy) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['auth0_user_id'] ?? null) === $submittedBy));
         }
 
         // Filter by date range
@@ -511,6 +520,11 @@ final class SupabaseMockHttpClient extends MockHttpClient
         if (null !== $ratedBy && '' !== $ratedBy) {
             $reviewedObjectIds = array_column(array_filter(self::allReviews(), static fn (array $review): bool => $review['auth0_user_id'] === $ratedBy), 'objectId');
             $rows = array_values(array_filter($rows, static fn (array $r): bool => \in_array($r['name'], $reviewedObjectIds, true)));
+        }
+
+        $submittedBy = isset($params['_submitted_by']) && \is_string($params['_submitted_by']) ? trim($params['_submitted_by']) : null;
+        if (null !== $submittedBy && '' !== $submittedBy) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['auth0_user_id'] ?? null) === $submittedBy));
         }
 
         $dateRange = $params['_date_range'] ?? null;
