@@ -32,18 +32,30 @@
         </div>
         <div class="col-xs-12 col-md-4">
             <div class="d-grid mb-12">
+                {% set isPaidPackage = package.pricing|default(0) > 0 %}
+                {% set ctaLabel = isPaidPackage
+                    ? (app.user
+                        ? 'mautic.marketplace.detail.buy'|trans({'%price%': package.pricing})
+                        : 'mautic.marketplace.detail.login_to_buy')
+                    : 'mautic.marketplace.detail.download'
+                %}
+                {% set ctaIcon = isPaidPackage
+                    ? (app.user ? 'ri-shopping-cart-line' : 'ri-login-box-line')
+                    : 'ri-download-line'
+                %}
+                {% set ctaHref = isPaidPackage and not app.user
+                    ? path('auth_login', { returnTo: app.request.requestUri })
+                    : '#'
+                %}
                 {% include 'components/button.html.twig' with {
                     buttons: [{
-                        label: (package.pricing is defined and package.pricing > 0) 
-                            ? 'mautic.marketplace.detail.buy'|trans({'%price%': package.pricing}) 
-                            : 'mautic.marketplace.detail.download'|trans,
+                        label: ctaLabel,
                         variant: 'primary',
                         size: '2xl',
-                        icon: (package.pricing is defined and package.pricing > 0) 
-                            ? 'ri-shopping-cart-line' 
-                            : 'ri-download-line',
-                        href: '#',
+                        icon: ctaIcon,
+                        href: ctaHref,
                         attributes: {
+                            id: 'package-cta',
                             'data-turbo': 'false'
                         }
                     }]
