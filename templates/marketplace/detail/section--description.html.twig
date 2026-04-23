@@ -188,7 +188,7 @@
 
             <div class="tile mt-12">
                 {% include 'marketplace/detail/module--review-summary.html.twig' %}
-                {% if package.reviews|length > 0 %}
+                {% if package.reviews|length > 3 %}
                 <div class="mt-12">
                         {% include 'components/button.html.twig' with {
                             buttons: [{
