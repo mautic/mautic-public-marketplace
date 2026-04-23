@@ -49,7 +49,9 @@ final class MarketplaceController extends AbstractController
         $query = $request->query->get('query');
         $mauticVersions = $this->normalizeMauticVersions($request->query->all()['mautic'] ?? null);
         $languages = $this->normalizeLanguages($request->query->all()['language'] ?? null);
-        $minimumRating = $this->normalizeMinimumRating($request->query->get('rating'));
+        $ratingFilter = $this->normalizeRatingFilter($request->query->get('rating'));
+        $minimumRating = $this->minimumRatingForFilter($ratingFilter);
+        $unratedOnly = 'unrated' === $ratingFilter;
         $currentUser = $this->getUser();
         $thingsIRated = null !== $currentUser && $this->isChecked($request->query->all()['things_i_rated'] ?? null);
         $ratedBy = $thingsIRated ? $currentUser->getUserIdentifier() : null;
@@ -67,6 +69,7 @@ final class MarketplaceController extends AbstractController
                 $mauticVersions,
                 $languages,
                 $minimumRating,
+                $unratedOnly,
                 $ratedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
@@ -76,6 +79,7 @@ final class MarketplaceController extends AbstractController
                 $mauticVersions,
                 $languages,
                 $minimumRating,
+                $unratedOnly,
                 $ratedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
@@ -86,6 +90,7 @@ final class MarketplaceController extends AbstractController
                 \is_string($query) ? $query : null,
                 $mauticVersions,
                 $minimumRating,
+                $unratedOnly,
                 $ratedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
@@ -107,7 +112,7 @@ final class MarketplaceController extends AbstractController
                     'query' => $query,
                     'mautic' => $mauticVersions,
                     'language' => $languages,
-                    'rating' => $minimumRating,
+                    'rating' => $ratingFilter,
                     'things_i_rated' => $thingsIRated,
                     'date_range' => $dateRange,
                     'popularity' => $popularity,
@@ -131,7 +136,7 @@ final class MarketplaceController extends AbstractController
                 'query' => $query,
                 'mautic' => $mauticVersions,
                 'language' => $languages,
-                'rating' => $minimumRating,
+                'rating' => $ratingFilter,
                 'things_i_rated' => $thingsIRated,
                 'date_range' => $dateRange,
                 'popularity' => $popularity,
@@ -165,7 +170,7 @@ final class MarketplaceController extends AbstractController
      *
      * @return array<string, int>
      */
-    private function buildTypeCounts(?string $query, array $mauticVersions, array $languages, ?int $minimumRating, ?string $ratedBy, ?string $dateRange, ?string $popularity): array
+    private function buildTypeCounts(?string $query, array $mauticVersions, array $languages, ?int $minimumRating, bool $unratedOnly, ?string $ratedBy, ?string $dateRange, ?string $popularity): array
     {
         $baseResult = $this->apiClient->listPackages(
             1,
@@ -177,6 +182,7 @@ final class MarketplaceController extends AbstractController
             $mauticVersions,
             $languages,
             $minimumRating,
+            $unratedOnly,
             $ratedBy,
             $dateRange,
             $popularity,
@@ -197,6 +203,7 @@ final class MarketplaceController extends AbstractController
             $mauticVersions,
             $languages,
             $minimumRating,
+            $unratedOnly,
             $ratedBy,
             $dateRange,
             $popularity,
@@ -297,15 +304,28 @@ final class MarketplaceController extends AbstractController
         return array_values(array_unique($languages));
     }
 
-    private function normalizeMinimumRating(mixed $value): ?int
+    private function normalizeRatingFilter(mixed $value): ?string
     {
+        if ('unrated' === $value) {
+            return 'unrated';
+        }
+
         if (null === $value || '' === $value || !is_numeric($value)) {
             return null;
         }
 
         $rating = (int) $value;
 
-        return $rating >= 1 && $rating <= 5 ? $rating : null;
+        return $rating >= 1 && $rating <= 5 ? (string) $rating : null;
+    }
+
+    private function minimumRatingForFilter(?string $ratingFilter): ?int
+    {
+        if (null === $ratingFilter || 'unrated' === $ratingFilter) {
+            return null;
+        }
+
+        return (int) $ratingFilter;
     }
 
     private function isChecked(mixed $value): bool

@@ -58,8 +58,8 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'maintainers' => 'escopecz',
                 'smv' => '^5.0 || ^5.1',
                 'language' => 'en',
-                'average_rating' => 5.0,
-                'total_review' => 1,
+                'average_rating' => 4.7,
+                'total_review' => 2,
             ],
             'mautic/alpha-plugin' => [
                 'name' => 'mautic/alpha-plugin',
@@ -109,6 +109,9 @@ final class SupabaseMockHttpClient extends MockHttpClient
         ];
     }
 
+    /**
+     * @param array<string, mixed> $options
+     */
     private static function packageListResponse(string $url, string $method, array $options): MockResponse
     {
         $params = self::parseParams($url, $method, $options);
@@ -147,7 +150,12 @@ final class SupabaseMockHttpClient extends MockHttpClient
 
         $minimumRating = isset($params['_minimum_rating']) && is_numeric($params['_minimum_rating']) ? (int) $params['_minimum_rating'] : null;
         if (null !== $minimumRating) {
-            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['average_rating'] ?? 0) >= $minimumRating));
+            $threshold = 5 === $minimumRating ? 4.6 : $minimumRating;
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['average_rating'] ?? 0) >= $threshold));
+        }
+
+        if (self::isTruthy($params['_unrated_only'] ?? false)) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => 0 === ($r['total_review'] ?? 0)));
         }
 
         $ratedBy = isset($params['_rated_by']) && \is_string($params['_rated_by']) ? trim($params['_rated_by']) : null;
@@ -224,6 +232,9 @@ final class SupabaseMockHttpClient extends MockHttpClient
         );
     }
 
+    /**
+     * @param array<string, mixed> $options
+     */
     private static function availableLanguagesResponse(string $method, array $options): MockResponse
     {
         $params = self::parseParams('', $method, $options);
@@ -402,6 +413,8 @@ final class SupabaseMockHttpClient extends MockHttpClient
     }
 
     /**
+     * @param array<string, mixed> $options
+     *
      * @return array<string, mixed>
      */
     private static function parseParams(string $url, string $method, array $options): array
@@ -486,7 +499,12 @@ final class SupabaseMockHttpClient extends MockHttpClient
 
         $minimumRating = isset($params['_minimum_rating']) && is_numeric($params['_minimum_rating']) ? (int) $params['_minimum_rating'] : null;
         if (null !== $minimumRating) {
-            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['average_rating'] ?? 0) >= $minimumRating));
+            $threshold = 5 === $minimumRating ? 4.6 : $minimumRating;
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['average_rating'] ?? 0) >= $threshold));
+        }
+
+        if (self::isTruthy($params['_unrated_only'] ?? false)) {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => 0 === ($r['total_review'] ?? 0)));
         }
 
         $ratedBy = isset($params['_rated_by']) && \is_string($params['_rated_by']) ? trim($params['_rated_by']) : null;
@@ -550,5 +568,10 @@ final class SupabaseMockHttpClient extends MockHttpClient
             'nl', 'nl-nl', 'dutch', 'nederlands' => 'dutch',
             default => $language,
         };
+    }
+
+    private static function isTruthy(mixed $value): bool
+    {
+        return true === $value || 1 === $value || '1' === $value || 'true' === $value;
     }
 }

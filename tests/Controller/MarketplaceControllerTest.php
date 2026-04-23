@@ -188,6 +188,7 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertContains('At least 3 stars', $labels);
         self::assertContains('At least 2 stars', $labels);
         self::assertContains('At least 1 star', $labels);
+        self::assertContains('Not rated yet', $labels);
     }
 
     public function testAccountFilterGroupIsHiddenForAnonymousUsers(): void
@@ -223,6 +224,30 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('.card-group', 'Zebra Theme');
         self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
         self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFiveStarFilterIncludesRatingsThatRoundUp(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?rating=5');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFilteringByNotRatedYet(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?rating=unrated');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
     }
 
     public function testFilteringByThingsIRated(): void

@@ -1,7 +1,13 @@
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT[], TEXT, TEXT);
 DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT[], INT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT[], INT, BOOLEAN, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT[], NUMERIC, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS get_view(INT, INT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT[], NUMERIC, BOOLEAN, TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS get_available_languages(TEXT, TEXT[], TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS get_available_languages(TEXT, TEXT[], TEXT, INT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS get_available_languages(TEXT, TEXT[], TEXT, INT, BOOLEAN, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS get_available_languages(TEXT, TEXT[], TEXT, NUMERIC, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS get_available_languages(TEXT, TEXT[], TEXT, NUMERIC, BOOLEAN, TEXT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION get_view(
     _limit INT,
@@ -13,6 +19,7 @@ CREATE OR REPLACE FUNCTION get_view(
     _type TEXT DEFAULT NULL,
     _language TEXT[] DEFAULT NULL,
     _minimum_rating INT DEFAULT NULL,
+    _unrated_only BOOLEAN DEFAULT FALSE,
     _rated_by TEXT DEFAULT NULL,
     _date_range TEXT DEFAULT NULL,
     _popularity TEXT DEFAULT NULL
@@ -100,7 +107,15 @@ BEGIN
                     SELECT ROUND(AVG(r2.rating), 1)
                     FROM reviews r2
                     WHERE r2."objectId" = p.name
-                ), 0) >= %L
+                ), 0) >= CASE WHEN %L = 5 THEN 4.6 ELSE %L END
+           )
+           AND (
+                %L IS NOT TRUE
+                OR NOT EXISTS (
+                    SELECT 1
+                    FROM reviews ur
+                    WHERE ur."objectId" = p.name
+                )
            )
            AND (
                 %L IS NULL
@@ -112,7 +127,7 @@ BEGIN
                 )
            )
            ' || date_filter,
-        _query, _query, _query, _type, _type, _smv, _smv, _language, _language, _minimum_rating, _minimum_rating, _rated_by, _rated_by
+        _query, _query, _query, _type, _type, _smv, _smv, _language, _language, _minimum_rating, _minimum_rating, _minimum_rating, _unrated_only, _rated_by, _rated_by
     ) INTO total;
 
     sql_query := format(
@@ -167,7 +182,15 @@ BEGIN
                         SELECT ROUND(AVG(r2.rating), 1)
                         FROM reviews r2
                         WHERE r2."objectId" = p.name
-                    ), 0) >= %L
+                    ), 0) >= CASE WHEN %L = 5 THEN 4.6 ELSE %L END
+               )
+               AND (
+                    %L IS NOT TRUE
+                    OR NOT EXISTS (
+                        SELECT 1
+                        FROM reviews ur
+                        WHERE ur."objectId" = p.name
+                    )
                )
                AND (
                     %L IS NULL
@@ -183,7 +206,7 @@ BEGIN
              ORDER BY %s %s, p.name ASC
              LIMIT %L OFFSET %L
          ) t',
-        _query, _query, _query, _type, _type, _smv, _smv, _language, _language, _minimum_rating, _minimum_rating, _rated_by, _rated_by, _orderby, _orderdir, _limit, _offset
+        _query, _query, _query, _type, _type, _smv, _smv, _language, _language, _minimum_rating, _minimum_rating, _minimum_rating, _unrated_only, _rated_by, _rated_by, _orderby, _orderdir, _limit, _offset
     );
 
     EXECUTE sql_query INTO todo;
@@ -200,6 +223,7 @@ CREATE OR REPLACE FUNCTION get_available_languages(
     _smv TEXT[] DEFAULT NULL,
     _type TEXT DEFAULT NULL,
     _minimum_rating INT DEFAULT NULL,
+    _unrated_only BOOLEAN DEFAULT FALSE,
     _rated_by TEXT DEFAULT NULL,
     _date_range TEXT DEFAULT NULL,
     _popularity TEXT DEFAULT NULL
@@ -252,7 +276,15 @@ BEGIN
                         SELECT ROUND(AVG(r2.rating), 1)
                         FROM reviews r2
                         WHERE r2."objectId" = p.name
-                    ), 0) >= %L
+                    ), 0) >= CASE WHEN %L = 5 THEN 4.6 ELSE %L END
+               )
+               AND (
+                    %L IS NOT TRUE
+                    OR NOT EXISTS (
+                        SELECT 1
+                        FROM reviews ur
+                        WHERE ur."objectId" = p.name
+                    )
                )
                AND (
                     %L IS NULL
@@ -265,7 +297,7 @@ BEGIN
                )
                ' || date_filter || '
          ) available_languages',
-        _query, _query, _query, _type, _type, _smv, _smv, _minimum_rating, _minimum_rating, _rated_by, _rated_by
+        _query, _query, _query, _type, _type, _smv, _smv, _minimum_rating, _minimum_rating, _minimum_rating, _unrated_only, _rated_by, _rated_by
     ) INTO languages;
 
     RETURN languages;

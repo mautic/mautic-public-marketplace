@@ -18,6 +18,10 @@ final class MarketplaceApiClient
     ) {
     }
 
+    /**
+     * @param list<string> $mauticVersions
+     * @param list<string> $languages
+     */
     public function listPackages(
         int $limit = 10,
         int $offset = 0,
@@ -28,6 +32,7 @@ final class MarketplaceApiClient
         array $mauticVersions = [],
         array $languages = [],
         ?int $minimumRating = null,
+        bool $unratedOnly = false,
         ?string $ratedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
@@ -57,6 +62,10 @@ final class MarketplaceApiClient
 
         if (null !== $minimumRating) {
             $params['_minimum_rating'] = $minimumRating;
+        }
+
+        if ($unratedOnly) {
+            $params['_unrated_only'] = true;
         }
 
         if (null !== $ratedBy && '' !== $ratedBy) {
@@ -106,6 +115,8 @@ final class MarketplaceApiClient
     }
 
     /**
+     * @param list<string> $mauticVersions
+     *
      * @return list<string>
      */
     public function getAvailableLanguages(
@@ -113,6 +124,7 @@ final class MarketplaceApiClient
         ?string $query = null,
         array $mauticVersions = [],
         ?int $minimumRating = null,
+        bool $unratedOnly = false,
         ?string $ratedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
@@ -133,6 +145,10 @@ final class MarketplaceApiClient
 
         if (null !== $minimumRating) {
             $params['_minimum_rating'] = $minimumRating;
+        }
+
+        if ($unratedOnly) {
+            $params['_unrated_only'] = true;
         }
 
         if (null !== $ratedBy && '' !== $ratedBy) {
