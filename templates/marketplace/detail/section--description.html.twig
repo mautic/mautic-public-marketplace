@@ -48,15 +48,6 @@
                         }
                     }]
                 } only %}
-
-                {% include 'components/toast.html.twig' with {
-                    title: 'mautic.marketplace.detail.buy'|trans({'%price%': package.pricing}),
-                    body: 'mautic.marketplace.detail.buy_description'|trans,
-                    icon: 'ri-shopping-cart-line',
-                    variant: 'primary',
-                    size: '2xl',
-                    href: '#',
-                } only %}
             </div>
             <div class="tile">
                 <!-- Last updated -->
