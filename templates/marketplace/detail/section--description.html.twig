@@ -31,6 +31,33 @@
 
         </div>
         <div class="col-xs-12 col-md-4">
+            <div class="d-grid mb-12">
+                {% include 'components/button.html.twig' with {
+                    buttons: [{
+                        label: (package.pricing is defined and package.pricing > 0) 
+                            ? 'mautic.marketplace.detail.buy'|trans({'%price%': package.pricing}) 
+                            : 'mautic.marketplace.detail.download'|trans,
+                        variant: 'primary',
+                        size: '2xl',
+                        icon: (package.pricing is defined and package.pricing > 0) 
+                            ? 'ri-shopping-cart-line' 
+                            : 'ri-download-line',
+                        href: '#',
+                        attributes: {
+                            'data-turbo': 'false'
+                        }
+                    }]
+                } only %}
+
+                {% include 'components/toast.html.twig' with {
+                    title: 'mautic.marketplace.detail.buy'|trans({'%price%': package.pricing}),
+                    body: 'mautic.marketplace.detail.buy_description'|trans,
+                    icon: 'ri-shopping-cart-line',
+                    variant: 'primary',
+                    size: '2xl',
+                    href: '#',
+                } only %}
+            </div>
             <div class="tile">
                 <!-- Last updated -->
                 <dt class="type-heading-01">{{ 'mautic.marketplace.detail.last_updated'|trans }}</dt>
