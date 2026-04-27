@@ -28,9 +28,9 @@ final class ProfileControllerTest extends WebTestCase
         self::assertSelectorExists('#profile-content');
         self::assertSelectorTextContains('h2', 'Test User');
         self::assertSelectorTextContains('body', 'test@example.com');
-        self::assertSelectorTextContains('body', 'My Reviews');
+        self::assertSelectorTextContains('body', 'Your reviews');
         self::assertSelectorTextContains('body', 'Great plugin!');
-        self::assertSelectorTextContains('body', 'My Packages');
+        self::assertSelectorTextContains('body', 'My packages');
         self::assertSelectorTextContains('body', 'Example Plugin');
         self::assertSelectorExists('a[href="/auth/logout"]');
     }

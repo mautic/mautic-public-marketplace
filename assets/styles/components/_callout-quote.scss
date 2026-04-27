@@ -5,16 +5,8 @@
 
 .quote__copy {
     inline-size: 100%;
-    padding-inline: 2rem;
     margin: 0px;
     word-break: break-word;
-}
-
-
-@media (min-width: 42rem) {
-    .quote__copy {
-        padding-block-end: 3rem;
-    }
 }
 
 .quote__mark-closing {
@@ -36,10 +28,4 @@
     padding-inline: 1rem;
     max-inline-size: 80%;
     padding-block-end: 3rem;
-}
-
-.quote__source-heading,
-.quote__source-copy,
-.quote__source-bottom-copy {
-    padding-inline-start: 1rem;
 }

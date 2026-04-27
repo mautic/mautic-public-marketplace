@@ -4,7 +4,7 @@
     display: flex;
     flex-grow: 1;
     flex-direction: column;
-    padding: 16px;
+    padding: var(--layout-density-padding-inline-local);
     background-color: var(--layer);
     min-block-size: 4rem;
     min-inline-size: 8rem;
@@ -126,8 +126,6 @@
     font-size: 100%;
     vertical-align: baseline;
     display: inline-block;
-    padding: 0;
-    border: 0;
     -webkit-appearance: none;
     appearance: none;
     background: none;
@@ -278,6 +276,7 @@
     display: flex;
     flex-direction: column;
     inline-size: 100%;
+    padding: var(--layout-density-padding-inline-local);
 }
 
 .card--pictogram {
@@ -288,19 +287,18 @@
 
 .card__pictogram-wrapper {
     display: flex;
-    position: absolute;
-    inset-block-end: 16px;
-    inset-inline-start: 16px;
 }
 
 .card__footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-block-start: auto;
+    grid-row: -1;
 }
 
 .card__footer-wrapper {
-        -webkit-margin-before: auto;
+    -webkit-margin-before: auto;
     margin-block-start: auto;
 }
 
@@ -377,7 +375,6 @@
             grid-row: span 10;
             grid-template-columns: subgrid;
             grid-template-rows: subgrid;
-            padding: var(--layout-density-padding-inline-local);
         }
     }
     
@@ -390,7 +387,6 @@
         grid-area: 1 / 1 / -1 / -1;
         grid-template-columns: subgrid;
         grid-template-rows: subgrid;
-        inline-size: 100%;
     }
     
     .card__copy {
