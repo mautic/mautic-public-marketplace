@@ -125,10 +125,6 @@ final class PackageSubmitService
             throw new SubmitValidationException('composer.json must contain a "version" field.');
         }
 
-        $require = $data['require'] ?? [];
-        if (\is_array($require) && !isset($require['mautic/core-lib'])) {
-            throw new SubmitValidationException('composer.json "require" must include "mautic/core-lib" (e.g. "^7.0").');
-        }
     }
 
     /**

@@ -18,10 +18,12 @@
                 <div class="row">
                     <div class="col-xs-12 col-md-8">
                         {% set formContent %}
-                            <p class="type-body-02 mb-24">
-                                Logged in as <strong>{{ app.user.name ?? app.user.email }}</strong>
-                                (<a href="{{ path('auth_logout') }}">Log out</a>)
-                            </p>
+                            {% if app.user %}
+                                <p class="type-body-02 mb-24">
+                                    Logged in as <strong>{{ app.user.name ?? app.user.email }}</strong>
+                                    (<a href="{{ path('auth_logout') }}">Log out</a>)
+                                </p>
+                            {% endif %}
 
                             <div class="mb-24">
                                 <dt class="type-heading-01 mb-4">Asset URL</dt>

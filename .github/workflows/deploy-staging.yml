@@ -203,4 +203,4 @@ jobs:
         run: |
           supabase link --project-ref "${SUPABASE_PROJECT_ID}"
           supabase functions deploy fetch_package
-          supabase db push
+          supabase db push --include-all
