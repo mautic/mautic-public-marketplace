@@ -14,6 +14,9 @@ final class MarketplaceControllerTest extends WebTestCase
         return $client->getCrawler()->filter('.card-group .card-group__item > a.tile--clickable');
     }
 
+    /**
+     * @return list<string>
+     */
     private function packageCardTitles(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client): array
     {
         return $this->packageCardsLinks($client)
@@ -168,6 +171,112 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('input[name="language[]"]');
+    }
+
+    public function testRatingFilterRendersThresholdOptions(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+
+        $labels = $client->getCrawler()->filter('input[name="rating"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertContains('5 stars', $labels);
+        self::assertContains('At least 4 stars', $labels);
+        self::assertContains('At least 3 stars', $labels);
+        self::assertContains('At least 2 stars', $labels);
+        self::assertContains('At least 1 star', $labels);
+        self::assertContains('Not rated yet', $labels);
+    }
+
+    public function testAccountFilterGroupIsHiddenForAnonymousUsers(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextNotContains('body', 'Tied to my account');
+        self::assertSelectorNotExists('input[name="things_i_rated[]"]');
+        self::assertSelectorNotExists('input[name="my_submitted_packages[]"]');
+    }
+
+    public function testAccountFilterGroupRendersForAuthenticatedUsers(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Tied to my account');
+        self::assertSelectorTextContains('body', 'Packages rated by me');
+        self::assertSelectorTextContains('body', 'My submitted packages');
+        self::assertSelectorExists('input[name="things_i_rated[]"][value="1"]');
+        self::assertSelectorExists('input[name="my_submitted_packages[]"][value="1"]');
+        self::assertSelectorNotExists('input[name="rated_by"]');
+    }
+
+    public function testFilteringByMinimumRating(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?rating=4');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFiveStarFilterIncludesRatingsThatRoundUp(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?rating=5');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFilteringByNotRatedYet(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?rating=unrated');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+    }
+
+    public function testFilteringByThingsIRated(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/browse?things_i_rated%5B%5D=1&rated_by=auth0%7Cother');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFilteringByMySubmittedPackages(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/browse?my_submitted_packages%5B%5D=1');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
     }
 
     public function testSortingByNameAsc(): void

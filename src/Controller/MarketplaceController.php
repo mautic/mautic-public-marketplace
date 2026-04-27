@@ -49,6 +49,14 @@ final class MarketplaceController extends AbstractController
         $query = $request->query->get('query');
         $mauticVersions = $this->normalizeMauticVersions($request->query->all()['mautic'] ?? null);
         $languages = $this->normalizeLanguages($request->query->all()['language'] ?? null);
+        $ratingFilter = $this->normalizeRatingFilter($request->query->get('rating'));
+        $minimumRating = $this->minimumRatingForFilter($ratingFilter);
+        $unratedOnly = 'unrated' === $ratingFilter;
+        $currentUser = $this->getUser();
+        $thingsIRated = null !== $currentUser && $this->isChecked($request->query->all()['things_i_rated'] ?? null);
+        $ratedBy = $thingsIRated ? $currentUser->getUserIdentifier() : null;
+        $mySubmittedPackages = null !== $currentUser && $this->isChecked($request->query->all()['my_submitted_packages'] ?? null);
+        $submittedBy = $mySubmittedPackages ? $currentUser->getUserIdentifier() : null;
         $dateRange = $request->query->get('date_range');
         $popularity = $request->query->get('popularity');
 
@@ -62,6 +70,10 @@ final class MarketplaceController extends AbstractController
                 \is_string($query) ? $query : null,
                 $mauticVersions,
                 $languages,
+                $minimumRating,
+                $unratedOnly,
+                $ratedBy,
+                $submittedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
@@ -69,6 +81,10 @@ final class MarketplaceController extends AbstractController
                 \is_string($query) ? $query : null,
                 $mauticVersions,
                 $languages,
+                $minimumRating,
+                $unratedOnly,
+                $ratedBy,
+                $submittedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
@@ -77,6 +93,10 @@ final class MarketplaceController extends AbstractController
                 \is_string($type) ? $type : null,
                 \is_string($query) ? $query : null,
                 $mauticVersions,
+                $minimumRating,
+                $unratedOnly,
+                $ratedBy,
+                $submittedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
@@ -97,6 +117,9 @@ final class MarketplaceController extends AbstractController
                     'query' => $query,
                     'mautic' => $mauticVersions,
                     'language' => $languages,
+                    'rating' => $ratingFilter,
+                    'things_i_rated' => $thingsIRated,
+                    'my_submitted_packages' => $mySubmittedPackages,
                     'date_range' => $dateRange,
                     'popularity' => $popularity,
                 ],
@@ -119,6 +142,9 @@ final class MarketplaceController extends AbstractController
                 'query' => $query,
                 'mautic' => $mauticVersions,
                 'language' => $languages,
+                'rating' => $ratingFilter,
+                'things_i_rated' => $thingsIRated,
+                'my_submitted_packages' => $mySubmittedPackages,
                 'date_range' => $dateRange,
                 'popularity' => $popularity,
             ],
@@ -146,9 +172,12 @@ final class MarketplaceController extends AbstractController
     }
 
     /**
+     * @param list<string> $mauticVersions
+     * @param list<string> $languages
+     *
      * @return array<string, int>
      */
-    private function buildTypeCounts(?string $query, array $mauticVersions, array $languages, ?string $dateRange, ?string $popularity): array
+    private function buildTypeCounts(?string $query, array $mauticVersions, array $languages, ?int $minimumRating, bool $unratedOnly, ?string $ratedBy, ?string $submittedBy, ?string $dateRange, ?string $popularity): array
     {
         $baseResult = $this->apiClient->listPackages(
             1,
@@ -159,6 +188,10 @@ final class MarketplaceController extends AbstractController
             $query,
             $mauticVersions,
             $languages,
+            $minimumRating,
+            $unratedOnly,
+            $ratedBy,
+            $submittedBy,
             $dateRange,
             $popularity,
         );
@@ -177,6 +210,10 @@ final class MarketplaceController extends AbstractController
             $query,
             $mauticVersions,
             $languages,
+            $minimumRating,
+            $unratedOnly,
+            $ratedBy,
+            $submittedBy,
             $dateRange,
             $popularity,
         );
@@ -274,5 +311,38 @@ final class MarketplaceController extends AbstractController
         }
 
         return array_values(array_unique($languages));
+    }
+
+    private function normalizeRatingFilter(mixed $value): ?string
+    {
+        if ('unrated' === $value) {
+            return 'unrated';
+        }
+
+        if (null === $value || '' === $value || !is_numeric($value)) {
+            return null;
+        }
+
+        $rating = (int) $value;
+
+        return $rating >= 1 && $rating <= 5 ? (string) $rating : null;
+    }
+
+    private function minimumRatingForFilter(?string $ratingFilter): ?int
+    {
+        if (null === $ratingFilter || 'unrated' === $ratingFilter) {
+            return null;
+        }
+
+        return (int) $ratingFilter;
+    }
+
+    private function isChecked(mixed $value): bool
+    {
+        if (\is_array($value)) {
+            return \in_array('1', $value, true);
+        }
+
+        return '1' === $value || 1 === $value || true === $value;
     }
 }

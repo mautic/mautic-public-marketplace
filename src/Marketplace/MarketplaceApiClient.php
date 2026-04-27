@@ -18,6 +18,10 @@ final class MarketplaceApiClient
     ) {
     }
 
+    /**
+     * @param list<string> $mauticVersions
+     * @param list<string> $languages
+     */
     public function listPackages(
         int $limit = 10,
         int $offset = 0,
@@ -27,6 +31,10 @@ final class MarketplaceApiClient
         ?string $query = null,
         array $mauticVersions = [],
         array $languages = [],
+        ?int $minimumRating = null,
+        bool $unratedOnly = false,
+        ?string $ratedBy = null,
+        ?string $submittedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
     ): PackageListResult {
@@ -51,6 +59,22 @@ final class MarketplaceApiClient
 
         if ([] !== $languages) {
             $params['_language'] = $languages;
+        }
+
+        if (null !== $minimumRating) {
+            $params['_minimum_rating'] = $minimumRating;
+        }
+
+        if ($unratedOnly) {
+            $params['_unrated_only'] = true;
+        }
+
+        if (null !== $ratedBy && '' !== $ratedBy) {
+            $params['_rated_by'] = $ratedBy;
+        }
+
+        if (null !== $submittedBy && '' !== $submittedBy) {
+            $params['_submitted_by'] = $submittedBy;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
@@ -96,12 +120,18 @@ final class MarketplaceApiClient
     }
 
     /**
+     * @param list<string> $mauticVersions
+     *
      * @return list<string>
      */
     public function getAvailableLanguages(
         ?string $type = null,
         ?string $query = null,
         array $mauticVersions = [],
+        ?int $minimumRating = null,
+        bool $unratedOnly = false,
+        ?string $ratedBy = null,
+        ?string $submittedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
     ): array {
@@ -117,6 +147,22 @@ final class MarketplaceApiClient
 
         if ([] !== $mauticVersions) {
             $params['_smv'] = $mauticVersions;
+        }
+
+        if (null !== $minimumRating) {
+            $params['_minimum_rating'] = $minimumRating;
+        }
+
+        if ($unratedOnly) {
+            $params['_unrated_only'] = true;
+        }
+
+        if (null !== $ratedBy && '' !== $ratedBy) {
+            $params['_rated_by'] = $ratedBy;
+        }
+
+        if (null !== $submittedBy && '' !== $submittedBy) {
+            $params['_submitted_by'] = $submittedBy;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
