@@ -29,7 +29,14 @@
                                 children: 'mautic.marketplace.header.browse_templates'
                             }
                         }
-                    ]
+                    ]|merge(app.user ? [
+                        {
+                            HeaderMenuItem: {
+                                href: path('marketplace_upload_package'),
+                                children: 'mautic.marketplace.header.upload_package'
+                            }
+                        }
+                    ] : [])
                 },
                 HeaderGlobal: {
                     children: app.user ? [
