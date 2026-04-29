@@ -3,6 +3,8 @@
 {% block title %}{{ 'mautic.marketplace.title'|trans }}{% endblock %}
 
 {% block body %}
+<div class="container mt-48">
+
     {% set current = app.request.query.all %}
     {% set orderby = filters.orderby %}
     {% set orderdir = filters.orderdir %}
@@ -159,5 +161,5 @@
             </div>
         </div>
     </form>
-
+</div>
 {% endblock %}
