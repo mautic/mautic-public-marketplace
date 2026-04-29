@@ -1,0 +1,19 @@
+<section aria-labelledby="upload-step-1-heading" class="d-flex flex-column gap-32">
+    <div class="d-flex flex-column gap-8">
+        <h2 id="upload-step-1-heading" class="type-heading-04 mb-16">{{ 'mautic.marketplace.upload.package.step.upload.heading'|trans }}</h2>
+        <p class="text-secondary type-body-02 m-0">{{ 'mautic.marketplace.upload.package.step.upload.description'|trans }}</p>
+    </div>
+<div>
+
+    {% include 'components/form-control.html.twig' with {
+        type: 'file',
+        name: 'package_zip',
+        label: 'mautic.marketplace.upload.package.field.package_zip.label'|trans,
+        required: true,
+        wrapperClass: 'd-flex flex-column',
+        helpText: 'mautic.marketplace.upload.package.field.package_zip.help'|trans,
+        attributes: {
+            accept: '.zip,application/zip'
+        }
+    } only %}
+</section>

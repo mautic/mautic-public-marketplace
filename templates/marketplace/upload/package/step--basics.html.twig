@@ -1,0 +1,72 @@
+<section aria-labelledby="upload-step-2-heading" class="d-flex flex-column gap-32">
+    <div class="row g-24">
+        <div class="col-12 col-md-6">
+            {% include 'components/form-control.html.twig' with {
+                name: 'name',
+                id: 'package-name',
+                label: 'mautic.marketplace.upload.package.field.name.label'|trans,
+                required: true,
+                placeholder: 'mautic.marketplace.upload.package.field.name.placeholder'|trans
+            } only %}
+        </div>
+        <div class="col-12 col-md-6">
+            {% include 'components/form-control.html.twig' with {
+                name: 'version',
+                id: 'package-version',
+                label: 'mautic.marketplace.upload.package.field.version.label'|trans,
+                required: true,
+                placeholder: 'mautic.marketplace.upload.package.field.version.placeholder'|trans
+            } only %}
+        </div>
+        <div class="col-12">
+            {% include 'components/select.html.twig' with {
+                name: 'category',
+                id: 'package-category',
+                label: 'mautic.marketplace.upload.package.field.category.label'|trans,
+                placeholder: 'mautic.marketplace.upload.package.field.category.placeholder'|trans,
+                options: [
+                    { value: 'analytics', label: 'mautic.marketplace.upload.package.category.analytics'|trans },
+                    { value: 'campaigns', label: 'mautic.marketplace.upload.package.category.campaigns'|trans },
+                    { value: 'crm', label: 'mautic.marketplace.upload.package.category.crm'|trans },
+                    { value: 'email', label: 'mautic.marketplace.upload.package.category.email'|trans },
+                    { value: 'integrations', label: 'mautic.marketplace.upload.package.category.integrations'|trans },
+                    { value: 'productivity', label: 'mautic.marketplace.upload.package.category.productivity'|trans }
+                ]
+            } only %}
+        </div>
+        <div class="col-12">
+            {% include 'components/form-control.html.twig' with {
+                name: 'headline',
+                id: 'package-headline',
+                label: 'mautic.marketplace.upload.package.field.headline.label'|trans,
+                required: true,
+                helpText: 'mautic.marketplace.upload.package.field.headline.help'|trans,
+                placeholder: 'mautic.marketplace.upload.package.field.headline.placeholder'|trans,
+                attributes: {
+                    maxlength: '60'
+                },
+                validation: {
+                    rules: [{ type: 'maxlength', value: 60 }]
+                }
+            } only %}
+        </div>
+        <div class="col-12">
+            {% include 'components/form-control.html.twig' with {
+                name: 'keywords',
+                id: 'package-keywords',
+                label: 'mautic.marketplace.upload.package.field.keywords.label'|trans,
+                helpText: 'mautic.marketplace.upload.package.field.keywords.help'|trans,
+                placeholder: 'mautic.marketplace.upload.package.field.keywords.placeholder'|trans
+            } only %}
+            <div class="mt-12">
+                {% include 'components/tags.html.twig' with {
+                    tags: [
+                        { label: 'mautic.marketplace.upload.package.keyword.email'|trans },
+                        { label: 'mautic.marketplace.upload.package.keyword.crm'|trans },
+                        { label: 'mautic.marketplace.upload.package.keyword.automation'|trans }
+                    ]
+                } only %}
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,100 @@
+<section aria-labelledby="upload-step-3-heading" class="d-flex flex-column gap-32">
+    <div class="row g-24">
+        <div class="col-12">
+            {% include 'components/form-control.html.twig' with {
+                type: 'textarea',
+                name: 'description',
+                id: 'package-description',
+                label: 'mautic.marketplace.upload.package.field.description.label'|trans,
+                required: true,
+                rows: 8,
+                helpText: 'mautic.marketplace.upload.package.field.description.help'|trans,
+                placeholder: 'mautic.marketplace.upload.package.field.description.placeholder'|trans,
+                attributes: {
+                    minlength: '150'
+                },
+                validation: {
+                    rules: [{ type: 'minlength', value: 150 }]
+                }
+            } only %}
+        </div>
+        <div class="col-12 col-lg-6">
+            {% include 'components/select.html.twig' with {
+                name: 'languages[]',
+                id: 'package-languages',
+                label: 'mautic.marketplace.upload.package.field.languages.label'|trans,
+                helpText: 'mautic.marketplace.upload.package.field.languages.help'|trans,
+                multiple: true,
+                options: [
+                    { value: 'en', label: 'mautic.marketplace.upload.package.language.english'|trans },
+                    { value: 'es', label: 'mautic.marketplace.upload.package.language.spanish'|trans },
+                    { value: 'fr', label: 'mautic.marketplace.upload.package.language.french'|trans },
+                    { value: 'de', label: 'mautic.marketplace.upload.package.language.german'|trans },
+                    { value: 'pt-br', label: 'mautic.marketplace.upload.package.language.portuguese_brazil'|trans },
+                    { value: 'it', label: 'mautic.marketplace.upload.package.language.italian'|trans }
+                ],
+                attributes: {
+                    size: '6'
+                }
+            } only %}
+        </div>
+        <div class="col-12 col-lg-6">
+            {% include 'components/checkbox.html.twig' with {
+                name: 'works_with[]',
+                legend: 'mautic.marketplace.upload.package.field.works_with.legend'|trans,
+                required: true,
+                helpText: 'mautic.marketplace.upload.package.field.works_with.help'|trans,
+                items: [
+                    { label: 'mautic.marketplace.upload.package.field.works_with.mautic_7'|trans, value: '7.x', name: 'works_with[]' },
+                    { label: 'mautic.marketplace.upload.package.field.works_with.mautic_6'|trans, value: '6.x', name: 'works_with[]' },
+                    { label: 'mautic.marketplace.upload.package.field.works_with.mautic_5'|trans, value: '5.x', name: 'works_with[]' }
+                ]
+            } only %}
+        </div>
+        <div class="col-12">
+            {% include 'components/form-control.html.twig' with {
+                type: 'file',
+                name: 'banner_image',
+                id: 'package-banner-image',
+                label: 'mautic.marketplace.upload.package.field.banner_image.label'|trans,
+                helpText: 'mautic.marketplace.upload.package.field.banner_image.help'|trans,
+                attributes: {
+                    accept: 'image/png,image/jpeg,image/webp'
+                }
+            } only %}
+        </div>
+        <div class="col-12 d-flex flex-column gap-16">
+            <div>
+                {% include 'components/form-control.html.twig' with {
+                    type: 'file',
+                    name: 'gallery_images[]',
+                    id: 'package-gallery-images',
+                    label: 'mautic.marketplace.upload.package.field.gallery_images.label'|trans,
+                    helpText: 'mautic.marketplace.upload.package.field.gallery_images.help'|trans,
+                    attributes: {
+                        accept: 'image/png,image/jpeg,image/webp',
+                        multiple: 'multiple'
+                    }
+                } only %}
+            </div>
+            <div class="row g-16">
+                <div class="col-12 col-lg-6">
+                    {% include 'components/form-control.html.twig' with {
+                        name: 'gallery_alt_text[0]',
+                        id: 'package-gallery-alt-0',
+                        label: 'mautic.marketplace.upload.package.field.gallery_alt_1.label'|trans,
+                        placeholder: 'mautic.marketplace.upload.package.field.gallery_alt.placeholder'|trans
+                    } only %}
+                </div>
+                <div class="col-12 col-lg-6">
+                    {% include 'components/form-control.html.twig' with {
+                        name: 'gallery_alt_text[1]',
+                        id: 'package-gallery-alt-1',
+                        label: 'mautic.marketplace.upload.package.field.gallery_alt_2.label'|trans,
+                        placeholder: 'mautic.marketplace.upload.package.field.gallery_alt.placeholder'|trans
+                    } only %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
