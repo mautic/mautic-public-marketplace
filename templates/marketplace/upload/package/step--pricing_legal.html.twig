@@ -6,6 +6,7 @@
                 id: 'package-license-type',
                 label: 'mautic.marketplace.upload.package.field.license_type.label'|trans,
                 placeholder: 'mautic.marketplace.upload.package.field.license_type.placeholder'|trans,
+                required: true,
                 options: [
                     { value: 'mit', label: 'mautic.marketplace.upload.package.license.mit'|trans },
                     { value: 'gpl-3.0', label: 'mautic.marketplace.upload.package.license.gpl_3'|trans },
@@ -23,6 +24,7 @@
                 control: {
                     name: 'price',
                     type: 'number',
+                    required: true,
                     placeholder: '0.00',
                     attributes: {
                         min: '0',

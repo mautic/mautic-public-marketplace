@@ -6,7 +6,10 @@
                 id: 'package-name',
                 label: 'mautic.marketplace.upload.package.field.name.label'|trans,
                 required: true,
-                placeholder: 'mautic.marketplace.upload.package.field.name.placeholder'|trans
+                placeholder: 'mautic.marketplace.upload.package.field.name.placeholder'|trans,
+                validation: {
+                    rules: ['notBlank']
+                }
             } only %}
         </div>
         <div class="col-12 col-md-6">
@@ -15,7 +18,16 @@
                 id: 'package-version',
                 label: 'mautic.marketplace.upload.package.field.version.label'|trans,
                 required: true,
-                placeholder: 'mautic.marketplace.upload.package.field.version.placeholder'|trans
+                placeholder: 'mautic.marketplace.upload.package.field.version.placeholder'|trans,
+                attributes: {
+                    pattern: '[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?'
+                },
+                validation: {
+                    rules: ['notBlank'],
+                    messages: {
+                        patternMismatch: 'mautic.marketplace.upload.package.validation.version.pattern'|trans
+                    }
+                }
             } only %}
         </div>
         <div class="col-12">
@@ -23,6 +35,7 @@
                 name: 'category',
                 id: 'package-category',
                 label: 'mautic.marketplace.upload.package.field.category.label'|trans,
+                required: true,
                 placeholder: 'mautic.marketplace.upload.package.field.category.placeholder'|trans,
                 options: [
                     { value: 'analytics', label: 'mautic.marketplace.upload.package.category.analytics'|trans },
@@ -46,7 +59,7 @@
                     maxlength: '60'
                 },
                 validation: {
-                    rules: [{ type: 'maxlength', value: 60 }]
+                    rules: ['notBlank']
                 }
             } only %}
         </div>

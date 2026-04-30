@@ -14,7 +14,10 @@
                     minlength: '150'
                 },
                 validation: {
-                    rules: [{ type: 'minlength', value: 150 }]
+                    rules: ['notBlank'],
+                    messages: {
+                        tooShort: 'mautic.marketplace.upload.package.validation.description.min_length'|trans({'%count%': 150})
+                    }
                 }
             } only %}
         </div>
@@ -25,6 +28,7 @@
                 label: 'mautic.marketplace.upload.package.field.languages.label'|trans,
                 helpText: 'mautic.marketplace.upload.package.field.languages.help'|trans,
                 multiple: true,
+                required: true,
                 options: [
                     { value: 'en', label: 'mautic.marketplace.upload.package.language.english'|trans },
                     { value: 'es', label: 'mautic.marketplace.upload.package.language.spanish'|trans },
@@ -60,6 +64,12 @@
                 helpText: 'mautic.marketplace.upload.package.field.banner_image.help'|trans,
                 attributes: {
                     accept: 'image/png,image/jpeg,image/webp'
+                },
+                validation: {
+                    rules: ['fileTypes(png,jpg,jpeg,webp,image/png,image/jpeg,image/webp)'],
+                    messages: {
+                        fileTypes: 'mautic.marketplace.upload.package.validation.image.file_type'|trans
+                    }
                 }
             } only %}
         </div>
@@ -74,6 +84,13 @@
                     attributes: {
                         accept: 'image/png,image/jpeg,image/webp',
                         multiple: 'multiple'
+                    },
+                    validation: {
+                        rules: ['fileTypes(png,jpg,jpeg,webp,image/png,image/jpeg,image/webp)', 'maxFiles(2)'],
+                        messages: {
+                            fileTypes: 'mautic.marketplace.upload.package.validation.image.file_type'|trans,
+                            maxFiles: 'mautic.marketplace.upload.package.validation.gallery_images.max_files'|trans({'%count%': 2})
+                        }
                     }
                 } only %}
             </div>
@@ -83,7 +100,13 @@
                         name: 'gallery_alt_text[0]',
                         id: 'package-gallery-alt-0',
                         label: 'mautic.marketplace.upload.package.field.gallery_alt_1.label'|trans,
-                        placeholder: 'mautic.marketplace.upload.package.field.gallery_alt.placeholder'|trans
+                        placeholder: 'mautic.marketplace.upload.package.field.gallery_alt.placeholder'|trans,
+                        validation: {
+                            rules: ['requiresFileAltText(package-gallery-images,0)'],
+                            messages: {
+                                requiresFileAltText: 'mautic.marketplace.upload.package.validation.gallery_alt.required'|trans
+                            }
+                        }
                     } only %}
                 </div>
                 <div class="col-12 col-lg-6">
@@ -91,7 +114,13 @@
                         name: 'gallery_alt_text[1]',
                         id: 'package-gallery-alt-1',
                         label: 'mautic.marketplace.upload.package.field.gallery_alt_2.label'|trans,
-                        placeholder: 'mautic.marketplace.upload.package.field.gallery_alt.placeholder'|trans
+                        placeholder: 'mautic.marketplace.upload.package.field.gallery_alt.placeholder'|trans,
+                        validation: {
+                            rules: ['requiresFileAltText(package-gallery-images,1)'],
+                            messages: {
+                                requiresFileAltText: 'mautic.marketplace.upload.package.validation.gallery_alt.required'|trans
+                            }
+                        }
                     } only %}
                 </div>
             </div>

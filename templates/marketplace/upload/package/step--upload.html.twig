@@ -8,12 +8,20 @@
     {% include 'components/form-control.html.twig' with {
         type: 'file',
         name: 'package_zip',
+        id: 'package-zip',
         label: 'mautic.marketplace.upload.package.field.package_zip.label'|trans,
         required: true,
         wrapperClass: 'd-flex flex-column',
         helpText: 'mautic.marketplace.upload.package.field.package_zip.help'|trans,
         attributes: {
             accept: '.zip,application/zip'
+        },
+        validation: {
+            rules: ['fileTypes(zip,application/zip,application/x-zip-compressed)'],
+            messages: {
+                fileTypes: 'mautic.marketplace.upload.package.validation.package_zip.file_type'|trans
+            }
         }
     } only %}
+    </div>
 </section>
