@@ -24,7 +24,9 @@
 
 <div class="{% if wrapperClass %}{{ wrapperClass }}{% endif %}">
     {% if label %}
-        <label for="{{ control.id|default(id ~ '-control') }}" class="form-label">{{ label|trans }}</label>
+        <label for="{{ control.id|default(id ~ '-control') }}" class="form-label">
+            {{ control.required|default(false) ? 'mautic.marketplace.forms.field.required'|trans({'%fieldLabel%': label|trans}) : label|trans }}
+        </label>
     {% endif %}
 
     <div
