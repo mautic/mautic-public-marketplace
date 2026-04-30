@@ -40,6 +40,23 @@ final class SupabaseClient
     }
 
     /**
+     * @param array<string, mixed> $query
+     */
+    public function queryPrivate(string $method, string $path, array $query): mixed
+    {
+        $response = $this->httpClient->request($method, $this->baseUri.$path, [
+            'query' => $query,
+            'headers' => [
+                'Accept' => 'application/json',
+                'apikey' => $this->serviceRoleKey,
+                'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
+            ],
+        ]);
+
+        return $this->decodeResponse($response);
+    }
+
+    /**
      * @param array<string, mixed> $body
      */
     public function rpc(string $path, array $body): mixed
