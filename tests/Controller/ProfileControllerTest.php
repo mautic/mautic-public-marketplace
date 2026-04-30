@@ -30,8 +30,14 @@ final class ProfileControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'test@example.com');
         self::assertSelectorTextContains('body', 'Your reviews');
         self::assertSelectorTextContains('body', 'Great plugin!');
-        self::assertSelectorTextContains('body', 'My packages');
+        self::assertSelectorTextContains('#profile-download-history-tab', 'Download history');
+        self::assertSelectorExists('#profile-download-history-tab.active');
+        self::assertSelectorTextContains('#profile-uploaded-packages-tab', 'Uploaded packages');
+        self::assertSelectorTextContains('#profile-download-history', 'Alpha Plugin');
+        self::assertSelectorTextContains('#profile-download-history', 'Version 1.0.0');
+        self::assertSelectorExists('#profile-download-history a[href="/package/mautic/alpha-plugin"]');
         self::assertSelectorTextContains('body', 'Example Plugin');
+        self::assertSelectorExists('#profile-uploaded-packages a[href="/package/mautic/example-plugin"]');
         self::assertSelectorExists('a[href="/auth/logout"]');
     }
 }
