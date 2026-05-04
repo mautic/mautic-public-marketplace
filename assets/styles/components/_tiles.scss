@@ -148,18 +148,6 @@
     cursor: pointer;
 }
 
-.nav-tabs-contained + .tab-content {
-    .tile {
-        background-color: var(--layer-02);
-
-        &.tile-clickable,
-        &.tile-selectable {
-            &:hover { background: var(--layer-hover-02); }
-        }
-    }
-}
-
-
 .card .card__wrapper,
 .card .card__wrapper[aspect-ratio="2:1"] {
     display: flex;
