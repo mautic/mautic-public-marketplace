@@ -30,6 +30,28 @@ review_submit:
     requirements:
         package: .+
 
+api_package_parse_composer:
+    path: /api/package/parse-composer
+    controller: App\Controller\Api\ParseComposerApiController::parse
+    methods: [POST]
+
+api_package_submit:
+    path: /api/package/submit
+    controller: App\Controller\Api\SubmitApiController::submit
+    methods: [POST]
+
+api_mautic_versions:
+    path: /api/mautic-versions
+    controller: App\Controller\Api\MauticVersionsApiController::list
+    methods: [GET]
+
+api_package_submission_status:
+    path: /api/package/{package}/submission-status
+    controller: App\Controller\Api\SubmissionStatusApiController::status
+    methods: [GET]
+    requirements:
+        package: .+
+
 marketplace_detail:
     path: /package/{package}
     controller: App\Controller\MarketplaceController::detail

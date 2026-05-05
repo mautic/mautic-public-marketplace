@@ -17,3 +17,5 @@ security:
     access_control:
         - { path: ^/profile$, roles: ROLE_USER }
         - { path: ^/package/.+/review$, roles: ROLE_USER }
+        - { path: ^/upload/package, roles: ROLE_USER }
+        - { path: ^/api/package, roles: ROLE_USER }

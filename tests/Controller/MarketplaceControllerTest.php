@@ -34,9 +34,18 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertPageTitleContains('Mautic Marketplace');
     }
 
-    public function testPackageUploadPageLoads(): void
+    public function testPackageUploadPageRedirectsAnonymousUsers(): void
     {
         $client = self::createClient();
+        $client->request('GET', '/upload/package');
+
+        self::assertResponseRedirects('/auth/login?returnTo=/upload/package');
+    }
+
+    public function testPackageUploadPageLoadsForAuthenticatedUsers(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/upload/package');
 
         self::assertResponseIsSuccessful();
