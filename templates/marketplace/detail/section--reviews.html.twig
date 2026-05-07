@@ -135,6 +135,7 @@
                     variant: 'tertiary',
                     icon: 'ri-login-box-line',
                     href: path('auth_login', { returnTo: app.request.requestUri }),
+                    attributes: { 'data-turbo': 'false' },
                 }]
             } only %}
         {% endif %}
