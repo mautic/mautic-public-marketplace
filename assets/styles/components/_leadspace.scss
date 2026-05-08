@@ -94,6 +94,14 @@
     block-size: auto;
     min-block-size: 560px;
   }
+
+  .image__img {
+    display: block;
+    block-size: 100%;
+    inline-size: 100%;
+    object-fit: cover;
+    object-position: right;
+  }
 }
 
 .leadspace__action {
@@ -119,13 +127,6 @@
 .background-media--mobile-position,
 .background-media--item {
   block-size: 100%;
-}
-
-.image__img {
-  display: block;
-  block-size: 100%;
-  inline-size: 100%;
-  object-fit: cover;
 }
 
 @media (min-width: breakpoint-min(lg)) {

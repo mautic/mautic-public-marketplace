@@ -14,8 +14,12 @@
     {% include 'components/lead-space.html.twig' with {
         variant: 'short',
         heading: 'mautic.marketplace.browse.leadspace.heading',
-        gradientStyleScheme: 'without-gradient',
-        gradientStyleSchemeColor: '#f1edea',
+        gradientStyleScheme: 'with-gradient',
+        gradientStyleSchemeColor: '#3c5395',
+        media: {
+            src: 'assets/images/mautinaut.jpeg',
+            alt: 'mautic.marketplace.browse.leadspace.image_alt'
+        }
     } %}
 
     {% if error %}
