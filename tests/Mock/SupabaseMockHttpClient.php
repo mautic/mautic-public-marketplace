@@ -62,6 +62,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'maintainers' => 'escopecz',
                 'smv' => '^5.0 || ^5.1',
                 'language' => 'en',
+                'keywords' => ['example', 'plugin', 'local-development'],
                 'average_rating' => 4.7,
                 'total_review' => 2,
                 'auth0_user_id' => 'auth0|test123',
@@ -78,6 +79,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'maintainers' => 'rcheesley',
                 'smv' => '^4.3 || ^5.0',
                 'language' => 'English',
+                'keywords' => ['alpha', 'plugin', 'sorting'],
                 'average_rating' => 3.0,
                 'total_review' => 1,
                 'auth0_user_id' => null,
@@ -94,6 +96,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'maintainers' => 'escopecz',
                 'smv' => '^4.4 || ^5.0 || ^5.2',
                 'language' => 'nl',
+                'keywords' => ['theme', 'zebra', 'responsive'],
                 'average_rating' => 4.0,
                 'total_review' => 1,
                 'auth0_user_id' => 'auth0|other',
@@ -110,6 +113,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'maintainers' => 'rcheesley',
                 'smv' => '^4.2 || ^5.3',
                 'language' => 'Nederlands',
+                'keywords' => ['campaign', 'welcome', 'resource', 'automation'],
                 'average_rating' => 0,
                 'total_review' => 0,
                 'auth0_user_id' => 'auth0|test123',
@@ -131,11 +135,15 @@ final class SupabaseMockHttpClient extends MockHttpClient
             $rows = array_values(array_filter($rows, static fn (array $r): bool => ($r['type'] ?? '') === $type));
         }
 
-        // Filter by query (searches both name and maintainers)
         if (isset($params['_query']) && '' !== $params['_query']) {
             $q = strtolower($params['_query']);
-            $rows = array_values(array_filter($rows, static fn (array $r): bool => str_contains(strtolower($r['name']), $q)
-                || str_contains(strtolower($r['maintainers'] ?? ''), $q)));
+            $rows = array_values(array_filter($rows, static function (array $r) use ($q): bool {
+                $keywords = \is_array($r['keywords'] ?? null) ? implode(' ', $r['keywords']) : '';
+
+                return str_contains(strtolower($r['name']), $q)
+                    || str_contains(strtolower($r['maintainers'] ?? ''), $q)
+                    || str_contains(strtolower($keywords), $q);
+            }));
         }
 
         // Filter by SMV
@@ -556,8 +564,13 @@ final class SupabaseMockHttpClient extends MockHttpClient
 
         if (isset($params['_query']) && '' !== $params['_query']) {
             $q = strtolower($params['_query']);
-            $rows = array_values(array_filter($rows, static fn (array $r): bool => str_contains(strtolower($r['name']), $q)
-                || str_contains(strtolower($r['maintainers'] ?? ''), $q)));
+            $rows = array_values(array_filter($rows, static function (array $r) use ($q): bool {
+                $keywords = \is_array($r['keywords'] ?? null) ? implode(' ', $r['keywords']) : '';
+
+                return str_contains(strtolower($r['name']), $q)
+                    || str_contains(strtolower($r['maintainers'] ?? ''), $q)
+                    || str_contains(strtolower($keywords), $q);
+            }));
         }
 
         $selectedVersions = self::normalizeSelectedVersions($params['_smv'] ?? null);
