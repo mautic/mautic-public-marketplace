@@ -291,6 +291,24 @@ final class MarketplaceApiClient
         return $data;
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getUserDownloadHistory(string $auth0UserId): array
+    {
+        $data = $this->supabaseClient->queryPrivate('GET', '/rest/v1/download_history', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
+            'select' => 'id,package_name,package_version,downloaded_at,package:packages(name,displayname,description,type)',
+            'order' => 'downloaded_at.desc',
+        ]);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        return $data;
+    }
+
     public function submitReview(string $packageName, string $userId, string $userName, ?string $picture, ReviewRequest $reviewRequest): void
     {
         $this->supabaseClient->mutate('POST', '/rest/v1/reviews', [
