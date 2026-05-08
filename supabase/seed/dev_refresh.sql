@@ -148,6 +148,14 @@ BEGIN
             'description', p.description,
             'time', p.time,
             'maintainers', p.maintainers,
+            'tags', (
+                SELECT v.keywords
+                FROM versions v
+                WHERE v.package_name = p.name
+                  AND v.keywords IS NOT NULL
+                ORDER BY v.time DESC NULLS LAST
+                LIMIT 1
+            ),
             'versions', (
                 SELECT jsonb_object_agg(
                     v.version,
