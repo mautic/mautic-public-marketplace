@@ -20,6 +20,10 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 return self::userReviewsResponse($url);
             }
 
+            if ('GET' === $method && str_contains($url, '/rest/v1/download_history') && !str_contains($url, '/rpc/')) {
+                return self::downloadHistoryResponse($url);
+            }
+
             if ('GET' === $method && str_contains($url, '/rest/v1/packages') && !str_contains($url, '/rpc/')) {
                 return self::userPackagesResponse($url);
             }
@@ -70,7 +74,7 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'repository' => 'https://github.com/mautic/alpha-plugin',
                 'downloads' => 10,
                 'favers' => 2,
-                'time' => (new \DateTimeImmutable('-60 days'))->format('c'),
+                'time' => (new \DateTimeImmutable('first day of this month -2 months'))->format('c'),
                 'maintainers' => 'rcheesley',
                 'smv' => '^4.3 || ^5.0',
                 'language' => 'English',
@@ -390,6 +394,64 @@ final class SupabaseMockHttpClient extends MockHttpClient
         ];
 
         $filtered = array_values(array_filter($allPackages, static fn (array $package): bool => $package['auth0_user_id'] === $userId));
+
+        return new MockResponse(
+            json_encode($filtered),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
+    private static function downloadHistoryResponse(string $url): MockResponse
+    {
+        $params = self::parseParams($url, 'GET', []);
+        $userId = $params['auth0_user_id'] ?? '';
+        $userId = str_replace('eq.', '', $userId);
+        $packages = self::allPackages();
+        $allHistory = [
+            [
+                'id' => 1,
+                'auth0_user_id' => 'auth0|test123',
+                'package_name' => 'mautic/alpha-plugin',
+                'package_version' => '1.0.0',
+                'downloaded_at' => (new \DateTimeImmutable('-1 day'))->format('c'),
+                'package' => [
+                    'name' => $packages['mautic/alpha-plugin']['name'],
+                    'displayname' => $packages['mautic/alpha-plugin']['displayname'],
+                    'description' => $packages['mautic/alpha-plugin']['description'],
+                    'type' => $packages['mautic/alpha-plugin']['type'],
+                ],
+            ],
+            [
+                'id' => 2,
+                'auth0_user_id' => 'auth0|test123',
+                'package_name' => 'mautic/example-plugin',
+                'package_version' => null,
+                'downloaded_at' => (new \DateTimeImmutable('-4 days'))->format('c'),
+                'package' => [
+                    'name' => $packages['mautic/example-plugin']['name'],
+                    'displayname' => $packages['mautic/example-plugin']['displayname'],
+                    'description' => $packages['mautic/example-plugin']['description'],
+                    'type' => $packages['mautic/example-plugin']['type'],
+                ],
+            ],
+            [
+                'id' => 3,
+                'auth0_user_id' => 'auth0|other',
+                'package_name' => 'mautic/zebra-theme',
+                'package_version' => null,
+                'downloaded_at' => (new \DateTimeImmutable('-2 days'))->format('c'),
+                'package' => [
+                    'name' => $packages['mautic/zebra-theme']['name'],
+                    'displayname' => $packages['mautic/zebra-theme']['displayname'],
+                    'description' => $packages['mautic/zebra-theme']['description'],
+                    'type' => $packages['mautic/zebra-theme']['type'],
+                ],
+            ],
+        ];
+
+        $filtered = array_values(array_filter($allHistory, static fn (array $historyItem): bool => $historyItem['auth0_user_id'] === $userId));
+
+        usort($filtered, static fn (array $a, array $b): int => strtotime($b['downloaded_at']) <=> strtotime($a['downloaded_at']));
 
         return new MockResponse(
             json_encode($filtered),

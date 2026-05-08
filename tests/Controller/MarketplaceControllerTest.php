@@ -359,8 +359,8 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorExists('a#tag-v5-0 span[data-bs-toggle="tooltip"][title="Supported Mautic version"]');
         self::assertSelectorTextContains('body', 'v4.3+');
         self::assertSelectorTextContains('body', 'v5.0+');
-        self::assertSelectorTextContains('time', 'month ago');
-        self::assertSelectorExists(\sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+        self::assertSelectorTextContains('time', '2 months ago');
+        self::assertSelectorExists(\sprintf('i[title="%s"]', (new \DateTimeImmutable('first day of this month -2 months'))->format('Y-m-d')));
         self::assertSelectorExists('a[href="/auth/login?returnTo=/package/mautic/alpha-plugin"]');
     }
 

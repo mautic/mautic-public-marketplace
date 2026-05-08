@@ -37,14 +37,16 @@
     {% if heading is defined %}
         <div class="card__heading-wrapper">
             <h3 class="card-heading
-                {% if type == 'feature--large' %}
-                    type-fluid-heading-04 mb-32
-                {% else %}
-                    type-heading-0{{ type == 'link' ? '2' : '3' }}
-                    {% if type != 'pictogram' and type != 'link' %}
-                        mb-32
-                    {% endif %}
-                {% endif %}
+                {{ type == 'feature--large' 
+                    ? 'type-fluid-heading-04 mb-32' 
+                    : type == 'mini' 
+                        ? 'type-body-compact-01 mb-0' 
+                        : type == 'link' 
+                            ? 'type-heading-02' 
+                            : type == 'pictogram'
+                                ? 'type-heading-03'
+                                : 'type-heading-03 mb-32'
+                }}
                 text-break">{{ heading|trans }}</h3>
         </div>
     {% endif %}
@@ -76,7 +78,8 @@
 
 {% set common_icon_content %}
     {% if icon is defined %}
-        <i class="{{ ctaIcons[ctaType] }} link-primary ri-lg ms-auto" aria-hidden="true"></i>
+        <i class="{{ type == 'mini' ? icon : ctaIcons[ctaType] }} link-primary {{ type == 'mini' ? 'ri-xl' : 'ri-lg' }} ms-auto" aria-hidden="true"></i>
+   
     {% endif %}
 {% endset %}
 
@@ -277,4 +280,22 @@
             icon: ctaIcons[ctaType],
             attributes: common_newtab_attributes,
         } %}
+
+    {# === MINI TYPE === #}
+    {% elseif type == 'mini' %}
+        {% set cardContent %}
+            <div class="card__content">
+                <div class="d-flex jc-space-between align-items-center gap-16">
+                    {{ common_heading_content }}
+                    {{ common_icon_content }}
+                </div>
+            </div>
+        {% endset %}
+        {% include 'components/tile.html.twig' with {
+            type: 'clickable',
+            content: cardContent,
+            className: 'card p-0 card--link justify-content-center' ~ (className is defined and className is not empty ? ' ' ~ className : ''),
+            href: href|default(null),
+            attributes: (attributes|default({}))|merge(common_newtab_attributes),
+        } only %}
     {% endif %}
