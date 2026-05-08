@@ -354,8 +354,11 @@
         grid-template-rows: subgrid;
         -webkit-margin-after: var(--card-group--row-gap);
         margin-block-end: var(--card-group--row-gap);
-        outline: 1px solid var(--border-tile-01, #c6c6c6);
-        outline-offset: 0;
+
+        &:is(a, button) {
+            outline: 1px solid var(--border-tile, #c6c6c6);
+            outline-offset: 0;
+        }
 
         .card__wrapper {
             display: grid;
