@@ -31,11 +31,7 @@
 >
     {% if legend %}
         <legend class="form-label type-label-01 mb-2">
-            {% if required %}
-                {{ 'mautic.marketplace.forms.field.required'|trans({'%fieldLabel%': legend|trans}) }}
-            {% else %}
-                {{ legend|trans }}
-            {% endif %}
+            {{ required ? 'mautic.marketplace.forms.field.required'|trans({'%fieldLabel%': legend|trans}) : legend|trans }}
         </legend>
     {% endif %}
 

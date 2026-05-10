@@ -21,6 +21,7 @@ Conventions
 - Prefer small, incremental changes with clear commit boundaries.
 - Keep templates accessible and responsive.
 - Avoid heavy JS frameworks unless necessary.
+- Use inline Twig ternaries instead of if statements where possible.
 
 Commands
 - Execute using ddev exec
