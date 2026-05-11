@@ -12,6 +12,36 @@ const VALIDITY_ORDER = [
 const FIELD_SELECTOR = '[data-validation-group], [data-validation-field]';
 
 const CUSTOM_RULES = {
+    fileTypes({ target, args }) {
+        const input = target.focusElement;
+
+        if (!input?.files || 0 === input.files.length) {
+            return true;
+        }
+
+        const allowed = args.map((value) => value.toLowerCase()).filter(Boolean);
+
+        if (0 === allowed.length) {
+            return true;
+        }
+
+        return Array.from(input.files).every((file) => {
+            const fileType = file.type.toLowerCase();
+            const fileName = file.name.toLowerCase();
+
+            return allowed.some((type) => fileType === type || fileName.endsWith(type.startsWith('.') ? type : `.${type}`));
+        });
+    },
+    maxFiles({ target, args }) {
+        const input = target.focusElement;
+        const max = Number.parseInt(args[0] ?? '', 10);
+
+        if (!Number.isFinite(max) || !input?.files) {
+            return true;
+        }
+
+        return input.files.length <= max;
+    },
     maxWords({ value, args }) {
         const max = Number.parseInt(args[0] ?? '', 10);
 
@@ -39,6 +69,17 @@ const CUSTOM_RULES = {
         const rating = Number.parseInt(normalizeStringValue(value), 10);
 
         return rating >= 1 && rating <= 5;
+    },
+    requiresFileAltText({ value, args }) {
+        const [fileInputId, indexValue] = args;
+        const fileInput = document.getElementById(fileInputId);
+        const index = Number.parseInt(indexValue ?? '', 10);
+
+        if (!fileInput?.files || !Number.isFinite(index) || fileInput.files.length <= index) {
+            return true;
+        }
+
+        return '' !== normalizeStringValue(value).trim();
     },
     regex({ value, args }) {
         const normalized = normalizeStringValue(value);

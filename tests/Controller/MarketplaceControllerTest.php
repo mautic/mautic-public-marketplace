@@ -14,6 +14,9 @@ final class MarketplaceControllerTest extends WebTestCase
         return $client->getCrawler()->filter('.card-group .card-group__item > a.tile--clickable');
     }
 
+    /**
+     * @return list<string>
+     */
     private function packageCardTitles(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client): array
     {
         return $this->packageCardsLinks($client)
@@ -38,8 +41,52 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Upload a package');
-        self::assertSelectorExists('#package-upload-form-placeholder');
+        self::assertSelectorExists('form.needs-validation[novalidate]');
+        self::assertSelectorExists('#package-zip[required][data-validation-field]');
         self::assertPageTitleContains('Upload package');
+    }
+
+    public function testPackageUploadBasicsStepRendersValidationAttributes(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/upload/package?step=2');
+        $crawler = $client->getCrawler();
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form.needs-validation[novalidate]');
+        self::assertSelectorExists('#package-name[required][data-validation-field]');
+        self::assertStringContainsString('notBlank', (string) $crawler->filter('#package-name')->attr('data-validation-rules'));
+        self::assertSelectorExists('#package-version[required][pattern][data-validation-field]');
+        self::assertSelectorExists('#package-category[required][data-validation-field]');
+        self::assertSelectorExists('#package-headline[required][maxlength="60"][data-validation-field]');
+    }
+
+    public function testPackageUploadDetailsStepRendersValidationAttributes(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/upload/package?step=3');
+        $crawler = $client->getCrawler();
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form.needs-validation[novalidate]');
+        self::assertSelectorExists('#package-description[required][minlength="150"][data-validation-field]');
+        self::assertSelectorExists('#package-languages[required][multiple][data-validation-field]');
+        self::assertSelectorExists('fieldset[data-validation-name="works_with[]"][data-validation-required="true"]');
+        self::assertStringContainsString('fileTypes', (string) $crawler->filter('#package-banner-image')->attr('data-validation-rules'));
+        self::assertStringContainsString('maxFiles', (string) $crawler->filter('#package-gallery-images')->attr('data-validation-rules'));
+        self::assertStringContainsString('requiresFileAltText', (string) $crawler->filter('#package-gallery-alt-0')->attr('data-validation-rules'));
+    }
+
+    public function testPackageUploadPricingLegalStepRendersValidationAttributes(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/upload/package?step=4');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form.needs-validation[novalidate]');
+        self::assertSelectorExists('#package-license-type[required][data-validation-field]');
+        self::assertSelectorExists('#package-price-control[required][min="0"][step="0.01"][data-validation-field]');
+        self::assertSelectorExists('fieldset[data-validation-name="legal_confirmation[]"][data-validation-required="true"]');
     }
 
     public function testBrowsePageLoads(): void
@@ -49,6 +96,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('h1');
+        self::assertSelectorExists('input[name="query"][placeholder="Search packages, maintainers, or tags"]');
         self::assertSelectorExists('a[href="/auth/login?returnTo=/browse"]');
     }
 
@@ -170,6 +218,112 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorNotExists('input[name="language[]"]');
     }
 
+    public function testRatingFilterRendersThresholdOptions(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+
+        $labels = $client->getCrawler()->filter('input[name="rating"] + label')
+            ->each(static fn ($node): string => trim($node->text()));
+
+        self::assertContains('5 stars', $labels);
+        self::assertContains('At least 4 stars', $labels);
+        self::assertContains('At least 3 stars', $labels);
+        self::assertContains('At least 2 stars', $labels);
+        self::assertContains('At least 1 star', $labels);
+        self::assertContains('Not rated yet', $labels);
+    }
+
+    public function testAccountFilterGroupIsHiddenForAnonymousUsers(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextNotContains('body', 'Tied to my account');
+        self::assertSelectorNotExists('input[name="things_i_rated[]"]');
+        self::assertSelectorNotExists('input[name="my_submitted_packages[]"]');
+    }
+
+    public function testAccountFilterGroupRendersForAuthenticatedUsers(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Tied to my account');
+        self::assertSelectorTextContains('body', 'Packages rated by me');
+        self::assertSelectorTextContains('body', 'My submitted packages');
+        self::assertSelectorExists('input[name="things_i_rated[]"][value="1"]');
+        self::assertSelectorExists('input[name="my_submitted_packages[]"][value="1"]');
+        self::assertSelectorNotExists('input[name="rated_by"]');
+    }
+
+    public function testFilteringByMinimumRating(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?rating=4');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFiveStarFilterIncludesRatingsThatRoundUp(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?rating=5');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFilteringByNotRatedYet(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?rating=unrated');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+    }
+
+    public function testFilteringByThingsIRated(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/browse?things_i_rated%5B%5D=1&rated_by=auth0%7Cother');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Welcome Campaign');
+    }
+
+    public function testFilteringByMySubmittedPackages(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/browse?my_submitted_packages%5B%5D=1');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
+    }
+
     public function testSortingByNameAsc(): void
     {
         $client = self::createClient();
@@ -207,7 +361,7 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'v4.3+');
         self::assertSelectorTextContains('body', 'v5.0+');
         self::assertSelectorTextContains('time', '2 months ago');
-        self::assertSelectorExists(\sprintf('i[title="%s"]', (new \DateTimeImmutable('-60 days'))->format('Y-m-d')));
+        self::assertSelectorExists(\sprintf('i[title="%s"]', (new \DateTimeImmutable('first day of this month -2 months'))->format('Y-m-d')));
         self::assertSelectorExists('a[href="/auth/login?returnTo=/package/mautic/alpha-plugin"]');
     }
 
@@ -315,6 +469,18 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
         self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+    }
+
+    public function testSearchByTag(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?query=automation');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
         self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 

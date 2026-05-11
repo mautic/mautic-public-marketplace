@@ -58,6 +58,7 @@ ON CONFLICT (name) DO UPDATE SET
 INSERT INTO versions (
     package_name,
     description,
+    keywords,
     version,
     version_normalized,
     type,
@@ -67,13 +68,15 @@ INSERT INTO versions (
 VALUES (
     'mautic/example-plugin',
     'Example version for local development.',
+    '["example", "plugin", "local-development"]'::jsonb,
     '1.0.0',
     '1.0.0.0',
     'mautic-plugin',
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET
+    keywords = EXCLUDED.keywords;
 
 INSERT INTO packages (
     name,
@@ -118,6 +121,7 @@ ON CONFLICT (name) DO UPDATE SET
 INSERT INTO versions (
     package_name,
     description,
+    keywords,
     version,
     version_normalized,
     type,
@@ -127,13 +131,15 @@ INSERT INTO versions (
 VALUES (
     'mautic/alpha-plugin',
     'Alpha version.',
+    '["alpha", "plugin", "sorting"]'::jsonb,
     '0.1.0',
     '0.1.0.0',
     'mautic-plugin',
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET
+    keywords = EXCLUDED.keywords;
 
 INSERT INTO packages (
     name,
@@ -178,6 +184,7 @@ ON CONFLICT (name) DO UPDATE SET
 INSERT INTO versions (
     package_name,
     description,
+    keywords,
     version,
     version_normalized,
     type,
@@ -187,13 +194,15 @@ INSERT INTO versions (
 VALUES (
     'mautic/zebra-theme',
     'Zebra version.',
+    '["theme", "zebra", "responsive"]'::jsonb,
     '2.0.0',
     '2.0.0.0',
     'mautic-theme',
     '^4.4 || ^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET
+    keywords = EXCLUDED.keywords;
 
 INSERT INTO packages (
     name,
@@ -238,6 +247,7 @@ ON CONFLICT (name) DO UPDATE SET
 INSERT INTO versions (
     package_name,
     description,
+    keywords,
     version,
     version_normalized,
     type,
@@ -247,13 +257,15 @@ INSERT INTO versions (
 VALUES (
     'mautic/welcome-campaign',
     'Welcome campaign v1.',
+    '["campaign", "welcome", "resource", "automation"]'::jsonb,
     '1.0.0',
     '1.0.0.0',
     'mautic-resource',
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET
+    keywords = EXCLUDED.keywords;
 
 INSERT INTO packages (
     name,

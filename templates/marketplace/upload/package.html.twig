@@ -1,21 +1,304 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ 'mautic.marketplace.upload.package.title'|trans }}{% endblock %}
+{% block title %}
+    {{ 'mautic.marketplace.upload.package.title'|trans }}
+{% endblock %}
 
 {% block body %}
-    {% include 'components/lead-space.html.twig' with {
-        variant: 'short',
-        heading: 'mautic.marketplace.upload.package.heading',
-        description: 'mautic.marketplace.upload.package.description',
-        gradientStyleScheme: 'without-gradient',
-        gradientStyleSchemeColor: '#f1edea',
-    } %}
-
-    <div class="row mt-32">
-        <div class="col-12 col-lg-8 offset-lg-2">
-            <div id="package-upload-form-placeholder" class="p-32 border rounded text-center text-helper">
-                {{ 'mautic.marketplace.upload.package.form_placeholder'|trans }}
+    <div class="container-fluid px-32 mt-48">
+        <div class="row pt-32">
+            <div class="col-12 col-lg-6">
+                <h1 class="type-heading-05 mb-16">
+                    {{ 'mautic.marketplace.upload.package.heading'|trans }}
+                </h1>
+                <p class="type-body-02 text-secondary">
+                    {{ 'mautic.marketplace.upload.package.description'|trans }}
+                </p>
             </div>
         </div>
     </div>
+    <hr class="mb-0" />
+
+    {% if app.request.query.get('step') == '1' or app.request.query.get('step') is null %}
+    <!-- Step 1 -->
+    <form class="needs-validation" novalidate>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 col-lg-3 p-32">
+                    {% include 'components/progress-indicator.html.twig' with {
+                        vertical: true,
+                        steps: [
+                            { label: 'mautic.marketplace.upload.package.step.1', status: 'current' },
+                            { label: 'mautic.marketplace.upload.package.step.2', status: 'incomplete' },
+                            { label: 'mautic.marketplace.upload.package.step.3', status: 'incomplete' },
+                            { label: 'mautic.marketplace.upload.package.step.4', status: 'incomplete' }
+                        ]
+                    } %}
+                </div>
+                <div class="col-12 col-lg-9 border-start bg-light layer-two">
+                    <div class="row">
+                        <div class="col-12 col-lg-10 gap-64 p-32">
+                            {% include 'marketplace/upload/package/step--upload.html.twig' %}
+                        </div>
+                    </div>
+                    <div class="row border-top border-bottom">
+                        <div class="col-12 col-md-6 col-xl g-0">
+                            {% include 'components/button.html.twig' with {
+                                buttons: [
+                                    {
+                                        label: 'Cancel',
+                                        variant: 'ghost',
+                                        size: '2xl',
+                                        attributes: {
+                                            href: path('marketplace_index'),
+                                            class: 'w-100'
+                                        }
+                                    }
+                                ]
+                            } only %}
+                        </div>
+                        <div class="col-12 col-md-6 col-xl g-0">
+                            <div class="d-flex flex-column flex-md-row">
+                                {% include 'components/button.html.twig' with {
+                                    buttons: [
+
+                                        {
+                                            label: 'Next',
+                                            variant: 'primary',
+                                            size: '2xl',
+                                            attributes: {
+                                                type: 'submit',
+                                                class: 'col'
+                                            }
+                                        }
+                                    ]
+                                } only %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% elseif app.request.query.get('step') == '2' %}
+    <!-- Step 2 -->
+    <form class="needs-validation" novalidate>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 col-lg-3 p-32">
+                    {% include 'components/progress-indicator.html.twig' with {
+                        vertical: true,
+                        steps: [
+                            { label: 'mautic.marketplace.upload.package.step.1', status: 'complete' },
+                            { label: 'mautic.marketplace.upload.package.step.2', status: 'current', secondaryLabel: 'Package metadata' },
+                            { label: 'mautic.marketplace.upload.package.step.3', status: 'incomplete' },
+                            { label: 'mautic.marketplace.upload.package.step.4', status: 'incomplete' }
+                        ]
+                    } %}
+                </div>
+                <div class="col-12 col-lg-9 border-start bg-light layer-two">
+                    <div class="row">
+                        <div class="col-12 col-lg-10 gap-64 p-32">
+                            {% include 'marketplace/upload/package/step--basics.html.twig' %}
+                        </div>
+                    </div>
+                    <div class="row border-top border-bottom">
+                        <div class="col-12 col-md-4 col-lg-4 col-xl g-0">
+                            {% include 'components/button.html.twig' with {
+                                buttons: [
+                                    {
+                                        label: 'Cancel',
+                                        variant: 'ghost',
+                                        size: '2xl',
+                                        attributes: {
+                                            href: path('marketplace_index'),
+                                            class: 'col'
+                                        }
+                                    }
+                                ]
+                            } only %}
+                        </div>
+                        <div class="col-12 col-md-8 col-lg-8 col-xl g-0">
+                            <div class="d-flex flex-column flex-md-row">
+                                {% include 'components/button.html.twig' with {
+                                    buttons: [
+                                        {
+                                            label: 'Back',
+                                            variant: 'secondary',
+                                            size: '2xl',
+                                            attributes: {
+                                                type: 'submit',
+                                                class: 'col'
+                                            }
+                                        },
+                                        {
+                                            label: 'Next',
+                                            variant: 'primary',
+                                            size: '2xl',
+                                            attributes: {
+                                                type: 'submit',
+                                                class: 'col'
+                                            }
+                                        }
+                                    ]
+                                } only %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% elseif app.request.query.get('step') == '3' %}
+    <!-- Step 3 -->
+    <form class="needs-validation" novalidate>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 col-lg-3 p-32">
+                    {% include 'components/progress-indicator.html.twig' with {
+                        vertical: true,
+                        steps: [
+                            { label: 'mautic.marketplace.upload.package.step.1', status: 'complete' },
+                            { label: 'mautic.marketplace.upload.package.step.2', status: 'complete' },
+                            { label: 'mautic.marketplace.upload.package.step.3', status: 'current', secondaryLabel: 'Content and compatibility' },
+                            { label: 'mautic.marketplace.upload.package.step.4', status: 'incomplete' }
+                        ]
+                    } %}
+                </div>
+                <div class="col-12 col-lg-9 border-start bg-light layer-two">
+                    <div class="row">
+                        <div class="col-12 col-lg-10 gap-64 p-32">
+                            {% include 'marketplace/upload/package/step--details.html.twig' %}
+                        </div>
+                    </div>
+                    <div class="row border-top border-bottom">
+                        <div class="col-12 col-md-4 col-lg-4 col-xl g-0">
+                            {% include 'components/button.html.twig' with {
+                                buttons: [
+                                    {
+                                        label: 'Cancel',
+                                        variant: 'ghost',
+                                        size: '2xl',
+                                        attributes: {
+                                            href: path('marketplace_index'),
+                                            class: 'col'
+                                        }
+                                    }
+                                ]
+                            } only %}
+                        </div>
+                        <div class="col-12 col-md-8 col-lg-8 col-xl g-0">
+                            <div class="d-flex flex-column flex-md-row">
+                                {% include 'components/button.html.twig' with {
+                                    buttons: [
+                                        {
+                                            label: 'Back to Basics',
+                                            variant: 'secondary',
+                                            size: '2xl',
+                                            attributes: {
+                                                type: 'submit',
+                                                class: 'col'
+                                            }
+                                        },
+                                        {
+                                            label: 'Next',
+                                            variant: 'primary',
+                                            size: '2xl',
+                                            attributes: {
+                                                type: 'submit',
+                                                class: 'col'
+                                            }
+                                        }
+                                    ]
+                                } only %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </form>
+
+
+
+    {% elseif app.request.query.get('step') == '4' %}
+    <!-- Step 4 -->
+    <form class="needs-validation" novalidate>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 col-lg-3 p-32">
+                    {% include 'components/progress-indicator.html.twig' with {
+                        vertical: true,
+                        steps: [
+                            { label: 'mautic.marketplace.upload.package.step.1', status: 'complete' },
+                            { label: 'mautic.marketplace.upload.package.step.2', status: 'complete' },
+                            { label: 'mautic.marketplace.upload.package.step.3', status: 'complete' },
+                            { label: 'mautic.marketplace.upload.package.step.4', status: 'current', secondaryLabel: 'Commercial details and payout connection' }
+                        ]
+                    } %}
+                </div>
+                <div class="col-12 col-lg-9 border-start bg-light layer-two">
+                    <div class="row">
+                        <div class="col-12 col-lg-10 gap-64 p-32">
+                            {% include 'marketplace/upload/package/step--pricing_legal.html.twig' %}
+                        </div>
+                    </div>
+                    <div class="row border-top border-bottom">
+                        <div class="col-12 col-md-4 col-lg-4 col-xl g-0">
+                            {% include 'components/button.html.twig' with {
+                                buttons: [
+                                    {
+                                        label: 'Cancel',
+                                        variant: 'ghost',
+                                        size: '2xl',
+                                        attributes: {
+                                            href: path('marketplace_index'),
+                                            class: 'w-100'
+                                        }
+                                    }
+                                ]
+                            } only %}
+                        </div>
+                        <div class="col-12 col-md-8 col-lg-8 col-xl g-0">
+                            <div class="d-flex flex-column flex-md-row">
+                                {% include 'components/button.html.twig' with {
+                                    buttons: [
+                                        {
+                                            label: 'Back',
+                                            variant: 'secondary',
+                                            size: '2xl',
+                                            attributes: {
+                                                type: 'submit',
+                                                class: 'col'
+                                            }
+                                        },
+                                        {
+                                            label: 'Submit your package',
+                                            variant: 'primary',
+                                            size: '2xl',
+                                            attributes: {
+                                                type: 'submit',
+                                                class: 'col'
+                                            }
+                                        }
+                                    ]
+                                } only %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </form>
+
+
+
+
+    {% endif %}
 {% endblock %}

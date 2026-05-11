@@ -3,6 +3,8 @@
 {% block title %}{{ name }}{% endblock %}
 
 {% block body %}
+<div class="container mt-48">
+
     {% if error %}
         <p class="muted">{{ error }}</p>
     {% endif %}
@@ -66,4 +68,5 @@
             {% include 'marketplace/detail/section--similar-templates.html.twig' %}
 
     {% endif %}
+</div>
 {% endblock %}

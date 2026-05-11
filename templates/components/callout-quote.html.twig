@@ -36,11 +36,11 @@
       <div class="quote__container">
         <div class="quote__wrapper mx-lg-n32">
           <span class="quote__mark type-fluid-quotation-02">{{ quoteMarks[0] }}</span>
-          <div class="quote__copy type-fluid-quotation-02 text-break">
+          <div class="quote__copy px-32 pb-8 pb-lg-48 type-fluid-quotation-02 text-break">
             <em>{{ copy }}</em>
             <span class="quote__mark-closing type-fluid-quotation-02">{{ quoteMarks[1] }}</span>
           </div>
-          <div class="quote__source">
+          <div class="quote__source px-32">
             {% if sourceHeading is defined and sourceHeading is not empty %}
               <div class="quote__source-heading type-heading-02">{{ sourceHeading }}</div>
             {% endif %}
@@ -51,22 +51,22 @@
               <div class="quote__source-bottom-copy type-body-02">{{ sourceBottomCopy }}</div>
             {% endif %}
             {% if customContent is defined and customContent is not empty %}
-              <div class="quote__custom-content px-16">{{ customContent }}</div>
+              <div class="quote__custom-content">{{ customContent }}</div>
             {% endif %}
           </div>
           {% if (cta is defined and cta is not empty) or (hasBorder is defined and hasBorder) %}
-            <div class="quote__footer">
+            <div class="quote__footer px-32">
               {% if hasBorder is defined and hasBorder %}
-                <hr role="separator" type="solid" size="fluid" contrast="strong" weight="thin">
+                <hr role="separator" class="mx-n16 mt-0">
               {% endif %}
               {% if cta is defined and cta is not empty %}
               <a 
-                class="link link--lg link-with-icon link-with-icon__icon-right link-with-icon--inline-icon"
+                class="link icon-link icon-link-hover"
                 href="{{ cta.href }}"
                 target="_blank" rel="noopener"
               >
                 {{ cta.text }}
-                <svg focusable="false" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" class="c4d--card__cta c4d-ce--cta__icon"><path d="M11.8 2.8L10.8 3.8 16.2 9.3 1 9.3 1 10.7 16.2 10.7 10.8 16.2 11.8 17.2 19 10z"></path></svg>
+                <svg focusable="false" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" class="bi"><path d="M11.8 2.8L10.8 3.8 16.2 9.3 1 9.3 1 10.7 16.2 10.7 10.8 16.2 11.8 17.2 19 10z"></path></svg>
               </a>
               {% endif %}
             </div>

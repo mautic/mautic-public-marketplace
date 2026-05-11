@@ -8,11 +8,6 @@
     {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
 <body>
-      {% set authMenu %}
-          <a class="dropdown-item" href="{{ path('profile_page') }}">{{ 'mautic.marketplace.header.my_profile'|trans }}</a>
-          <a class="dropdown-item" href="{{ path('auth_logout') }}">{{ 'mautic.marketplace.header.logout'|trans }}</a>
-      {% endset %}
-
       {% include 'components/uishell.html.twig' with {
         Header: {
             ariaLabel: 'mautic.marketplace.header.aria_label',
@@ -34,23 +29,49 @@
                                 children: 'mautic.marketplace.header.browse_templates'
                             }
                         }
-                    ]
+                    ]|merge(app.user ? [
+                        {
+                            HeaderMenuItem: {
+                                href: path('marketplace_upload_package'),
+                                children: 'mautic.marketplace.header.upload_package'
+                            }
+                        }
+                    ] : [])
                 },
                 HeaderGlobal: {
                     children: app.user ? [
                         {
                             HeaderGlobalDropdown: {
                                 ariaLabel: 'mautic.marketplace.header.account',
-                                label: app.user.name ?? app.user.email ?? 'Account',
-                                renderMenuContent: authMenu
+                                renderDropdownIcon: 'ri-account-circle-line',
+                                renderMenuContent: [
+                                    {
+                                        menuItem: {
+                                            href: path('profile_page'),
+                                            label: 'mautic.marketplace.header.my_profile'
+                                        }
+                                    },
+                                    {
+                                        menuItem: {
+                                            href: path('auth_logout'),
+                                            label: 'mautic.marketplace.header.logout',
+                                            attributes: {
+                                                'data-turbo': 'false'
+                                            }
+                                        }
+                                    }
+                                ]
                             }
                         }
                     ] : [
                         {
                             HeaderGlobalAction: {
                                 href: path('auth_login', { returnTo: app.request.requestUri }),
-                                label: 'mautic.marketplace.header.login',
-                                ariaLabel: 'mautic.marketplace.header.login'
+                                renderActionIcon: 'ri-login-box-line',
+                                ariaLabel: 'mautic.marketplace.header.login',
+                                attributes: {
+                                    'data-turbo': 'false'
+                                }
                             }
                         }
                     ]
@@ -59,7 +80,7 @@
         }
     } %}
     <main id="main-content">
-        <div class="container mt-48">
+
             {% for message in app.flashes('success') %}
                 <div class="alert alert--success mb-16">{{ message }}</div>
             {% endfor %}
@@ -67,7 +88,7 @@
                 <div class="alert alert--error mb-16">{{ message }}</div>
             {% endfor %}
             {% block body %}{% endblock %}
-        </div>
+
     </main>
 </body>
 </html>

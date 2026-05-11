@@ -24,7 +24,9 @@
 
 <div class="{% if wrapperClass %}{{ wrapperClass }}{% endif %}">
     {% if label %}
-        <label for="{{ control.id|default(id ~ '-control') }}" class="form-label">{{ label|trans }}</label>
+        <label for="{{ control.id|default(id ~ '-control') }}" class="form-label">
+            {{ control.required|default(false) ? 'mautic.marketplace.forms.field.required'|trans({'%fieldLabel%': label|trans}) : label|trans }}
+        </label>
     {% endif %}
 
     <div
@@ -36,7 +38,7 @@
         {% endfor %}
     >
         {% for addon in addons_prepend %}
-            <span class="input-group-text">{{ addon|trans }}</span>
+            <span class="input-group-text position-relative prepend">{{ addon|raw }}</span>
         {% endfor %}
 
         {% set control_type = control.component|default('form-control') %}
@@ -54,7 +56,7 @@
         {% include 'components/' ~ control_type ~ '.html.twig' with control_context only %}
 
         {% for addon in addons_append %}
-            <span class="input-group-text">{{ addon|trans }}</span>
+            <span class="input-group-text position-relative append">{{ addon|trans }}</span>
         {% endfor %}
     </div>
 
