@@ -96,6 +96,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('h1');
+        self::assertSelectorExists('input[name="query"][placeholder="Search packages, maintainers, or tags"]');
         self::assertSelectorExists('a[href="/auth/login?returnTo=/browse"]');
     }
 
@@ -468,6 +469,18 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
         self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+    }
+
+    public function testSearchByTag(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?query=automation');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
         self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 
