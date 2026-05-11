@@ -1,6 +1,3 @@
-ALTER TABLE versions ADD COLUMN IF NOT EXISTS validation_errors TEXT DEFAULT NULL;
-ALTER TABLE packages ADD COLUMN IF NOT EXISTS auth0_user_id TEXT;
-
 DO $$
 BEGIN
     IF EXISTS (
