@@ -1,0 +1,97 @@
+<section aria-labelledby="upload-step-4-heading" class="d-flex flex-column gap-32">
+    <div class="row g-24">
+        <div class="col-12 col-md-6">
+            {% include 'components/select.html.twig' with {
+                name: 'license_type',
+                id: 'package-license-type',
+                label: 'mautic.marketplace.upload.package.field.license_type.label'|trans,
+                placeholder: 'mautic.marketplace.upload.package.field.license_type.placeholder'|trans,
+                required: true,
+                options: [
+                    { value: 'mit', label: 'mautic.marketplace.upload.package.license.mit'|trans },
+                    { value: 'gpl-3.0', label: 'mautic.marketplace.upload.package.license.gpl_3'|trans },
+                    { value: 'apache-2.0', label: 'mautic.marketplace.upload.package.license.apache_2'|trans },
+                    { value: 'proprietary', label: 'mautic.marketplace.upload.package.license.proprietary'|trans }
+                ]
+            } only %}
+        </div>
+        <div class="col-12 col-md-6">
+            {% include 'components/input-group.html.twig' with {
+                id: 'package-price',
+                label: 'mautic.marketplace.upload.package.field.price.label'|trans,
+                helpText: 'mautic.marketplace.upload.package.field.price.help'|trans,
+                addons_prepend: ['<i class="ri-money-euro-circle-fill text-secondary"></i>'],
+                control: {
+                    name: 'price',
+                    type: 'number',
+                    required: true,
+                    placeholder: '0.00',
+                    attributes: {
+                        min: '0',
+                        step: '0.01',
+                        inputmode: 'decimal'
+                    }
+                }
+            } only %}
+        </div>
+        <div class="col-12">
+            {% include 'components/notification.html.twig' with {
+                title: 'mautic.marketplace.upload.package.revenue_share.title'|trans,
+                subtitle: 'mautic.marketplace.upload.package.revenue_share.subtitle'|trans,
+                type: 'callout',
+                role: 'alert',
+                kind: 'info'
+            } only %}
+        </div>
+        <div class="col-12">
+            {% set stripeTileContent %}
+                <div class="d-flex flex-column gap-12">
+                    <div>
+                        <p class="m-0 fw-semibold">{{ 'mautic.marketplace.upload.package.stripe.heading'|trans }}</p>
+                        <p class="m-0 text-helper">{{ 'mautic.marketplace.upload.package.stripe.description'|trans }}</p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-12 align-items-center">
+                        {% include 'components/button.html.twig' with {
+                            buttons: [
+                                {
+                                    label: 'mautic.marketplace.upload.package.stripe.connect'|trans,
+                                    variant: 'secondary',
+                                    attributes: {
+                                        type: 'button'
+                                    }
+                                }
+                            ]
+                        } only %}
+                        {% include 'components/tags.html.twig' with {
+                            tags: [
+                                {
+                                    label: 'mautic.marketplace.upload.package.stripe.status.not_connected'|trans,
+                                    color: 'cool-gray'
+                                }
+                            ]
+                        } only %}
+                    </div>
+                </div>
+            {% endset %}
+            {% include 'components/tile.html.twig' with {
+                type: 'base',
+                className: 'mx-n16',
+                content: stripeTileContent
+            } only %}
+        </div>
+        <div class="col-12">
+            {% include 'components/checkbox.html.twig' with {
+                name: 'legal_confirmation[]',
+                legend: 'mautic.marketplace.upload.package.field.legal_confirmation.legend'|trans,
+                required: true,
+                items: [
+                    {
+                        label: 'mautic.marketplace.upload.package.field.legal_confirmation.label'|trans,
+                        value: 'accepted',
+                        name: 'legal_confirmation[]'
+                    }
+                ]
+            } only %}
+        </div>
+    </div>
+</section>
