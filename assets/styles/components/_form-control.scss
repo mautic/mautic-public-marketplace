@@ -1,7 +1,31 @@
-.form-control:hover {
-    background-color: var(--field-hover);
+.form-control,
+.form-select {
+    &:hover,
+    &:focus {
+        background-color: var(--field-hover);
+    }
 }
 
-.form-control, .form-select {
+.form-control, 
+.input-group-text,
+.form-select {
     border-bottom: 1px solid var(--border-strong);
+}
+
+.input-group-text {
+    &.prepend::after,
+    &.append::before {
+        content: '';
+        display: block;
+        width: 1px;
+        height: 1rem;
+        background-color: var(--border-subtle);
+        position: absolute;
+    }
+    &.prepend::after {
+        right: 0;
+    }
+    &.append::before {
+        left: 0;
+    }
 }

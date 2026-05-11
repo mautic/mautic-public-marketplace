@@ -37,7 +37,8 @@
         {% if icon %}
         <i class="{{ icon }} me-4" aria-hidden="true"></i>
     {% endif %}
-    {{ label|trans }}</label>
+        {{ required ? 'mautic.marketplace.forms.field.required'|trans({'%fieldLabel%': label|trans}) : label|trans }}
+    </label>
     {% endif %}
 {% endset %}
 

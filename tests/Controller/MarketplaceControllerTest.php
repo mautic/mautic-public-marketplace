@@ -41,8 +41,52 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Upload a package');
-        self::assertSelectorExists('#package-upload-form-placeholder');
+        self::assertSelectorExists('form.needs-validation[novalidate]');
+        self::assertSelectorExists('#package-zip[required][data-validation-field]');
         self::assertPageTitleContains('Upload package');
+    }
+
+    public function testPackageUploadBasicsStepRendersValidationAttributes(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/upload/package?step=2');
+        $crawler = $client->getCrawler();
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form.needs-validation[novalidate]');
+        self::assertSelectorExists('#package-name[required][data-validation-field]');
+        self::assertStringContainsString('notBlank', (string) $crawler->filter('#package-name')->attr('data-validation-rules'));
+        self::assertSelectorExists('#package-version[required][pattern][data-validation-field]');
+        self::assertSelectorExists('#package-category[required][data-validation-field]');
+        self::assertSelectorExists('#package-headline[required][maxlength="60"][data-validation-field]');
+    }
+
+    public function testPackageUploadDetailsStepRendersValidationAttributes(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/upload/package?step=3');
+        $crawler = $client->getCrawler();
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form.needs-validation[novalidate]');
+        self::assertSelectorExists('#package-description[required][minlength="150"][data-validation-field]');
+        self::assertSelectorExists('#package-languages[required][multiple][data-validation-field]');
+        self::assertSelectorExists('fieldset[data-validation-name="works_with[]"][data-validation-required="true"]');
+        self::assertStringContainsString('fileTypes', (string) $crawler->filter('#package-banner-image')->attr('data-validation-rules'));
+        self::assertStringContainsString('maxFiles', (string) $crawler->filter('#package-gallery-images')->attr('data-validation-rules'));
+        self::assertStringContainsString('requiresFileAltText', (string) $crawler->filter('#package-gallery-alt-0')->attr('data-validation-rules'));
+    }
+
+    public function testPackageUploadPricingLegalStepRendersValidationAttributes(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/upload/package?step=4');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('form.needs-validation[novalidate]');
+        self::assertSelectorExists('#package-license-type[required][data-validation-field]');
+        self::assertSelectorExists('#package-price-control[required][min="0"][step="0.01"][data-validation-field]');
+        self::assertSelectorExists('fieldset[data-validation-name="legal_confirmation[]"][data-validation-required="true"]');
     }
 
     public function testBrowsePageLoads(): void
@@ -52,6 +96,7 @@ final class MarketplaceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('h1');
+        self::assertSelectorExists('input[name="query"][placeholder="Search packages, maintainers, or tags"]');
         self::assertSelectorExists('a[href="/auth/login?returnTo=/browse"]');
     }
 
@@ -424,6 +469,18 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.card-group', 'Alpha Plugin');
         self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
+    }
+
+    public function testSearchByTag(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse?query=automation');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.card-group', 'Welcome Campaign');
+        self::assertSelectorTextNotContains('.card-group', 'Example Plugin');
+        self::assertSelectorTextNotContains('.card-group', 'Alpha Plugin');
         self::assertSelectorTextNotContains('.card-group', 'Zebra Theme');
     }
 
