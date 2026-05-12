@@ -17,6 +17,6 @@ final class MauticVersionsApiControllerTest extends WebTestCase
         $data = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertIsArray($data['versions']);
         self::assertNotEmpty($data['versions']);
-        self::assertContains('5.2', $data['versions']);
+        self::assertSame(['7', '6', '5', '4'], $data['versions']);
     }
 }

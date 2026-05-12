@@ -6,17 +6,31 @@ namespace App\Controller\Api;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class CategoriesApiController extends AbstractController
 {
-    private const CATEGORIES = [
-        ['code' => 'mautic-plugin', 'label' => 'Plugin'],
-        ['code' => 'mautic-theme', 'label' => 'Theme'],
-        ['code' => 'mautic-resource', 'label' => 'Resource (Campaign)'],
+    private const CATEGORY_CODES = [
+        'mautic-plugin',
+        'mautic-theme',
+        'mautic-resource',
     ];
+
+    public function __construct(
+        private readonly TranslatorInterface $translator,
+    ) {
+    }
 
     public function list(): JsonResponse
     {
-        return $this->json(['categories' => self::CATEGORIES]);
+        $categories = [];
+        foreach (self::CATEGORY_CODES as $code) {
+            $categories[] = [
+                'code' => $code,
+                'label' => $this->translator->trans('mautic.marketplace.api.category.'.$code),
+            ];
+        }
+
+        return $this->json(['categories' => $categories]);
     }
 }

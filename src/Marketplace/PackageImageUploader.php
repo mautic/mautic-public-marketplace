@@ -15,13 +15,17 @@ final class PackageImageUploader
     private const ALLOWED_MIME_TYPES = [
         'image/png',
         'image/jpeg',
+        'image/pjpeg',
         'image/webp',
         'image/gif',
     ];
 
+    // All JPEG variants normalize to ".jpg" so storage paths stay uniform regardless
+    // of whether the uploaded file was named .jpg, .jpeg, or came in as image/pjpeg.
     private const MIME_EXTENSIONS = [
         'image/png' => 'png',
         'image/jpeg' => 'jpg',
+        'image/pjpeg' => 'jpg',
         'image/webp' => 'webp',
         'image/gif' => 'gif',
     ];
