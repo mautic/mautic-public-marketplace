@@ -9,6 +9,39 @@ $font-family-serif: "Source Serif 4", "Times New Roman", Times, Baskerville, Geo
   color: var(--link-primary);
 }
 
+.type-heading-01,
+.type-heading-02,
+.type-heading-03,
+.type-heading-04,
+.type-heading-05,
+.type-heading-06,
+.type-heading-07,
+.type-fluid-heading-03,
+.type-fluid-heading-04,
+.type-fluid-heading-05,
+.type-fluid-heading-06 {
+  font-family: $headings-font-family;
+}
+
+.type-code-01,
+.type-code-02 {
+  font-family: $font-family-monospace;
+}
+
+.type-label-01,
+.type-label-02,
+.type-helper-text-01,
+.type-helper-text-02,
+.type-legal-01,
+.type-legal-02,
+.type-body-compact-01,
+.type-body-compact-02,
+.type-body-01,
+.type-body-02,
+.type-fluid-paragraph-01 {
+  font-family: $font-family-sans-serif;
+}
+
 .type-code-01 {
   font-size: var(--code-01-font-size);
   line-height: var(--code-01-line-height);

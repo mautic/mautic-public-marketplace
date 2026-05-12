@@ -439,6 +439,16 @@ $transition-all-productive: all 150ms cubic-bezier(0.2, 0, 0.38, 0.9);
   --support-warning-inverse: #f1c21b;
   --support-info-inverse: #6da2ff;
 
+  --status-red: #da1e28;
+  --status-green: #24A148;
+  --status-orange: #ff832b;
+  --status-orange-outline: #ba4e00;
+  --status-yellow: #f1c21b;
+  --status-yellow-outline: #8e6a00;
+  --status-blue: #0043ce;
+  --status-purple: #8a3ffc;
+  --status-gray: #6f6f6f;
+
   --focus: var(--primary-60);
   --focus-inset: #ffffff;
   --focus-inverse: #ffffff;

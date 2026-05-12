@@ -28,6 +28,7 @@
     rangeOverflow: 'mautic.marketplace.forms.validation.range_overflow'|trans,
     stepMismatch: 'mautic.marketplace.forms.validation.step_mismatch'|trans,
     badInput: 'mautic.marketplace.forms.validation.bad_input'|trans,
+    notBlank: 'mautic.marketplace.forms.validation.value_missing'|trans,
 }|merge(validation.messages|default({})) %}
 {% set input_class = plaintext ? 'form-control-plaintext' : 'form-control' %}
 {% set describedby = describedby|default([]) %}
@@ -38,11 +39,7 @@
         {% if icon is defined and icon is not empty %}
         <i class="{{ icon }} me-4" aria-hidden="true"></i>
         {% endif %}
-        {% if required %}
-            {{ 'mautic.marketplace.forms.field.required'|trans({'%fieldLabel%': label|trans}) }}
-        {% else %}
-            {{ label|trans }}
-        {% endif %}
+        {{ required ? 'mautic.marketplace.forms.field.required'|trans({'%fieldLabel%': label|trans}) : label|trans }}
     </label>
     {% endif %}
 {% endset %}

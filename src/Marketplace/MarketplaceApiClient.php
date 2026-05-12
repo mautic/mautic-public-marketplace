@@ -230,6 +230,26 @@ final class MarketplaceApiClient
             throw new SupabaseApiException('Unexpected response from Supabase get_pack.');
         }
 
+        $versions = $this->toArray($row['versions'] ?? null);
+        $tags = $this->toArray($row['tags'] ?? $row['keywords'] ?? null);
+        if (null === $tags && null !== $versions) {
+            $keywords = [];
+            foreach ($versions as $version) {
+                if (!\is_array($version) || !\is_array($version['keywords'] ?? null)) {
+                    continue;
+                }
+
+                foreach ($version['keywords'] as $keyword) {
+                    if (\is_scalar($keyword)) {
+                        $keywords[] = (string) $keyword;
+                    }
+                }
+            }
+
+            $keywords = array_values(array_unique($keywords));
+            $tags = [] === $keywords ? null : $keywords;
+        }
+
         return new PackageDetail(
             (string) $row['name'],
             $row['displayname'] ?? null,
@@ -249,9 +269,10 @@ final class MarketplaceApiClient
             $this->toBool($row['isreviewed'] ?? null),
             $this->toBool($row['latest_mautic_support'] ?? null),
             $this->toArray($row['maintainers'] ?? null),
+            $tags,
             isset($row['time']) ? (string) $row['time'] : null,
             $this->toArray($row['reviews'] ?? null),
-            $this->toArray($row['versions'] ?? null),
+            $versions,
         );
     }
 

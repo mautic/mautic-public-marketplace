@@ -3,6 +3,8 @@
 {% block title %}Mautic Marketplace{% endblock %}
 
 {% block body %}
+<div class="container mt-48">
+
 {% set browseBySignalCards = [
     {
         heading: 'mautic.marketplace.homepage.categories.most_popular.heading',
@@ -161,5 +163,5 @@
         childContainer: childContainerCuratedJourneyCards
     }, with_context = false) }}
 </div>
-
+</div>
 {% endblock %}

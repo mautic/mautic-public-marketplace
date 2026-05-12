@@ -80,7 +80,7 @@
         }
     } %}
     <main id="main-content">
-        <div class="container mt-48">
+
             {% for message in app.flashes('success') %}
                 <div class="alert alert--success mb-16">{{ message }}</div>
             {% endfor %}
@@ -88,7 +88,7 @@
                 <div class="alert alert--error mb-16">{{ message }}</div>
             {% endfor %}
             {% block body %}{% endblock %}
-        </div>
+
     </main>
 </body>
 </html>

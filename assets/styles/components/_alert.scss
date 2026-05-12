@@ -1,0 +1,16 @@
+.inline-notification,
+.actionable-notification,
+.toast-notification {
+    &--info {
+        border-inline-start: 3px solid var(--status-blue);
+    }
+    &--success {
+        border-inline-start: 3px solid var(--status-green);
+    }
+    &--warning {
+        border-inline-start: 3px solid var(--status-orange);
+    }
+    &--error {
+        border-inline-start: 3px solid var(--status-red);
+    }
+}

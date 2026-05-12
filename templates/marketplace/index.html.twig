@@ -3,6 +3,8 @@
 {% block title %}{{ 'mautic.marketplace.title'|trans }}{% endblock %}
 
 {% block body %}
+<div class="container mt-48">
+
     {% set current = app.request.query.all %}
     {% set orderby = filters.orderby %}
     {% set orderdir = filters.orderdir %}
@@ -14,8 +16,12 @@
     {% include 'components/lead-space.html.twig' with {
         variant: 'short',
         heading: 'mautic.marketplace.browse.leadspace.heading',
-        gradientStyleScheme: 'without-gradient',
-        gradientStyleSchemeColor: '#f1edea',
+        gradientStyleScheme: 'with-gradient',
+        gradientStyleSchemeColor: '#3c5395',
+        media: {
+            src: 'assets/images/mautinaut.jpeg',
+            alt: 'mautic.marketplace.browse.leadspace.image_alt'
+        }
     } %}
 
     {% if error %}
@@ -159,5 +165,5 @@
             </div>
         </div>
     </form>
-
+</div>
 {% endblock %}

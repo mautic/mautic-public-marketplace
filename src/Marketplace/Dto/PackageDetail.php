@@ -9,6 +9,7 @@ final class PackageDetail
     /**
      * @param array<mixed>|null $downloads
      * @param array<mixed>|null $maintainers
+     * @param array<mixed>|null $tags
      * @param array<mixed>|null $reviews
      * @param array<mixed>|null $versions
      */
@@ -31,6 +32,7 @@ final class PackageDetail
         public readonly ?bool $isReviewed,
         public readonly ?bool $latestMauticSupport,
         public readonly ?array $maintainers,
+        public readonly ?array $tags,
         public readonly ?string $time,
         public readonly ?array $reviews,
         public readonly ?array $versions,
