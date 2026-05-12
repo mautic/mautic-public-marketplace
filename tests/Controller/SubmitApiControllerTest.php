@@ -97,6 +97,37 @@ final class SubmitApiControllerTest extends WebTestCase
         self::assertTrue($data['created']);
     }
 
+    public function testSubmitWithUnreachableAssetUrlReturnsJsonError(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
+        ], content: json_encode([
+            'asset_url' => 'https://unreachable.test/campaign.zip',
+        ]));
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertResponseHeaderSame('content-type', 'application/json');
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('Could not reach asset URL', $data['error']);
+    }
+
+    public function testSubmitWithUnknownVendorIsRejected(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
+        ], content: json_encode([
+            'asset_url' => 'https://example.com/asset/unknown-vendor.zip',
+        ]));
+
+        self::assertResponseStatusCodeSame(400);
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('missing a vendor name', $data['error']);
+    }
+
     public function testSubmitWithInvalidJson(): void
     {
         $client = self::createClient();

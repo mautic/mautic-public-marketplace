@@ -9,6 +9,7 @@ use App\Marketplace\Dto\SubmitRequest;
 use App\Marketplace\Exception\SubmitValidationException;
 use App\Marketplace\PackageSubmitService;
 use App\Supabase\Exception\SupabaseApiException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +20,7 @@ final class SubmitApiController extends AbstractController
 {
     public function __construct(
         private readonly PackageSubmitService $submitService,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -32,8 +34,13 @@ final class SubmitApiController extends AbstractController
             $result = $this->submitService->submit($submitRequest->asset_url, $user);
         } catch (SubmitValidationException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        } catch (SupabaseApiException) {
-            return $this->json(['error' => 'Failed to publish package.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (SupabaseApiException $e) {
+            $this->logger->error('Package submit failed at marketplace storage layer.', [
+                'asset_url' => $submitRequest->asset_url,
+                'exception' => $e,
+            ]);
+
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_GATEWAY);
         }
 
         return $this->json($result, Response::HTTP_CREATED);

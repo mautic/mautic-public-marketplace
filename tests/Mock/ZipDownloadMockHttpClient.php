@@ -12,6 +12,22 @@ final class ZipDownloadMockHttpClient extends MockHttpClient
     public function __construct()
     {
         parent::__construct(static function (string $method, string $url): MockResponse {
+            if (str_contains($url, 'unreachable.test')) {
+                return new MockResponse('', ['error' => 'Could not resolve host: unreachable.test']);
+            }
+
+            if (str_contains($url, 'unknown-vendor')) {
+                return new MockResponse(
+                    self::createValidZip(json_encode([
+                        'name' => 'unknown-vendor/test-campaign',
+                        'description' => 'A campaign with placeholder vendor.',
+                        'type' => 'mautic-resource',
+                        'version' => '1.0.0',
+                    ])),
+                    ['http_code' => 200, 'response_headers' => ['content-type' => 'application/zip']],
+                );
+            }
+
             return new MockResponse(
                 self::createValidZip(),
                 ['http_code' => 200, 'response_headers' => ['content-type' => 'application/zip']],

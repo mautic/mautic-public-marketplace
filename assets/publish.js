@@ -26,16 +26,29 @@ function initPublish() {
                 credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                 },
                 body: JSON.stringify({
                     asset_url: ASSET_URL,
                 }),
             });
 
-            const data = await response.json();
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (e) {
+                // Non-JSON response (e.g. HTML error page). Fall through with a generic error below.
+            }
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to publish package');
+                const message = (data && data.error)
+                    ? data.error
+                    : 'Failed to publish package (HTTP ' + response.status + '). Please try again or check that the asset URL is reachable.';
+                throw new Error(message);
+            }
+
+            if (!data) {
+                throw new Error('Unexpected response from the server. Please try again.');
             }
 
             const action = data.created ? 'published' : 'updated';

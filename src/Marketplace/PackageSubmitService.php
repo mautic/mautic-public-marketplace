@@ -6,6 +6,9 @@ namespace App\Marketplace;
 
 use App\Auth0\Auth0User;
 use App\Marketplace\Exception\SubmitValidationException;
+use App\Supabase\Exception\SupabaseApiException;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class PackageSubmitService
@@ -22,6 +25,7 @@ final class PackageSubmitService
      * @return array{package_name: string, version: string, created: bool}
      *
      * @throws SubmitValidationException
+     * @throws SupabaseApiException
      */
     public function submit(string $assetUrl, Auth0User $user): array
     {
@@ -41,10 +45,21 @@ final class PackageSubmitService
 
     private function downloadZip(string $assetUrl): string
     {
-        $response = $this->httpClient->request('GET', $assetUrl);
+        try {
+            $response = $this->httpClient->request('GET', $assetUrl);
+            $statusCode = $response->getStatusCode();
+        } catch (TransportExceptionInterface $e) {
+            throw new SubmitValidationException(\sprintf('Could not reach asset URL. The server running the marketplace must be able to download the ZIP from this address (%s).', $assetUrl));
+        }
 
-        if (200 !== $response->getStatusCode()) {
-            throw new SubmitValidationException(\sprintf('Failed to download asset from URL (HTTP %d).', $response->getStatusCode()));
+        if (200 !== $statusCode) {
+            throw new SubmitValidationException(\sprintf('Failed to download asset from URL (HTTP %d).', $statusCode));
+        }
+
+        try {
+            $content = $response->getContent();
+        } catch (HttpClientExceptionInterface $e) {
+            throw new SubmitValidationException(\sprintf('Failed to download asset from URL: %s', $e->getMessage()));
         }
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'mautic_submit_');
@@ -52,7 +67,7 @@ final class PackageSubmitService
             throw new SubmitValidationException('Failed to create temporary file.');
         }
 
-        $bytesWritten = file_put_contents($tmpFile, $response->getContent());
+        $bytesWritten = file_put_contents($tmpFile, $content);
         if (false === $bytesWritten) {
             throw new SubmitValidationException('Failed to write downloaded asset to temporary file.');
         }
@@ -115,6 +130,11 @@ final class PackageSubmitService
             throw new SubmitValidationException('composer.json "name" must be a valid package name (vendor/package).');
         }
 
+        [$vendor] = explode('/', $data['name'], 2);
+        if ('unknown-vendor' === $vendor) {
+            throw new SubmitValidationException('The campaign is missing a vendor name. Please fill in a vendor name in Mautic when sharing the campaign, then try again.');
+        }
+
         $type = $data['type'] ?? null;
         $allowedTypes = ['mautic-plugin', 'mautic-theme', 'mautic-resource'];
         if (!\in_array($type, $allowedTypes, true)) {
@@ -124,7 +144,6 @@ final class PackageSubmitService
         if (!isset($data['version']) || !\is_string($data['version']) || '' === trim($data['version'])) {
             throw new SubmitValidationException('composer.json must contain a "version" field.');
         }
-
     }
 
     /**
@@ -139,7 +158,13 @@ final class PackageSubmitService
         $type = (string) $composerData['type'];
         $campaignUuid = $composerData['extra']['mautic']['campaign-uuid'] ?? null;
 
-        $existingPackage = $this->apiClient->getPackageByName($packageName);
+        $existingPackage = null;
+        if (\is_string($campaignUuid) && '' !== $campaignUuid) {
+            $existingPackage = $this->apiClient->getPackageByCampaignUuid($campaignUuid);
+        }
+        if (null === $existingPackage) {
+            $existingPackage = $this->apiClient->getPackageByName($packageName);
+        }
         $created = null === $existingPackage;
 
         $maintainerName = $user->getName() ?? $user->getEmail() ?? 'Anonymous';
@@ -162,8 +187,10 @@ final class PackageSubmitService
             $packageData['downloads'] = ['total' => 0];
             $this->apiClient->createPackage($packageData);
         } else {
+            $existingName = (string) ($existingPackage['name'] ?? $packageName);
             unset($packageData['name']);
-            $this->apiClient->updatePackage($packageName, $packageData);
+            $this->apiClient->updatePackage($existingName, $packageData);
+            $packageName = $existingName;
         }
 
         $smv = $this->extractMauticVersion($composerData);
