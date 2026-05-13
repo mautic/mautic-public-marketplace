@@ -55,7 +55,7 @@ function initPublish() {
             showSuccess('Campaign ' + action + ' successfully as "' + data.package_name + '" (version ' + data.version + '). Redirecting...');
 
             setTimeout(function () {
-                window.location.href = '/package/' + encodeURIComponent(data.package_name);
+                window.location.href = '/package/' + data.package_name.split('/').map(encodeURIComponent).join('/');
             }, 2000);
         } catch (err) {
             console.error('Submit error:', err);
