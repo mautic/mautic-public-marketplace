@@ -58,6 +58,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPackageUploadBasicsStepRendersValidationAttributes(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/upload/package?step=2');
         $crawler = $client->getCrawler();
 
@@ -73,6 +74,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPackageUploadDetailsStepRendersValidationAttributes(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/upload/package?step=3');
         $crawler = $client->getCrawler();
 
@@ -89,6 +91,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPackageUploadPricingLegalStepRendersValidationAttributes(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/upload/package?step=4');
 
         self::assertResponseIsSuccessful();
