@@ -12,15 +12,24 @@
             } %}
 
             {% set statCards = [
-                { eyebrow: 'mautic.marketplace.detail.stats.downloads', heading: package.downloads.total ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.favers', heading: package.favers ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.stars', heading: package.githubStars ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.forks', heading: package.githubForks ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.open_issues', heading: package.githubOpenIssues ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.dependents', heading: package.dependents ?? 0 }
+                { eyebrow: 'mautic.marketplace.detail.stats.downloads', heading: package.downloads.total ?? 0 }
             ] %}
+            {% if package.url %}
+                {% set statCards = statCards|merge([
+                    { eyebrow: 'mautic.marketplace.detail.stats.favers', heading: package.favers ?? 0 },
+                    { eyebrow: 'mautic.marketplace.detail.stats.dependents', heading: package.dependents ?? 0 }
+                ]) %}
+            {% endif %}
+            {% if package.repository %}
+                {% set statCards = statCards|merge([
+                    { eyebrow: 'mautic.marketplace.detail.stats.stars', heading: package.githubStars ?? 0 },
+                    { eyebrow: 'mautic.marketplace.detail.stats.forks', heading: package.githubForks ?? 0 },
+                    { eyebrow: 'mautic.marketplace.detail.stats.open_issues', heading: package.githubOpenIssues ?? 0 }
+                ]) %}
+            {% endif %}
     
             <section>
+                <h3 class="type-heading-01 text-secondary mb-0">{{ 'mautic.marketplace.detail.stats.heading'|trans }}</h3>
                 {% include 'components/card-group.html.twig' with {
                     type: 'static',
                     gridMode: 'condensed',
