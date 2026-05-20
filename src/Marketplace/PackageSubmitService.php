@@ -15,6 +15,7 @@ final class PackageSubmitService
         private readonly MarketplaceApiClient $apiClient,
         private readonly ComposerJsonReader $composerReader,
         private readonly PackageImageUploader $imageUploader,
+        private readonly PackageZipUploader $zipUploader,
     ) {
     }
 
@@ -36,6 +37,8 @@ final class PackageSubmitService
         $this->composerReader->validate($composerData);
         $this->ensureComposerMatchesRequest($composerData, $request);
 
+        $zipUrl = $this->zipUploader->upload($request->name, $request->version, $zipPath);
+
         $bannerUrl = null;
         if ($bannerFile instanceof UploadedFile) {
             $bannerUrl = $this->imageUploader->uploadBanner($request->name, $bannerFile);
@@ -50,7 +53,7 @@ final class PackageSubmitService
             ];
         }
 
-        return $this->upsertPackage($composerData, $request, $user, $bannerUrl, $gallery);
+        return $this->upsertPackage($composerData, $request, $user, $zipUrl, $bannerUrl, $gallery);
     }
 
     /**
@@ -81,6 +84,7 @@ final class PackageSubmitService
         array $composerData,
         SubmitRequest $request,
         Auth0User $user,
+        string $zipUrl,
         ?string $bannerUrl,
         array $gallery,
     ): array {
@@ -142,7 +146,7 @@ final class PackageSubmitService
             'license' => $composerData['license'] ?? [$request->license_type],
             'authors' => $composerData['authors'] ?? null,
             'type' => $request->category,
-            'dist' => ['type' => 'zip'],
+            'dist' => ['type' => 'zip', 'url' => $zipUrl],
             'time' => (new \DateTimeImmutable())->format('c'),
             'smv' => $smv,
             'require' => $composerData['require'] ?? null,
