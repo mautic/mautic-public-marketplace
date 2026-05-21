@@ -128,6 +128,22 @@ final class SubmitApiControllerTest extends WebTestCase
         self::assertStringContainsString('missing a vendor name', $data['error']);
     }
 
+    public function testSubmitWithHtmlPageReturnsClearError(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('POST', '/api/package/submit', server: [
+            'CONTENT_TYPE' => 'application/json',
+        ], content: json_encode([
+            'asset_url' => 'https://example.com/asset/not-a-zip.zip',
+        ]));
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertResponseHeaderSame('content-type', 'application/json');
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('did not return a downloadable ZIP file', $data['error']);
+    }
+
     public function testSubmitWithInvalidJson(): void
     {
         $client = self::createClient();

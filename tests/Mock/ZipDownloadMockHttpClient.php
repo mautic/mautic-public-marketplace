@@ -16,6 +16,13 @@ final class ZipDownloadMockHttpClient extends MockHttpClient
                 return new MockResponse('', ['error' => 'Could not resolve host: unreachable.test']);
             }
 
+            if (str_contains($url, 'not-a-zip')) {
+                return new MockResponse(
+                    '<!DOCTYPE html><html><body>Sign in to continue</body></html>',
+                    ['http_code' => 200, 'response_headers' => ['content-type' => 'text/html; charset=utf-8']],
+                );
+            }
+
             if (str_contains($url, 'unknown-vendor')) {
                 return new MockResponse(
                     self::createValidZip(json_encode([

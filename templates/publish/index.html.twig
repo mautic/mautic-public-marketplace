@@ -1,61 +1,117 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Publish to Marketplace{% endblock %}
+{% block title %}{{ 'mautic.marketplace.publish.title'|trans }}{% endblock %}
 
 {% block body %}
     <section id="publish-container" data-asset-url="{{ asset_url }}">
 
         {% include 'components/lead-space.html.twig' with {
             variant: 'short',
-            heading: 'Publish Campaign to Marketplace',
+            heading: 'mautic.marketplace.publish.heading',
+            description: 'mautic.marketplace.publish.description',
             gradientStyleScheme: 'without-gradient',
             gradientStyleSchemeColor: '#4e5e9e',
-            tags: [{ label: 'Resource', color: 'gray' }],
+            tags: [{ label: 'mautic.marketplace.publish.tag.resource', color: 'gray' }],
         } %}
 
-        <div class="mt-48">
-            <div id="publish-form">
-                <div class="row">
-                    <div class="col-xs-12 col-md-8">
-                        {% set formContent %}
-                            {% if app.user %}
-                                <p class="type-body-02 mb-24">
-                                    Logged in as <strong>{{ app.user.name ?? app.user.email }}</strong>
-                                    (<a href="{{ path('auth_logout') }}">Log out</a>)
-                                </p>
-                            {% endif %}
+        <div class="container mt-48 mb-96">
+            <div class="row gx-32 gy-32">
 
-                            <div class="mb-24">
-                                <dt class="type-heading-01 mb-4">Asset URL</dt>
-                                <dd class="type-body-02" style="word-break: break-all;">
-                                    <code>{{ asset_url }}</code>
-                                </dd>
+                {# Left column: form #}
+                <div class="col-12 col-lg-8">
+                    {% set formContent %}
+                        {% if app.user %}
+                            <div class="d-flex align-items-center gap-12 mb-32 p-16 publish-user-pill">
+                                <i class="ri-user-line type-heading-04 text-primary" aria-hidden="true"></i>
+                                <div class="flex-grow-1">
+                                    <div class="type-label-01 text-helper">{{ 'mautic.marketplace.publish.publishing_as'|trans }}</div>
+                                    <div class="type-heading-02">{{ app.user.name ?? app.user.email }}</div>
+                                </div>
+                                <a href="{{ path('auth_logout') }}" class="type-body-02">{{ 'mautic.marketplace.header.logout'|trans }}</a>
                             </div>
+                        {% endif %}
 
-                            <p class="type-body-02 text-helper mb-32">
-                                The campaign ZIP will be downloaded from the URL above.
-                                It must contain a <code>composer.json</code> with the package metadata.
+                        <div class="mb-32">
+                            <div class="d-flex align-items-center gap-8 mb-8">
+                                <i class="ri-link type-heading-03 text-primary" aria-hidden="true"></i>
+                                <h3 class="type-heading-02 m-0">{{ 'mautic.marketplace.publish.asset_url.heading'|trans }}</h3>
+                            </div>
+                            <p class="type-body-02 text-helper mb-12">
+                                {{ 'mautic.marketplace.publish.asset_url.help'|trans }}
                             </p>
+                            <div class="publish-url-box p-16">
+                                <code class="type-code-01 text-break">{{ asset_url }}</code>
+                            </div>
+                        </div>
 
-                            {% include 'components/button.html.twig' with { buttons: [{
-                                label: 'Publish to Marketplace',
-                                variant: 'primary',
-                                size: 'lg',
-                                wide: true,
-                                icon: 'ri-upload-cloud-2-line',
-                                attributes: { type: 'button', id: 'publish-submit-btn' },
-                            }]} %}
-                        {% endset %}
-                        {% include 'components/content-block.html.twig' with {
-                            heading: 'Campaign details',
-                            childContainer: formContent,
-                        } %}
+                        <div id="publish-error" class="alert alert--error mb-16" style="display:none" role="alert"></div>
+                        <div id="publish-success" class="alert alert--success mb-16" style="display:none" role="status"></div>
+
+                        {% include 'components/button.html.twig' with { buttons: [{
+                            label: 'mautic.marketplace.publish.submit',
+                            variant: 'primary',
+                            size: 'lg',
+                            wide: true,
+                            icon: 'ri-upload-cloud-2-line',
+                            attributes: { type: 'button', id: 'publish-submit-btn' },
+                        }]} %}
+
+                        <p class="type-legal-01 text-helper mt-16 mb-0">
+                            {{ 'mautic.marketplace.publish.legal'|trans }}
+                        </p>
+                    {% endset %}
+
+                    {% include 'components/content-block.html.twig' with {
+                        heading: 'mautic.marketplace.publish.details.heading',
+                        childContainer: formContent,
+                    } %}
+                </div>
+
+                {# Right column: steps + tips #}
+                <div class="col-12 col-lg-4">
+                    <div class="publish-steps tile p-24 mb-24">
+                        <div class="type-label-01 text-helper mb-4">{{ 'mautic.marketplace.publish.steps.eyebrow'|trans }}</div>
+                        <h3 class="type-heading-03 mb-24">{{ 'mautic.marketplace.publish.steps.heading'|trans }}</h3>
+
+                        <ol class="publish-steps__list">
+                            <li class="publish-steps__item">
+                                <span class="publish-steps__num">1</span>
+                                <div>
+                                    <div class="type-heading-01 mb-4">{{ 'mautic.marketplace.publish.steps.1.heading'|trans }}</div>
+                                    <div class="type-body-02 text-helper">
+                                        {{ 'mautic.marketplace.publish.steps.1.copy'|trans }}
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="publish-steps__item">
+                                <span class="publish-steps__num">2</span>
+                                <div>
+                                    <div class="type-heading-01 mb-4">{{ 'mautic.marketplace.publish.steps.2.heading'|trans }}</div>
+                                    <div class="type-body-02 text-helper">
+                                        {{ 'mautic.marketplace.publish.steps.2.copy'|trans }}
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="publish-steps__item">
+                                <span class="publish-steps__num">3</span>
+                                <div>
+                                    <div class="type-heading-01 mb-4">{{ 'mautic.marketplace.publish.steps.3.heading'|trans }}</div>
+                                    <div class="type-body-02 text-helper">
+                                        {{ 'mautic.marketplace.publish.steps.3.copy'|trans }}
+                                    </div>
+                                </div>
+                            </li>
+                        </ol>
                     </div>
+
+                    {% include 'components/notification.html.twig' with {
+                        kind: 'info',
+                        title: 'mautic.marketplace.publish.notice.title',
+                        subtitle: 'mautic.marketplace.publish.notice.subtitle',
+                        hideCloseButton: true,
+                    } %}
                 </div>
             </div>
-
-            <div id="publish-error" class="alert alert--error mt-24" style="display:none"></div>
-            <div id="publish-success" class="alert alert--success mt-24" style="display:none"></div>
         </div>
     </section>
 {% endblock %}

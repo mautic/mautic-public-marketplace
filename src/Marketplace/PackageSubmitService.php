@@ -71,6 +71,21 @@ final class PackageSubmitService
             throw new SubmitValidationException(\sprintf('The asset URL did not return a valid ZIP file. Make sure it is publicly accessible and points directly to the campaign ZIP: %s', $assetUrl));
         }
 
+        // A ZIP archive always begins with the "PK" signature. Some hosts (e.g. private
+        // Codespaces ports, login walls) answer with HTTP 200 and an HTML page instead of
+        // the file, so check the payload before treating it as a downloadable archive.
+        if (!str_starts_with($content, 'PK')) {
+            $contentType = strtolower($response->getHeaders(false)['content-type'][0] ?? '');
+            $looksLikeHtml = str_contains($contentType, 'html')
+                || 1 === preg_match('/^\s*<(?:!doctype|html|\?xml)/i', $content);
+
+            if ($looksLikeHtml) {
+                throw new SubmitValidationException(\sprintf('The asset URL did not return a downloadable ZIP file — it returned a web page instead. Make sure the URL is publicly accessible (the marketplace server must be able to reach it) and points directly to the campaign ZIP: %s', $assetUrl));
+            }
+
+            throw new SubmitValidationException(\sprintf('The asset URL did not return a valid ZIP file. Make sure it points directly to the campaign ZIP: %s', $assetUrl));
+        }
+
         $tmpFile = tempnam(sys_get_temp_dir(), 'mautic_submit_');
         if (false === $tmpFile || false === file_put_contents($tmpFile, $content)) {
             throw new SubmitValidationException('Failed to save downloaded asset to a temporary file.');
