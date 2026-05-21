@@ -7,7 +7,7 @@ namespace App\Marketplace;
 use App\Auth0\Auth0User;
 use App\Marketplace\Exception\SubmitValidationException;
 use App\Supabase\Exception\SupabaseApiException;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -16,6 +16,7 @@ final class PackageSubmitService
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
         private readonly HttpClientInterface $httpClient,
+        private readonly PackageZipUploader $zipUploader,
     ) {
     }
 
@@ -35,7 +36,15 @@ final class PackageSubmitService
             $composerData = $this->readComposerJson($zipPath);
             $this->validateComposerData($composerData);
 
-            return $this->upsertPackage($composerData, $assetUrl, $user);
+            // Copy the archive into marketplace-owned storage so installs don't depend on
+            // the originating Mautic instance staying reachable.
+            $distUrl = $this->zipUploader->upload(
+                (string) $composerData['name'],
+                (string) $composerData['version'],
+                $zipPath,
+            );
+
+            return $this->upsertPackage($composerData, $distUrl, $user);
         } finally {
             if (file_exists($zipPath)) {
                 unlink($zipPath);
@@ -45,31 +54,26 @@ final class PackageSubmitService
 
     private function downloadZip(string $assetUrl): string
     {
+        // Symfony HttpClient throws on 4xx/5xx by default, so a single getContent() call
+        // covers both transport errors and bad status codes without manual code branching.
         try {
-            $response = $this->httpClient->request('GET', $assetUrl);
-            $statusCode = $response->getStatusCode();
-        } catch (TransportExceptionInterface $e) {
+            $content = $this->httpClient->request('GET', $assetUrl)->getContent();
+        } catch (TransportExceptionInterface) {
             throw new SubmitValidationException(\sprintf('Could not reach asset URL. The server running the marketplace must be able to download the ZIP from this address (%s).', $assetUrl));
+        } catch (HttpExceptionInterface $e) {
+            throw new SubmitValidationException(\sprintf('Failed to download asset from URL (HTTP %d): %s', $e->getResponse()->getStatusCode(), $assetUrl));
         }
 
-        if (200 !== $statusCode) {
-            throw new SubmitValidationException(\sprintf('Failed to download asset from URL (HTTP %d).', $statusCode));
-        }
-
-        try {
-            $content = $response->getContent();
-        } catch (HttpClientExceptionInterface $e) {
-            throw new SubmitValidationException(\sprintf('Failed to download asset from URL: %s', $e->getMessage()));
+        // Validate the ZIP local-file-header signature. Some hosts answer with HTTP 200
+        // and an HTML page (login wall, error page) instead of the file, so checking magic
+        // bytes is more reliable than trusting Content-Type.
+        if (!str_starts_with($content, "PK\x03\x04")) {
+            throw new SubmitValidationException(\sprintf('The asset URL did not return a valid ZIP file. Make sure it is publicly accessible and points directly to the campaign ZIP: %s', $assetUrl));
         }
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'mautic_submit_');
-        if (false === $tmpFile) {
-            throw new SubmitValidationException('Failed to create temporary file.');
-        }
-
-        $bytesWritten = file_put_contents($tmpFile, $content);
-        if (false === $bytesWritten) {
-            throw new SubmitValidationException('Failed to write downloaded asset to temporary file.');
+        if (false === $tmpFile || false === file_put_contents($tmpFile, $content)) {
+            throw new SubmitValidationException('Failed to save downloaded asset to a temporary file.');
         }
 
         return $tmpFile;
@@ -151,7 +155,7 @@ final class PackageSubmitService
      *
      * @return array{package_name: string, version: string, created: bool}
      */
-    private function upsertPackage(array $composerData, string $assetUrl, Auth0User $user): array
+    private function upsertPackage(array $composerData, string $distUrl, Auth0User $user): array
     {
         $packageName = (string) $composerData['name'];
         $version = (string) $composerData['version'];
@@ -204,7 +208,7 @@ final class PackageSubmitService
             'license' => $composerData['license'] ?? null,
             'authors' => $composerData['authors'] ?? null,
             'type' => $type,
-            'dist' => ['url' => $assetUrl, 'type' => 'zip'],
+            'dist' => ['url' => $distUrl, 'type' => 'zip'],
             'time' => (new \DateTimeImmutable())->format('c'),
             'smv' => $smv,
         ];

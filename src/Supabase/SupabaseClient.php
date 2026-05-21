@@ -94,6 +94,29 @@ final class SupabaseClient
         return $this->decodeResponse($response);
     }
 
+    public function uploadStorageObject(string $bucket, string $objectPath, string $contents, string $contentType): string
+    {
+        $response = $this->httpClient->request('POST', $this->baseUri.'/storage/v1/object/'.$bucket.'/'.ltrim($objectPath, '/'), [
+            'body' => $contents,
+            'headers' => [
+                'Accept' => 'application/json',
+                'Content-Type' => $contentType,
+                'apikey' => $this->serviceRoleKey,
+                'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
+                'x-upsert' => 'true',
+            ],
+        ]);
+
+        $status = $response->getStatusCode();
+        if ($status >= 400) {
+            $payload = $response->toArray(false);
+            $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
+            throw new SupabaseApiException(\sprintf('Supabase storage upload failed (%s).', $message));
+        }
+
+        return $this->baseUri.'/storage/v1/object/public/'.$bucket.'/'.ltrim($objectPath, '/');
+    }
+
     private function decodeResponse(ResponseInterface $response): mixed
     {
         $status = $response->getStatusCode();
