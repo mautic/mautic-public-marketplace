@@ -57,7 +57,8 @@ final class PackageSubmitService
         // Symfony HttpClient throws on 4xx/5xx by default, so a single getContent() call
         // covers both transport errors and bad status codes without manual code branching.
         try {
-            $content = $this->httpClient->request('GET', $assetUrl)->getContent();
+            $response = $this->httpClient->request('GET', $assetUrl);
+            $content  = $response->getContent();
         } catch (TransportExceptionInterface) {
             throw new SubmitValidationException(\sprintf('Could not reach asset URL. The server running the marketplace must be able to download the ZIP from this address (%s).', $assetUrl));
         } catch (HttpExceptionInterface $e) {
@@ -68,22 +69,14 @@ final class PackageSubmitService
         // and an HTML page (login wall, error page) instead of the file, so checking magic
         // bytes is more reliable than trusting Content-Type.
         if (!str_starts_with($content, "PK\x03\x04")) {
-            throw new SubmitValidationException(\sprintf('The asset URL did not return a valid ZIP file. Make sure it is publicly accessible and points directly to the campaign ZIP: %s', $assetUrl));
-        }
-
-        // A ZIP archive always begins with the "PK" signature. Some hosts (e.g. private
-        // Codespaces ports, login walls) answer with HTTP 200 and an HTML page instead of
-        // the file, so check the payload before treating it as a downloadable archive.
-        if (!str_starts_with($content, 'PK')) {
-            $contentType = strtolower($response->getHeaders(false)['content-type'][0] ?? '');
+            $contentType   = strtolower($response->getHeaders(false)['content-type'][0] ?? '');
             $looksLikeHtml = str_contains($contentType, 'html')
                 || 1 === preg_match('/^\s*<(?:!doctype|html|\?xml)/i', $content);
 
-            if ($looksLikeHtml) {
-                throw new SubmitValidationException(\sprintf('The asset URL did not return a downloadable ZIP file — it returned a web page instead. Make sure the URL is publicly accessible (the marketplace server must be able to reach it) and points directly to the campaign ZIP: %s', $assetUrl));
-            }
-
-            throw new SubmitValidationException(\sprintf('The asset URL did not return a valid ZIP file. Make sure it points directly to the campaign ZIP: %s', $assetUrl));
+            throw new SubmitValidationException($looksLikeHtml
+                ? \sprintf('The asset URL did not return a downloadable ZIP file — it returned a web page instead. Make sure the URL is publicly accessible (the marketplace server must be able to reach it) and points directly to the campaign ZIP: %s', $assetUrl)
+                : \sprintf('The asset URL did not return a valid ZIP file. Make sure it points directly to the campaign ZIP: %s', $assetUrl)
+            );
         }
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'mautic_submit_');
