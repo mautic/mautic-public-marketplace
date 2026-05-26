@@ -1,0 +1,71 @@
+.publish-user-pill {
+    background-color: var(--layer-01);
+    border: 1px solid var(--border-subtle-01);
+    border-radius: var(--border-radius-sm);
+
+    a {
+        color: var(--link-primary);
+        text-decoration: none;
+        white-space: nowrap;
+
+        &:hover {
+            color: var(--link-primary-hover);
+            text-decoration: underline;
+        }
+    }
+}
+
+.publish-url-box {
+    background-color: var(--field-01);
+    border: 1px solid var(--border-subtle-01);
+    border-left: 3px solid var(--primary-60);
+    border-radius: var(--border-radius-sm);
+
+    code {
+        background: transparent;
+        padding: 0;
+        color: var(--text-primary);
+        font-size: var(--code-02-font-size);
+        line-height: var(--code-02-line-height);
+    }
+}
+
+.publish-steps {
+    background-color: var(--layer-01);
+    border: 1px solid var(--border-subtle-01);
+
+    @media (min-width: 1056px) {
+        position: sticky;
+        top: 24px;
+    }
+
+    &__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    &__item {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    &__num {
+        flex: 0 0 32px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: var(--primary-60);
+        color: var(--text-on-color);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 1;
+    }
+}
