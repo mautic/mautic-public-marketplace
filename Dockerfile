@@ -58,6 +58,11 @@ RUN printf '%s\n' \
   > /etc/apache2/conf-available/marketplace.conf \
   && a2enconf marketplace.conf
 
+# Allow encoded slashes in URLs so package detail routes like
+# /package/vendor%2Fpackage resolve (package names are vendor/package format).
+# Must be in server-level config, not inside <Directory>.
+RUN echo 'AllowEncodedSlashes NoDecode' >> /etc/apache2/apache2.conf
+
 RUN chown -R www-data:www-data /var/www/html/var
 
 EXPOSE 80
