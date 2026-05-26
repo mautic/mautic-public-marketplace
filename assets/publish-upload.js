@@ -104,7 +104,10 @@ function initPublishUpload() {
             showSuccess('Campaign ' + action + ' successfully as "' + data.package_name + '" (version ' + data.version + '). Redirecting...');
 
             setTimeout(function () {
-                window.location.href = '/package/' + encodeURIComponent(data.package_name);
+                // Package names are vendor/package — keep the slash literal so the
+                // route matches without depending on nginx/Apache decoding %2F.
+                var pathSegments = data.package_name.split('/').map(encodeURIComponent).join('/');
+                window.location.href = '/package/' + pathSegments;
             }, 2000);
         } catch (err) {
             console.error('Upload error:', err);
