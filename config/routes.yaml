@@ -30,15 +30,16 @@ review_submit:
     requirements:
         package: .+
 
-package_submit:
-    path: /api/package/submit
-    controller: App\Controller\Api\SubmitApiController::submit
+package_upload:
+    path: /api/package/upload
+    controller: App\Controller\Api\UploadApiController::upload
     methods: [POST]
 
-publish_index:
-    path: /publish
-    controller: App\Controller\PublishController::index
-    
+publish_upload:
+    path: /publish/upload
+    controller: App\Controller\PublishController::upload
+    methods: [GET]
+
 marketplace_detail:
     path: /package/{package}
     controller: App\Controller\MarketplaceController::detail

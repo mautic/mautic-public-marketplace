@@ -2,40 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Mock;
+namespace App\Tests\Fixtures;
 
-use Symfony\Component\HttpClient\MockHttpClient;
-use Symfony\Component\HttpClient\Response\MockResponse;
-
-final class ZipDownloadMockHttpClient extends MockHttpClient
+final class ValidZipFixture
 {
-    public function __construct()
-    {
-        parent::__construct(static function (string $method, string $url): MockResponse {
-            if (str_contains($url, 'unreachable.test')) {
-                return new MockResponse('', ['error' => 'Could not resolve host: unreachable.test']);
-            }
-
-            if (str_contains($url, 'unknown-vendor')) {
-                return new MockResponse(
-                    self::createValidZip(json_encode([
-                        'name' => 'unknown-vendor/test-campaign',
-                        'description' => 'A campaign with placeholder vendor.',
-                        'type' => 'mautic-resource',
-                        'version' => '1.0.0',
-                    ])),
-                    ['http_code' => 200, 'response_headers' => ['content-type' => 'application/zip']],
-                );
-            }
-
-            return new MockResponse(
-                self::createValidZip(),
-                ['http_code' => 200, 'response_headers' => ['content-type' => 'application/zip']],
-            );
-        });
-    }
-
-    public static function createValidZip(?string $composerJson = null): string
+    /**
+     * Builds an in-memory ZIP with the given composer.json (defaults to a valid Mautic resource).
+     * Used by upload-endpoint tests to simulate what Mautic's share flow would produce.
+     */
+    public static function build(?string $composerJson = null): string
     {
         $composerJson ??= json_encode([
             'name' => 'testuser/test-campaign',

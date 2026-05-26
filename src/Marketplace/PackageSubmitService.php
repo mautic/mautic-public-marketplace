@@ -7,76 +7,38 @@ namespace App\Marketplace;
 use App\Auth0\Auth0User;
 use App\Marketplace\Exception\SubmitValidationException;
 use App\Supabase\Exception\SupabaseApiException;
-use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class PackageSubmitService
 {
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
-        private readonly HttpClientInterface $httpClient,
         private readonly PackageZipUploader $zipUploader,
     ) {
     }
 
     /**
-     * Downloads the zip from assetUrl, reads composer.json, and creates/updates the package.
+     * Reads composer.json from an already-saved ZIP and creates/updates the package.
+     * Caller manages the file lifetime (typically a Symfony UploadedFile, auto-cleaned by PHP at request shutdown).
      *
      * @return array{package_name: string, version: string, created: bool}
      *
      * @throws SubmitValidationException
      * @throws SupabaseApiException
      */
-    public function submit(string $assetUrl, Auth0User $user): array
+    public function submitFromFile(string $zipPath, Auth0User $user): array
     {
-        $zipPath = $this->downloadZip($assetUrl);
+        $composerData = $this->readComposerJson($zipPath);
+        $this->validateComposerData($composerData);
 
-        try {
-            $composerData = $this->readComposerJson($zipPath);
-            $this->validateComposerData($composerData);
+        // Copy the archive into marketplace-owned storage so installs don't depend on
+        // the originating Mautic instance staying reachable.
+        $distUrl = $this->zipUploader->upload(
+            (string) $composerData['name'],
+            (string) $composerData['version'],
+            $zipPath,
+        );
 
-            // Copy the archive into marketplace-owned storage so installs don't depend on
-            // the originating Mautic instance staying reachable.
-            $distUrl = $this->zipUploader->upload(
-                (string) $composerData['name'],
-                (string) $composerData['version'],
-                $zipPath,
-            );
-
-            return $this->upsertPackage($composerData, $distUrl, $user);
-        } finally {
-            if (file_exists($zipPath)) {
-                unlink($zipPath);
-            }
-        }
-    }
-
-    private function downloadZip(string $assetUrl): string
-    {
-        // Symfony HttpClient throws on 4xx/5xx by default, so a single getContent() call
-        // covers both transport errors and bad status codes without manual code branching.
-        try {
-            $content = $this->httpClient->request('GET', $assetUrl)->getContent();
-        } catch (TransportExceptionInterface) {
-            throw new SubmitValidationException(\sprintf('Could not reach asset URL. The server running the marketplace must be able to download the ZIP from this address (%s).', $assetUrl));
-        } catch (HttpExceptionInterface $e) {
-            throw new SubmitValidationException(\sprintf('Failed to download asset from URL (HTTP %d): %s', $e->getResponse()->getStatusCode(), $assetUrl));
-        }
-
-        // Validate the ZIP local-file-header signature. Some hosts answer with HTTP 200
-        // and an HTML page (login wall, error page) instead of the file, so checking magic
-        // bytes is more reliable than trusting Content-Type.
-        if (!str_starts_with($content, "PK\x03\x04")) {
-            throw new SubmitValidationException(\sprintf('The asset URL did not return a valid ZIP file. Make sure it is publicly accessible and points directly to the campaign ZIP: %s', $assetUrl));
-        }
-
-        $tmpFile = tempnam(sys_get_temp_dir(), 'mautic_submit_');
-        if (false === $tmpFile || false === file_put_contents($tmpFile, $content)) {
-            throw new SubmitValidationException('Failed to save downloaded asset to a temporary file.');
-        }
-
-        return $tmpFile;
+        return $this->upsertPackage($composerData, $distUrl, $user);
     }
 
     /**
