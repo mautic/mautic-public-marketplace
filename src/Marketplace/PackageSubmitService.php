@@ -57,6 +57,66 @@ final class PackageSubmitService
     }
 
     /**
+     * Mautic-source upload: the ZIP already carries banner/gallery and all metadata in
+     * extra.mautic.*, so no form fields or separate image files are needed. Synthesizes
+     * a SubmitRequest from composer.json and delegates to the same upsert pipeline.
+     *
+     * @return array{package_name: string, version: string, status: string, created: bool}
+     *
+     * @throws SubmitValidationException
+     */
+    public function submitFromMauticShare(string $zipPath, Auth0User $user): array
+    {
+        $composerData = $this->composerReader->read($zipPath);
+        $this->composerReader->validate($composerData);
+
+        [$vendor] = explode('/', (string) $composerData['name'], 2);
+        if ('unknown-vendor' === $vendor) {
+            throw new SubmitValidationException('The campaign is missing a vendor name. Please fill in a vendor name in Mautic when sharing the campaign, then try again.');
+        }
+
+        $request  = $this->requestFromComposer($composerData);
+        $zipUrl   = $this->zipUploader->upload($request->name, $request->version, $zipPath);
+
+        return $this->upsertPackage($composerData, $request, $user, $zipUrl, null, []);
+    }
+
+    /**
+     * @param array<string, mixed> $composerData
+     */
+    private function requestFromComposer(array $composerData): SubmitRequest
+    {
+        $extra      = $composerData['extra']['mautic'] ?? [];
+        $worksWith  = \is_array($extra['works-with'] ?? null) ? array_values(array_filter(array_map('strval', $extra['works-with']))) : [];
+        $languages  = \is_array($extra['languages'] ?? null) ? array_values(array_filter(array_map('strval', $extra['languages']))) : [];
+        $price      = $extra['price']['amount'] ?? 0;
+        $keywords   = \is_array($composerData['keywords'] ?? null) ? array_values(array_filter(array_map('strval', $composerData['keywords']))) : [];
+
+        if ([] === $worksWith) {
+            $minVersion = $extra['minimum-version'] ?? null;
+            if (\is_string($minVersion) && '' !== $minVersion) {
+                $worksWith = [$minVersion];
+            }
+        }
+
+        return new SubmitRequest(
+            name: (string) $composerData['name'],
+            version: (string) $composerData['version'],
+            category: (string) $composerData['type'],
+            headline: (string) ($extra['headline'] ?? ''),
+            keywords: $keywords,
+            description: (string) ($composerData['description'] ?? ''),
+            languages: $languages,
+            works_with: $worksWith,
+            // License + ownership are UI-form-only concerns; Mautic share-flow uploads carry
+            // their declared licence inside composer.json (handled by upsertPackage).
+            license_type: 'mautic-share',
+            price: (float) $price,
+            ip_ownership_accepted: true,
+        );
+    }
+
+    /**
      * @param array<string, mixed> $composerData
      */
     private function ensureComposerMatchesRequest(array $composerData, SubmitRequest $request): void

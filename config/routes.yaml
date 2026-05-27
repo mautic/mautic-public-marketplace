@@ -40,6 +40,11 @@ api_package_submit:
     controller: App\Controller\Api\SubmitApiController::submit
     methods: [POST]
 
+api_package_mautic_upload:
+    path: /api/package/mautic-upload
+    controller: App\Controller\Api\MauticUploadApiController::upload
+    methods: [POST]
+
 api_mautic_versions:
     path: /api/mautic-versions
     controller: App\Controller\Api\MauticVersionsApiController::list

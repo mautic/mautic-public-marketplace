@@ -51,6 +51,18 @@ RUN printf '%s\n' \
   > /etc/apache2/conf-available/marketplace.conf \
   && a2enconf marketplace.conf
 
+# Package detail routes use vendor/package format and may be linked as
+# /package/vendor%2Fpackage. AllowEncodedSlashes must live in server context
+# (rejected inside <Directory>), so it's appended directly to apache2.conf.
+RUN echo 'AllowEncodedSlashes NoDecode' >> /etc/apache2/apache2.conf
+
+# Allow campaign ZIP uploads up to the marketplace's 50MB cap (PackageZipUploader::MAX_BYTES).
+# A few MB of headroom on post_max_size covers multipart form overhead.
+RUN printf '%s\n' \
+  'upload_max_filesize = 60M' \
+  'post_max_size = 64M' \
+  > /usr/local/etc/php/conf.d/upload-limits.ini
+
 RUN chown -R www-data:www-data /var/www/html/var
 
 EXPOSE 80

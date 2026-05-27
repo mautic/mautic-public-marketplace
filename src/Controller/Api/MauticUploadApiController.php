@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controller\Api;
+
+use App\Auth0\Auth0User;
+use App\Marketplace\Exception\SubmitValidationException;
+use App\Marketplace\PackageSubmitService;
+use App\Supabase\Exception\SupabaseApiException;
+use Psr\Log\LoggerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+
+final class MauticUploadApiController extends AbstractController
+{
+    // Mirrors PackageZipUploader::MAX_BYTES so the edge cap matches storage.
+    private const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+
+    public function __construct(
+        private readonly PackageSubmitService $submitService,
+        private readonly LoggerInterface $logger,
+    ) {
+    }
+
+    /**
+     * Receives a ZIP pushed from a Mautic instance via the browser-as-proxy popup.
+     * No form fields — all metadata lives inside composer.json's extra.mautic.*.
+     */
+    #[IsGranted('ROLE_USER')]
+    public function upload(Request $request): JsonResponse
+    {
+        /** @var Auth0User $user */
+        $user = $this->getUser();
+
+        $file = $request->files->get('package');
+        if (!$file instanceof UploadedFile) {
+            return $this->json(
+                ['error' => 'No package file uploaded. Expected a multipart/form-data field named "package".'],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        if (!$file->isValid()) {
+            return $this->json(
+                ['error' => \sprintf('Upload failed: %s', $file->getErrorMessage())],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        if ($file->getSize() > self::MAX_UPLOAD_BYTES) {
+            return $this->json(
+                ['error' => \sprintf('The ZIP file is too large. Maximum size is %dMB.', self::MAX_UPLOAD_BYTES / 1024 / 1024)],
+                Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
+            );
+        }
+
+        try {
+            $result = $this->submitService->submitFromMauticShare($file->getPathname(), $user);
+        } catch (SubmitValidationException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (SupabaseApiException $e) {
+            $this->logger->error('Mautic share upload failed at marketplace storage layer.', [
+                'filename' => $file->getClientOriginalName(),
+                'exception' => $e,
+            ]);
+
+            return $this->json(
+                ['error' => "We couldn't save the package right now. Please try again in a moment, or contact support if it keeps happening."],
+                Response::HTTP_BAD_GATEWAY,
+            );
+        }
+
+        return $this->json($result, Response::HTTP_CREATED);
+    }
+}

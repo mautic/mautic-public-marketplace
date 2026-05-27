@@ -96,14 +96,27 @@ final class SupabaseClient
 
     public function uploadStorageObject(string $bucket, string $objectPath, string $contents, string $contentType): string
     {
-        $response = $this->httpClient->request('POST', $this->baseUri.'/storage/v1/object/'.$bucket.'/'.ltrim($objectPath, '/'), [
+        $objectUrl = $this->baseUri.'/storage/v1/object/'.$bucket.'/'.ltrim($objectPath, '/');
+
+        // Delete any existing object at this path first, then POST without upsert.
+        // Supabase Storage's upsert flow triggers a server-side "delete old version"
+        // step that crashes in local file-backend mode (TypeError on undefined path),
+        // so we bypass it by always issuing a clean POST. 404 on delete is expected
+        // when the path is new and is ignored.
+        $this->httpClient->request('DELETE', $objectUrl, [
+            'headers' => [
+                'apikey' => $this->serviceRoleKey,
+                'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
+            ],
+        ])->getStatusCode();
+
+        $response = $this->httpClient->request('POST', $objectUrl, [
             'body' => $contents,
             'headers' => [
                 'Accept' => 'application/json',
                 'Content-Type' => $contentType,
                 'apikey' => $this->serviceRoleKey,
                 'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
-                'x-upsert' => 'true',
             ],
         ]);
 
