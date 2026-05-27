@@ -8,7 +8,6 @@ function initPublishUpload() {
     const waitingEl = document.getElementById('publish-upload-waiting');
     const confirmEl = document.getElementById('publish-upload-confirm');
     const confirmBtn = document.getElementById('publish-upload-confirm-btn');
-    const originEl = document.getElementById('publish-upload-origin');
     const filenameEl = document.getElementById('publish-upload-filename');
     const sizeEl = document.getElementById('publish-upload-size');
     const errorEl = document.getElementById('publish-upload-error');
@@ -48,7 +47,6 @@ function initPublishUpload() {
         pendingFilename = typeof filename === 'string' && filename ? filename : 'campaign.zip';
         pendingOrigin = event.origin;
 
-        originEl.textContent = pendingOrigin;
         filenameEl.textContent = pendingFilename;
         sizeEl.textContent = formatBytes(pendingArchive.size);
 
