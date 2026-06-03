@@ -1,0 +1,142 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Publish to Marketplace{% endblock %}
+
+{% block body %}
+<section id="publish-upload-container">
+
+    <div class="publish-upload-hero" style="background: #4e5e9e; padding: 56px 0 48px;">
+        <div class="container">
+            <div class="mb-16">
+                <span class="label label-gray" aria-label="Resource">
+                    <span aria-hidden="true">Resource</span>
+                </span>
+            </div>
+            <h1 class="type-fluid-heading-04 text-break" style="color: #fff; margin: 0; line-height: 1.2;">
+                Publish Campaign to Marketplace
+            </h1>
+        </div>
+    </div>
+
+    <div class="container mt-48">
+        <div class="row">
+                <div class="col-xs-12 col-md-8">
+                    {% set formContent %}
+                        {% if app.user %}
+                            <div class="bg-layer-01 pa-16 mb-24" style="border-radius: 4px;">
+                                <p class="type-helper-text text-helper m-0">Publishing as</p>
+                                <p class="type-heading-01 m-0">
+                                    <i class="ri-account-circle-line"></i>
+                                    {{ app.user.name ?? app.user.email }}
+                                </p>
+                            </div>
+                        {% endif %}
+
+                        <div id="publish-upload-waiting" class="mb-24">
+                            <div class="mb-16">
+                                <h3 class="type-heading-02 m-0">
+                                    <i class="ri-time-line"></i> Waiting for Mautic
+                                </h3>
+                            </div>
+                            <p class="type-body-02 text-helper">
+                                We're waiting for the campaign archive to arrive from Mautic.
+                                If nothing happens within a few seconds, close this window and click <em>Publish</em> in Mautic again.
+                            </p>
+                        </div>
+
+                        <div id="publish-upload-confirm" class="mb-24" style="display:none">
+                            <div class="mb-16">
+                                <h3 class="type-heading-02 m-0">
+                                    <i class="ri-archive-line"></i> Archive
+                                </h3>
+                            </div>
+                            <p class="type-body-02 mb-24">
+                                <span id="publish-upload-filename"></span>
+                                &middot;
+                                <span id="publish-upload-size" class="text-helper"></span>
+                            </p>
+
+                            <p class="type-body-02 text-helper mb-32">
+                                By publishing you confirm that the campaign respects the marketplace guidelines and that you have the right to distribute it.
+                            </p>
+
+                            {% include 'components/button.html.twig' with { buttons: [{
+                                label: 'Confirm and publish',
+                                variant: 'primary',
+                                size: 'lg',
+                                wide: true,
+                                icon: 'ri-upload-cloud-2-line',
+                                attributes: { type: 'button', id: 'publish-upload-confirm-btn' },
+                            }]} %}
+                        </div>
+                    {% endset %}
+                    {% include 'components/content-block.html.twig' with {
+                        heading: 'Campaign details',
+                        childContainer: formContent,
+                    } %}
+                </div>
+
+                <div class="col-xs-12 col-md-4">
+                    <div class="bg-layer-01 pa-24" style="border-radius: 4px;">
+                        <p class="type-helper-text text-helper m-0">In 3 steps</p>
+                        <h3 class="type-heading-03 mt-4 mb-24">How publishing works</h3>
+
+                        <div class="mb-24 d-flex">
+                            <div class="me-16">
+                                <div class="d-flex align-items-center justify-content-center text-bg-primary"
+                                     style="width: 32px; height: 32px; border-radius: 50%; font-weight: 600;">1</div>
+                            </div>
+                            <div>
+                                <p class="type-heading-01 m-0">Mautic sends the archive</p>
+                                <p class="type-body-02 text-helper mt-4">
+                                    The campaign ZIP is streamed from your Mautic instance directly through your browser.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mb-24 d-flex">
+                            <div class="me-16">
+                                <div class="d-flex align-items-center justify-content-center text-bg-primary"
+                                     style="width: 32px; height: 32px; border-radius: 50%; font-weight: 600;">2</div>
+                            </div>
+                            <div>
+                                <p class="type-heading-01 m-0">You review and confirm</p>
+                                <p class="type-body-02 text-helper mt-4">
+                                    Check the source and archive details, then confirm to publish under your marketplace account.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mb-0 d-flex">
+                            <div class="me-16">
+                                <div class="d-flex align-items-center justify-content-center text-bg-primary"
+                                     style="width: 32px; height: 32px; border-radius: 50%; font-weight: 600;">3</div>
+                            </div>
+                            <div>
+                                <p class="type-heading-01 m-0">The package goes live</p>
+                                <p class="type-body-02 text-helper mt-4">
+                                    You'll be redirected to the package page where you can manage updates.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-16 d-flex" style="background: #edf5ff; border-left: 4px solid #0f62fe; border-radius: 4px; padding: 16px 20px;">
+                        <div style="flex-shrink: 0; margin-right: 12px; padding-top: 2px;">
+                            <i class="ri-information-line" style="color: #0f62fe; font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <p class="type-heading-01 m-0">First time publishing?</p>
+                            <p class="type-body-02 mt-8 mb-0">
+                                A new version of the same package overwrites the previous one &mdash; bump the version in <code>composer.json</code> to release an update.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <div id="publish-upload-error" class="alert alert--error mt-24" style="display:none"></div>
+        <div id="publish-upload-success" class="alert alert--success mt-24" style="display:none"></div>
+    </div>
+</section>
+{% endblock %}

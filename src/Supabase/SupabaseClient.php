@@ -75,22 +75,59 @@ final class SupabaseClient
     }
 
     /**
-     * @param array<string, mixed> $body
+     * @param array<string, mixed>  $body
+     * @param array<string, string> $extraHeaders
      */
-    public function mutate(string $method, string $path, array $body): void
+    public function mutate(string $method, string $path, array $body, array $extraHeaders = []): mixed
     {
         $response = $this->httpClient->request($method, $this->baseUri.$path, [
             'json' => $body,
-            'headers' => [
+            'headers' => array_merge([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
                 'apikey' => $this->serviceRoleKey,
                 'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
                 'Prefer' => 'return=representation',
+            ], $extraHeaders),
+        ]);
+
+        return $this->decodeResponse($response);
+    }
+
+    public function uploadStorageObject(string $bucket, string $objectPath, string $contents, string $contentType): string
+    {
+        $objectUrl = $this->baseUri.'/storage/v1/object/'.$bucket.'/'.ltrim($objectPath, '/');
+
+        // Delete any existing object at this path first, then POST without upsert.
+        // Supabase Storage's upsert path triggers a server-side "delete old version"
+        // step that crashes in local file-backend mode (TypeError on undefined path),
+        // so we bypass it by always issuing a clean POST. 404 on delete is expected
+        // when the path is new and is ignored.
+        $this->httpClient->request('DELETE', $objectUrl, [
+            'headers' => [
+                'apikey' => $this->serviceRoleKey,
+                'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
+            ],
+        ])->getStatusCode();
+
+        $response = $this->httpClient->request('POST', $objectUrl, [
+            'body' => $contents,
+            'headers' => [
+                'Accept' => 'application/json',
+                'Content-Type' => $contentType,
+                'apikey' => $this->serviceRoleKey,
+                'Authorization' => \sprintf('Bearer %s', $this->serviceRoleKey),
             ],
         ]);
 
-        $this->decodeResponse($response);
+        $status = $response->getStatusCode();
+        if ($status >= 400) {
+            $payload = $response->toArray(false);
+            $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
+            throw new SupabaseApiException(\sprintf('Supabase storage upload failed (%s).', $message));
+        }
+
+        return $this->baseUri.'/storage/v1/object/public/'.$bucket.'/'.ltrim($objectPath, '/');
     }
 
     private function decodeResponse(ResponseInterface $response): mixed
