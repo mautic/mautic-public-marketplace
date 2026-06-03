@@ -294,6 +294,23 @@ final class MarketplaceApiClient
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function getPackageByCampaignUuid(string $campaignUuid): ?array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+            'campaign_uuid' => 'eq.'.$campaignUuid,
+            'select' => '*',
+        ]);
+
+        if (!\is_array($data) || [] === $data) {
+            return null;
+        }
+
+        return \is_array($data[0] ?? null) ? $data[0] : null;
+    }
+
+    /**
      * @param array<string, mixed> $data
      *
      * @return array<string, mixed>

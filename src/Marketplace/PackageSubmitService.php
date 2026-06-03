@@ -82,6 +82,19 @@ final class PackageSubmitService
     }
 
     /**
+     * File-based upload entry (browser-mediated push from Mautic). All metadata lives in
+     * the ZIP's composer.json, so this delegates to the same Mautic-share pipeline.
+     *
+     * @return array{package_name: string, version: string, status: string, created: bool}
+     *
+     * @throws SubmitValidationException
+     */
+    public function submitFromFile(string $zipPath, Auth0User $user): array
+    {
+        return $this->submitFromMauticShare($zipPath, $user);
+    }
+
+    /**
      * @param array<string, mixed> $composerData
      */
     private function requestFromComposer(array $composerData): SubmitRequest
@@ -148,7 +161,19 @@ final class PackageSubmitService
         ?string $bannerUrl,
         array $gallery,
     ): array {
-        $existingPackage = $this->apiClient->getPackageByName($request->name);
+        $packageName = $request->name;
+        $campaignUuid = $composerData['extra']['mautic']['campaign-uuid'] ?? null;
+
+        // Dedupe shared campaigns by their stable UUID first so re-shares update the same
+        // package even if the user renamed it; fall back to lookup by package name.
+        $existingPackage = null;
+        if (\is_string($campaignUuid) && '' !== $campaignUuid) {
+            $existingPackage = $this->apiClient->getPackageByCampaignUuid($campaignUuid);
+        }
+        if (null === $existingPackage) {
+            $existingPackage = $this->apiClient->getPackageByName($packageName);
+        }
+
         $created = null === $existingPackage;
         $status = \is_array($existingPackage) ? ($existingPackage['status'] ?? 'pending') : 'pending';
         if (!\is_string($status) || '' === $status) {
@@ -158,8 +183,8 @@ final class PackageSubmitService
         $maintainerName = $user->getName() ?? $user->getEmail() ?? 'Anonymous';
 
         $packageData = [
-            'name' => $request->name,
-            'displayname' => $composerData['extra']['mautic']['display-name'] ?? $this->toDisplayName($request->name),
+            'name' => $packageName,
+            'displayname' => $composerData['extra']['mautic']['display-name'] ?? $this->toDisplayName($packageName),
             'description' => $composerData['description'] ?? null,
             'type' => $request->category,
             'time' => (new \DateTimeImmutable())->format('c'),
@@ -176,6 +201,10 @@ final class PackageSubmitService
             'ip_ownership_accepted' => $request->ip_ownership_accepted,
         ];
 
+        if (\is_string($campaignUuid) && '' !== $campaignUuid) {
+            $packageData['campaign_uuid'] = $campaignUuid;
+        }
+
         if (null !== $bannerUrl) {
             $packageData['banner_url'] = $bannerUrl;
         }
@@ -190,15 +219,18 @@ final class PackageSubmitService
             $this->apiClient->createPackage($packageData);
             $status = 'pending';
         } else {
+            // A campaign_uuid match may resolve to a package stored under a different name;
+            // update that row and carry its name through to the version record.
+            $packageName = (string) ($existingPackage['name'] ?? $packageName);
             $packageData['status'] = $status;
             unset($packageData['name']);
-            $this->apiClient->updatePackage($request->name, $packageData);
+            $this->apiClient->updatePackage($packageName, $packageData);
         }
 
         $smv = $this->composerReader->extractMauticVersion($composerData);
 
         $versionData = [
-            'package_name' => $request->name,
+            'package_name' => $packageName,
             'version' => $request->version,
             'version_normalized' => $this->composerReader->normalizeVersion($request->version),
             'description' => $composerData['description'] ?? null,
@@ -216,7 +248,7 @@ final class PackageSubmitService
         $this->apiClient->upsertVersion($versionData);
 
         return [
-            'package_name' => $request->name,
+            'package_name' => $packageName,
             'version' => $request->version,
             'status' => $status,
             'created' => $created,

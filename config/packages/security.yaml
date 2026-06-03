@@ -19,3 +19,4 @@ security:
         - { path: ^/package/.+/review$, roles: ROLE_USER }
         - { path: ^/upload/package, roles: ROLE_USER }
         - { path: ^/api/package, roles: ROLE_USER }
+        - { path: ^/publish, roles: ROLE_USER }
