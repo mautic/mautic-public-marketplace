@@ -50,6 +50,11 @@ api_mautic_versions:
     controller: App\Controller\Api\MauticVersionsApiController::list
     methods: [GET]
 
+api_categories:
+    path: /api/categories
+    controller: App\Controller\Api\CategoriesApiController::list
+    methods: [GET]
+
 api_package_submission_status:
     path: /api/package/{package}/submission-status
     controller: App\Controller\Api\SubmissionStatusApiController::status

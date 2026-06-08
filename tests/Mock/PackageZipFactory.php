@@ -28,9 +28,11 @@ final class PackageZipFactory
         }
 
         $zip = new \ZipArchive();
-        $zip->open($tmpFile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        if (true !== $zip->open($tmpFile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE)) {
+            throw new \RuntimeException('Failed to open temporary ZIP file.');
+        }
         if (!$omitComposer) {
-            $zip->addFromString('composer.json', $invalidJson ? '{not-json' : (string) json_encode($composer));
+            $zip->addFromString('composer.json', $invalidJson ? '{not-json' : json_encode($composer, \JSON_THROW_ON_ERROR));
         }
         $zip->addFromString('README.md', '# Test');
         $zip->close();

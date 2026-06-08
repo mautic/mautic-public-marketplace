@@ -71,6 +71,11 @@ final class PackageImageUploader
 
     private function slugify(string $packageName): string
     {
-        return preg_replace('/[^a-z0-9_-]/', '_', strtolower($packageName)) ?? 'package';
+        // Preserve the vendor/package "/" so distinct names can't collide into the same
+        // storage path (e.g. "a_b/c" vs "a/b_c" would both flatten to "a_b_c").
+        $slug = preg_replace('#[^a-z0-9/_-]#', '_', strtolower($packageName)) ?? 'package';
+        $slug = trim($slug, '/');
+
+        return '' !== $slug ? $slug : 'package';
     }
 }
