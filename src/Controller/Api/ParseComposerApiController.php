@@ -7,6 +7,7 @@ namespace App\Controller\Api;
 use App\Marketplace\ComposerJsonReader;
 use App\Marketplace\Exception\SubmitValidationException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,8 +24,11 @@ final class ParseComposerApiController extends AbstractController
     public function parse(Request $request): JsonResponse
     {
         $zip = $request->files->get('zip');
-        if (null === $zip) {
+        if (!$zip instanceof UploadedFile) {
             return $this->json(['error' => 'A ZIP file is required.'], Response::HTTP_BAD_REQUEST);
+        }
+        if (!$zip->isValid()) {
+            return $this->json(['error' => \sprintf('Upload failed: %s', $zip->getErrorMessage())], Response::HTTP_BAD_REQUEST);
         }
 
         try {

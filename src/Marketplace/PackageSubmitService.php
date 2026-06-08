@@ -75,8 +75,8 @@ final class PackageSubmitService
             throw new SubmitValidationException('The campaign is missing a vendor name. Please fill in a vendor name in Mautic when sharing the campaign, then try again.');
         }
 
-        $request  = $this->requestFromComposer($composerData);
-        $zipUrl   = $this->zipUploader->upload($request->name, $request->version, $zipPath);
+        $request = $this->requestFromComposer($composerData);
+        $zipUrl = $this->zipUploader->upload($request->name, $request->version, $zipPath);
 
         return $this->upsertPackage($composerData, $request, $user, $zipUrl, null, []);
     }
@@ -99,11 +99,11 @@ final class PackageSubmitService
      */
     private function requestFromComposer(array $composerData): SubmitRequest
     {
-        $extra      = $composerData['extra']['mautic'] ?? [];
-        $worksWith  = \is_array($extra['works-with'] ?? null) ? array_values(array_filter(array_map('strval', $extra['works-with']))) : [];
-        $languages  = \is_array($extra['languages'] ?? null) ? array_values(array_filter(array_map('strval', $extra['languages']))) : [];
-        $price      = $extra['price']['amount'] ?? 0;
-        $keywords   = \is_array($composerData['keywords'] ?? null) ? array_values(array_filter(array_map('strval', $composerData['keywords']))) : [];
+        $extra = $composerData['extra']['mautic'] ?? [];
+        $worksWith = \is_array($extra['works-with'] ?? null) ? array_values(array_filter(array_map('strval', $extra['works-with']))) : [];
+        $languages = \is_array($extra['languages'] ?? null) ? array_values(array_filter(array_map('strval', $extra['languages']))) : [];
+        $price = $extra['price']['amount'] ?? 0;
+        $keywords = \is_array($composerData['keywords'] ?? null) ? array_values(array_filter(array_map('strval', $composerData['keywords']))) : [];
 
         if ([] === $worksWith) {
             $minVersion = $extra['minimum-version'] ?? null;
@@ -185,7 +185,7 @@ final class PackageSubmitService
         $packageData = [
             'name' => $packageName,
             'displayname' => $composerData['extra']['mautic']['display-name'] ?? $this->toDisplayName($packageName),
-            'description' => $composerData['description'] ?? null,
+            'description' => $request->description,
             'type' => $request->category,
             'time' => (new \DateTimeImmutable())->format('c'),
             'maintainers' => [['name' => $maintainerName]],
@@ -233,7 +233,7 @@ final class PackageSubmitService
             'package_name' => $packageName,
             'version' => $request->version,
             'version_normalized' => $this->composerReader->normalizeVersion($request->version),
-            'description' => $composerData['description'] ?? null,
+            'description' => $request->description,
             'keywords' => $request->keywords,
             'license' => $composerData['license'] ?? [$request->license_type],
             'authors' => $composerData['authors'] ?? null,

@@ -11,7 +11,7 @@ final class PackagistMockHttpClient extends MockHttpClient
 {
     public function __construct()
     {
-        parent::__construct(static function (string $method, string $url): MockResponse {
+        parent::__construct(static function (string $method, string $url, array $options = []): MockResponse {
             if (str_contains($url, 'packagist-down.test')) {
                 return new MockResponse('', ['error' => 'Could not resolve host: packagist-down.test']);
             }
