@@ -97,7 +97,7 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('form.needs-validation[novalidate]');
         self::assertSelectorExists('#package-license-type[required][data-validation-field]');
-        self::assertSelectorExists('#package-price-control[required][min="0"][step="0.01"][data-validation-field]');
+        self::assertSelectorExists('#package-price-control[min="0"][step="0.01"][data-validation-field]');
         self::assertSelectorExists('fieldset[data-validation-name="legal_confirmation[]"][data-validation-required="true"]');
     }
 

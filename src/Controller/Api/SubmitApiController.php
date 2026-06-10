@@ -8,6 +8,7 @@ use App\Auth0\Auth0User;
 use App\Marketplace\Dto\SubmitRequest;
 use App\Marketplace\Exception\SubmitValidationException;
 use App\Marketplace\PackageSubmitService;
+use App\Marketplace\PackageZipUploader;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -20,8 +21,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class SubmitApiController extends AbstractController
 {
-    private const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
-
     public function __construct(
         private readonly PackageSubmitService $submitService,
         private readonly ValidatorInterface $validator,
@@ -38,9 +37,9 @@ final class SubmitApiController extends AbstractController
         if (!$zip->isValid()) {
             return $this->json(['error' => \sprintf('Upload failed: %s', $zip->getErrorMessage())], Response::HTTP_BAD_REQUEST);
         }
-        if ($zip->getSize() > self::MAX_UPLOAD_BYTES) {
+        if ($zip->getSize() > PackageZipUploader::MAX_BYTES) {
             return $this->json(
-                ['error' => \sprintf('The ZIP file is too large. Maximum size is %dMB.', self::MAX_UPLOAD_BYTES / 1024 / 1024)],
+                ['error' => \sprintf('The ZIP file is too large. Maximum size is %dMB.', PackageZipUploader::MAX_BYTES / 1024 / 1024)],
                 Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
             );
         }

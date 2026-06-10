@@ -98,13 +98,17 @@ function initUploadWizard() {
             });
 
             let data = null;
-            try { data = await response.json(); } catch (e) { /* non-JSON */ }
+            try { data = await response.json(); } catch (e) { /* non-JSON; surfaced below */ }
 
             if (!response.ok) {
                 throw new Error((data && data.error) ? data.error : GENERIC_ERROR);
             }
 
-            prefillBasics(data || {});
+            if (!data) {
+                throw new Error(GENERIC_ERROR);
+            }
+
+            prefillBasics(data);
             restore();
             goTo(2);
         } catch (err) {
@@ -148,12 +152,14 @@ function initUploadWizard() {
             });
 
             let data = null;
-            try { data = await response.json(); } catch (e) { /* non-JSON */ }
+            try { data = await response.json(); } catch (e) { /* non-JSON; surfaced below */ }
 
             if (!response.ok) {
                 throw new Error(formatError(data));
             }
 
+            // A non-JSON (or empty) success body can't be acted on — surface the
+            // generic error instead of treating it as a successful publish.
             if (!data || !data.package_name) {
                 throw new Error(GENERIC_ERROR);
             }

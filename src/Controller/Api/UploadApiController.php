@@ -7,6 +7,7 @@ namespace App\Controller\Api;
 use App\Auth0\Auth0User;
 use App\Marketplace\Exception\SubmitValidationException;
 use App\Marketplace\PackageSubmitService;
+use App\Marketplace\PackageZipUploader;
 use App\Supabase\Exception\SupabaseApiException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,10 +19,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class UploadApiController extends AbstractController
 {
-    // Mirrors PackageZipUploader::MAX_BYTES so callers get the same limit at the edge,
-    // before we spend bandwidth and memory copying bytes to Supabase.
-    private const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
-
     public function __construct(
         private readonly PackageSubmitService $submitService,
         private readonly LoggerInterface $logger,
@@ -50,9 +47,9 @@ final class UploadApiController extends AbstractController
             );
         }
 
-        if ($file->getSize() > self::MAX_UPLOAD_BYTES) {
+        if ($file->getSize() > PackageZipUploader::MAX_BYTES) {
             return $this->json(
-                ['error' => \sprintf('The ZIP file is too large. Maximum size is %dMB.', self::MAX_UPLOAD_BYTES / 1024 / 1024)],
+                ['error' => \sprintf('The ZIP file is too large. Maximum size is %dMB.', PackageZipUploader::MAX_BYTES / 1024 / 1024)],
                 Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
             );
         }

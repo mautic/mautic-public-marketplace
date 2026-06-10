@@ -13,7 +13,8 @@ final class PackageZipUploader
 
     // Supabase enforces a global upload size limit (50MB by default). Reject larger
     // archives here so the user gets a clear message instead of an opaque storage error.
-    private const MAX_BYTES = 50 * 1024 * 1024;
+    // Public so the API controllers can apply the same cap at the edge.
+    public const MAX_BYTES = 50 * 1024 * 1024;
 
     public function __construct(
         private readonly SupabaseClient $supabaseClient,
