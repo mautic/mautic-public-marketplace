@@ -19,9 +19,11 @@
     </div>
     <hr class="mb-0" />
 
-    {% if app.request.query.get('step') == '1' or app.request.query.get('step') is null %}
+    {# All four steps render up front; upload-wizard.js shows one at a time and
+       keeps the chosen ZIP in memory so it survives navigation between steps. #}
+
     <!-- Step 1 -->
-    <form class="needs-validation" novalidate>
+    <form id="package-upload-form" data-wizard-step="1" class="needs-validation" novalidate>
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12 col-lg-3 p-32">
@@ -68,7 +70,8 @@
                                             size: '2xl',
                                             attributes: {
                                                 type: 'submit',
-                                                class: 'col'
+                                                class: 'col',
+                                                'data-wizard-nav': 'next'
                                             }
                                         }
                                     ]
@@ -82,9 +85,8 @@
         </div>
     </form>
 
-    {% elseif app.request.query.get('step') == '2' %}
     <!-- Step 2 -->
-    <form class="needs-validation" novalidate>
+    <form data-wizard-step="2" class="needs-validation" novalidate hidden>
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12 col-lg-3 p-32">
@@ -129,8 +131,9 @@
                                             variant: 'secondary',
                                             size: '2xl',
                                             attributes: {
-                                                type: 'submit',
-                                                class: 'col'
+                                                type: 'button',
+                                                class: 'col',
+                                                'data-wizard-nav': 'back'
                                             }
                                         },
                                         {
@@ -139,7 +142,8 @@
                                             size: '2xl',
                                             attributes: {
                                                 type: 'submit',
-                                                class: 'col'
+                                                class: 'col',
+                                                'data-wizard-nav': 'next'
                                             }
                                         }
                                     ]
@@ -153,9 +157,8 @@
         </div>
     </form>
 
-    {% elseif app.request.query.get('step') == '3' %}
     <!-- Step 3 -->
-    <form class="needs-validation" novalidate>
+    <form data-wizard-step="3" class="needs-validation" novalidate hidden>
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12 col-lg-3 p-32">
@@ -200,8 +203,9 @@
                                             variant: 'secondary',
                                             size: '2xl',
                                             attributes: {
-                                                type: 'submit',
-                                                class: 'col'
+                                                type: 'button',
+                                                class: 'col',
+                                                'data-wizard-nav': 'back'
                                             }
                                         },
                                         {
@@ -210,7 +214,8 @@
                                             size: '2xl',
                                             attributes: {
                                                 type: 'submit',
-                                                class: 'col'
+                                                class: 'col',
+                                                'data-wizard-nav': 'next'
                                             }
                                         }
                                     ]
@@ -224,11 +229,8 @@
         </div>
     </form>
 
-
-
-    {% elseif app.request.query.get('step') == '4' %}
     <!-- Step 4 -->
-    <form class="needs-validation" novalidate>
+    <form data-wizard-step="4" class="needs-validation" novalidate hidden>
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12 col-lg-3 p-32">
@@ -273,8 +275,9 @@
                                             variant: 'secondary',
                                             size: '2xl',
                                             attributes: {
-                                                type: 'submit',
-                                                class: 'col'
+                                                type: 'button',
+                                                class: 'col',
+                                                'data-wizard-nav': 'back'
                                             }
                                         },
                                         {
@@ -283,7 +286,8 @@
                                             size: '2xl',
                                             attributes: {
                                                 type: 'submit',
-                                                class: 'col'
+                                                class: 'col',
+                                                'data-wizard-nav': 'submit'
                                             }
                                         }
                                     ]
@@ -296,9 +300,4 @@
             </div>
         </div>
     </form>
-
-
-
-
-    {% endif %}
 {% endblock %}

@@ -134,10 +134,11 @@ final class PackageSubmitService
      */
     private function ensureComposerMatchesRequest(array $composerData, SubmitRequest $request): void
     {
-        if (($composerData['name'] ?? null) !== $request->name) {
-            throw new SubmitValidationException('Submitted package name does not match composer.json.');
-        }
-
+        // The package name is intentionally NOT enforced against composer.json:
+        // the upload form lets publishers set the marketplace name, so the
+        // submitted $request->name takes priority and is used throughout the
+        // pipeline (storage paths, upsert identity). Type and version must still
+        // match composer.json to keep the published artifact self-consistent.
         if (($composerData['type'] ?? null) !== $request->category) {
             throw new SubmitValidationException('Submitted category does not match composer.json type.');
         }
@@ -219,12 +220,14 @@ final class PackageSubmitService
             $this->apiClient->createPackage($packageData);
             $status = 'pending';
         } else {
-            // A campaign_uuid match may resolve to a package stored under a different name;
-            // update that row and carry its name through to the version record.
-            $packageName = (string) ($existingPackage['name'] ?? $packageName);
+            // A campaign_uuid match may resolve to a package stored under a
+            // different name. Override is enabled, so the submitted name wins:
+            // rename the existing row in place (the child FKs cascade the rename
+            // via ON UPDATE CASCADE) and carry the new name to the version record.
+            $existingName = (string) ($existingPackage['name'] ?? $request->name);
             $packageData['status'] = $status;
-            unset($packageData['name']);
-            $this->apiClient->updatePackage($packageName, $packageData);
+            $this->apiClient->updatePackage($existingName, $packageData);
+            $packageName = $request->name;
         }
 
         $smv = $this->composerReader->extractMauticVersion($composerData);

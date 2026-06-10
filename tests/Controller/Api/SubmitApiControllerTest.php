@@ -62,19 +62,36 @@ final class SubmitApiControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
-    public function testSubmitWithMismatchedComposerReturns400(): void
+    public function testSubmitWithMismatchedComposerVersionReturns400(): void
     {
         $client = self::createClient();
         $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
 
         $fields = $this->validFormFields();
-        $fields['name'] = 'someone-else/different-name';
+        $fields['version'] = '9.9.9';
 
         $client->request('POST', '/api/package/submit', $fields, ['zip' => $this->validZipUpload()]);
 
         self::assertResponseStatusCodeSame(400);
         $payload = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertStringContainsString('does not match', $payload['error']);
+    }
+
+    public function testSubmitAllowsPackageNameOverride(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        // The upload form lets publishers set the marketplace name, so a name
+        // that differs from composer.json is accepted (the form value wins).
+        $fields = $this->validFormFields();
+        $fields['name'] = 'someone-else/renamed-package';
+
+        $client->request('POST', '/api/package/submit', $fields, ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(201);
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame('someone-else/renamed-package', $data['package_name']);
     }
 
     public function testSuccessfulSubmitReturns201AndStatusPending(): void

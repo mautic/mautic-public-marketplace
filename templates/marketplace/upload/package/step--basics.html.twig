@@ -54,6 +54,15 @@
     ] %}
     {% set category_options = package_type == 'mautic-theme' ? theme_category_options : package_type == 'mautic-resource' ? resource_category_options : plugin_category_options %}
 
+    {# All category sets, so upload-wizard.js can swap the options to match the
+       package type detected from composer.json in step 1 (the initial render
+       defaults to plugin categories because the type isn't known server-side). #}
+    <script type="application/json" id="package-category-options-data">{{ {
+        'mautic-plugin': plugin_category_options,
+        'mautic-theme': theme_category_options,
+        'mautic-resource': resource_category_options
+    }|json_encode|raw }}</script>
+
     <div class="row g-24">
         <div class="col-12 col-md-6">
             {% include 'components/form-control.html.twig' with {

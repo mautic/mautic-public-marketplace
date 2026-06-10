@@ -22,6 +22,34 @@
             } only %}
         </div>
         <div class="col-12 col-lg-6">
+            {% include 'components/form-control.html.twig' with {
+                type: 'url',
+                name: 'github_url',
+                id: 'package-github-url',
+                label: 'mautic.marketplace.upload.package.field.github_url.label'|trans,
+                placeholder: 'mautic.marketplace.upload.package.field.github_url.placeholder'|trans
+            } only %}
+        </div>
+        <div class="col-12 col-lg-6">
+            {% include 'components/form-control.html.twig' with {
+                type: 'url',
+                name: 'packagist_url',
+                id: 'package-packagist-url',
+                label: 'mautic.marketplace.upload.package.field.packagist_url.label'|trans,
+                placeholder: 'mautic.marketplace.upload.package.field.packagist_url.placeholder'|trans
+            } only %}
+        </div>
+        <div class="col-12">
+            {% include 'components/form-control.html.twig' with {
+                type: 'url',
+                name: 'documentation',
+                id: 'package-documentation',
+                label: 'mautic.marketplace.upload.package.field.documentation.label'|trans,
+                helpText: 'mautic.marketplace.upload.package.field.documentation.help'|trans,
+                placeholder: 'mautic.marketplace.upload.package.field.documentation.placeholder'|trans
+            } only %}
+        </div>
+        <div class="col-12 col-lg-6">
             {% include 'components/select.html.twig' with {
                 name: 'languages[]',
                 id: 'package-languages',
