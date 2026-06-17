@@ -21,6 +21,10 @@ final class MarketplaceApiClient
     ) {
     }
 
+    /**
+     * @param list<string> $mauticVersions
+     * @param list<string> $languages
+     */
     public function listPackages(
         int $limit = 10,
         int $offset = 0,
@@ -30,6 +34,10 @@ final class MarketplaceApiClient
         ?string $query = null,
         array $mauticVersions = [],
         array $languages = [],
+        ?int $minimumRating = null,
+        bool $unratedOnly = false,
+        ?string $ratedBy = null,
+        ?string $submittedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
     ): PackageListResult {
@@ -54,6 +62,22 @@ final class MarketplaceApiClient
 
         if ([] !== $languages) {
             $params['_language'] = $languages;
+        }
+
+        if (null !== $minimumRating) {
+            $params['_minimum_rating'] = $minimumRating;
+        }
+
+        if ($unratedOnly) {
+            $params['_unrated_only'] = true;
+        }
+
+        if (null !== $ratedBy && '' !== $ratedBy) {
+            $params['_rated_by'] = $ratedBy;
+        }
+
+        if (null !== $submittedBy && '' !== $submittedBy) {
+            $params['_submitted_by'] = $submittedBy;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
@@ -100,12 +124,18 @@ final class MarketplaceApiClient
     }
 
     /**
+     * @param list<string> $mauticVersions
+     *
      * @return list<string>
      */
     public function getAvailableLanguages(
         ?string $type = null,
         ?string $query = null,
         array $mauticVersions = [],
+        ?int $minimumRating = null,
+        bool $unratedOnly = false,
+        ?string $ratedBy = null,
+        ?string $submittedBy = null,
         ?string $dateRange = null,
         ?string $popularity = null,
     ): array {
@@ -121,6 +151,22 @@ final class MarketplaceApiClient
 
         if ([] !== $mauticVersions) {
             $params['_smv'] = $mauticVersions;
+        }
+
+        if (null !== $minimumRating) {
+            $params['_minimum_rating'] = $minimumRating;
+        }
+
+        if ($unratedOnly) {
+            $params['_unrated_only'] = true;
+        }
+
+        if (null !== $ratedBy && '' !== $ratedBy) {
+            $params['_rated_by'] = $ratedBy;
+        }
+
+        if (null !== $submittedBy && '' !== $submittedBy) {
+            $params['_submitted_by'] = $submittedBy;
         }
 
         if (null !== $dateRange && '' !== $dateRange) {
@@ -188,6 +234,26 @@ final class MarketplaceApiClient
             throw new SupabaseApiException('Unexpected response from Supabase get_pack.');
         }
 
+        $versions = $this->toArray($row['versions'] ?? null);
+        $tags = $this->toArray($row['tags'] ?? $row['keywords'] ?? null);
+        if (null === $tags && null !== $versions) {
+            $keywords = [];
+            foreach ($versions as $version) {
+                if (!\is_array($version) || !\is_array($version['keywords'] ?? null)) {
+                    continue;
+                }
+
+                foreach ($version['keywords'] as $keyword) {
+                    if (\is_scalar($keyword)) {
+                        $keywords[] = (string) $keyword;
+                    }
+                }
+            }
+
+            $keywords = array_values(array_unique($keywords));
+            $tags = [] === $keywords ? null : $keywords;
+        }
+
         return new PackageDetail(
             (string) $row['name'],
             $row['displayname'] ?? null,
@@ -207,13 +273,94 @@ final class MarketplaceApiClient
             $this->toBool($row['isreviewed'] ?? null),
             $this->toBool($row['latest_mautic_support'] ?? null),
             $this->toArray($row['maintainers'] ?? null),
+            $tags,
             isset($row['time']) ? (string) $row['time'] : null,
             $this->toArray($row['reviews'] ?? null),
-            $this->toArray($row['versions'] ?? null),
+            $versions,
             $this->toBannerUrl($row['banner_url'] ?? null),
         );
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getPackageByName(string $name): ?array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+            'name' => 'eq.'.$name,
+            'select' => '*',
+        ]);
+
+        if (!\is_array($data) || [] === $data) {
+            return null;
+        }
+
+        return $data[0] ?? null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getPackageByCampaignUuid(string $campaignUuid): ?array
+    {
+        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+            'campaign_uuid' => 'eq.'.$campaignUuid,
+            'select' => '*',
+        ]);
+
+        if (!\is_array($data) || [] === $data) {
+            return null;
+        }
+
+        return $data[0] ?? null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    public function createPackage(array $data): array
+    {
+        $result = $this->supabaseClient->mutate('POST', '/rest/v1/packages', $data);
+
+        return \is_array($result) ? ($result[0] ?? $result) : [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    public function updatePackage(string $name, array $data): array
+    {
+        $result = $this->supabaseClient->mutate(
+            'PATCH',
+            '/rest/v1/packages?name=eq.'.urlencode($name),
+            $data,
+        );
+
+        return \is_array($result) ? ($result[0] ?? $result) : [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    public function upsertVersion(array $data): array
+    {
+        $result = $this->supabaseClient->mutate(
+            'POST',
+            '/rest/v1/versions?on_conflict=package_name,version',
+            $data,
+            ['Prefer' => 'return=representation,resolution=merge-duplicates'],
+        );
+      
+        return \is_array($result) ? ($result[0] ?? $result) : [];
+
+    }
+  
     /**
      * @return list<array<string, mixed>>
      */
@@ -241,6 +388,24 @@ final class MarketplaceApiClient
             'auth0_user_id' => 'eq.'.$auth0UserId,
             'select' => 'name,displayname,description,type,downloads,favers',
             'order' => 'name.asc',
+        ]);
+
+        if (!\is_array($data)) {
+            return [];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getUserDownloadHistory(string $auth0UserId): array
+    {
+        $data = $this->supabaseClient->queryPrivate('GET', '/rest/v1/download_history', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
+            'select' => 'id,package_name,package_version,downloaded_at,package:packages(name,displayname,description,type)',
+            'order' => 'downloaded_at.desc',
         ]);
 
         if (!\is_array($data)) {

@@ -1,27 +1,256 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}My Profile - Mautic Marketplace{% endblock %}
+{% block title %}{{ 'mautic.marketplace.profile.page_title'|trans }}{% endblock %}
 
 {% block body %}
-<div id="profile-container"
-     data-api-url="{{ path('profile_api') }}"
-     data-auth0-domain="{{ auth0_domain }}"
-     data-auth0-client-id="{{ auth0_client_id }}">
+{% set reviewCount = reviews|length %}
+{% set profileReviewsModalId = 'profile-reviews-modal' %}
+{% set packageCount = uploaded_packages|length %}
+{% set downloadHistoryCount = download_history|length %}
+{% set reviewsWrittenCard = reviewCount > 0 ? {
+    eyebrow: 'mautic.marketplace.profile.stats.reviews.eyebrow',
+    heading: reviewCount,
+    copy: 'mautic.marketplace.profile.stats.reviews.copy',
+    ctaCopy: 'mautic.marketplace.detail.reviews.show_all',
+    href: '#',
+    ctaType: 'modal',
+    attributes: {
+        'data-bs-toggle': 'modal',
+        'data-bs-target': '#' ~ profileReviewsModalId,
+    },
+} : {
+    eyebrow: 'mautic.marketplace.profile.stats.reviews.eyebrow',
+    heading: reviewCount,
+    copy: 'mautic.marketplace.profile.stats.reviews.copy',
+    ctaType: 'local',
+    ctaCopy: 'mautic.marketplace.profile.stats.reviews.cta_find',
+    href: path('marketplace_index'),
+} %}
+{% set fullName = app.user.name|default('Anonymous') %}
+{% set initials = fullName|split(' ')|filter(part => part is not empty)|map(part => part|first)|join('')|slice(0, 2)|upper %}
+{% set profileTags = [
+    { label: 'mautic.marketplace.profile.tag.member', color: 'green' },
+] %}
+{% if packageCount > 1 %}
+    {% set profileTags = profileTags|merge([
+        { label: 'mautic.marketplace.profile.tag.author', color: 'blue', icon: 'ri-quill-pen-line' },
+    ]) %}
+{% endif %}
 
-    <div id="profile-loading">
-        <p>Loading profile...</p>
+{% set heroContent %}
+    <section class="profile-hero   gap-24" id="profile-content" aria-labelledby="profile-heading">
+        <div class="d-flex align-items-start align-items-md-center flex-column flex-md-wrap flex-md-row gap-24 py-32">
+            {% if app.user.picture %}
+                <img class="profile-avatar" src="{{ app.user.picture }}" alt="{{ fullName }}" width="96" height="96">
+            {% else %}
+                <div class="profile-avatar profile-avatar--fallback d-inline-flex align-items-center justify-content-center" aria-hidden="true">{{ initials }}</div>
+            {% endif %}
+            <div class="profile-hero__copy">
+                <h2 class="type-fluid-heading-05 mb-8 text-break" id="profile-heading">{{ fullName }}</h2>
+                <p class="type-body-02 mb-16 text-secondary">{{ app.user.email }}</p>
+                <div class="d-flex flex-wrap gap-8">
+                    {% include 'components/tags.html.twig' with { tags: profileTags } only %}
+                </div>
+            </div>
+        </div>
+    </section>
+{% endset %}
+
+{% include 'components/tile.html.twig' with {
+    type: 'base',
+    content: heroContent,
+    className: 'profile-hero-tile'
+} only %}
+
+<section class="profile-stats row g-4" aria-label="Profile summary">
+    <div class="col-12">
+        {% include 'components/card-group.html.twig' with {
+            type: 'default',
+            gridMode: 'narrow',
+            cards: [
+                reviewsWrittenCard,
+                {
+                    eyebrow: 'mautic.marketplace.profile.stats.packages.eyebrow',
+                    heading: packageCount,
+                    copy: 'mautic.marketplace.profile.stats.packages.copy',
+                    ctaType: packageCount > 1 ? 'jump' : 'new tab',
+                    ctaCopy: packageCount > 1 ? null : 'mautic.marketplace.profile.stats.packages.cta_submit',
+                    href: packageCount > 1 ? '#packages-content' : path('marketplace_upload_package'),
+                },
+                {
+                    eyebrow: 'mautic.marketplace.profile.stats.auth.eyebrow',
+                    heading: 'Auth0',
+                    copy: 'mautic.marketplace.profile.stats.auth.copy',
+                    ctaCopy: 'mautic.marketplace.profile.stats.auth.cta',
+                    ctaType: 'external',
+                    href: auth0_profile_url,
+                }
+            ],
+        } only %}
     </div>
+</section>
 
-    <div id="profile-login" style="display: none;">
-        <h2>My Profile</h2>
-        <p>Please log in to view your profile.</p>
-        <button id="profile-login-btn" type="button" class="cds--btn cds--btn--primary">Log in</button>
-    </div>
+{% if reviews is not empty %}
+    {% set profileReviewsModalBody %}
+        <div class="row justify-content-center gap-32 my-24">
+            <div class="col-12 col-md-6">
+            {% for review in reviews %}
+                  <div class="review__wrapper">
+                      <div class="d-flex flex-column pb-8">
+                          {% if review.rating is not null %}
+                          <div class="review-card__meta" aria-label="{{ 'mautic.marketplace.detail.reviews.rating'|trans({ '%rating%': review.rating }) }}">
+                              {% for i in 1..5 %}
+                              <i class="ri-star-fill {{ i <= review.rating ? 'text-primary' : 'text-disabled' }}" aria-hidden="true"></i>
+                              {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="review__copy type-body-compact-02 text-break">{{ review.review }}</div>
+                        <div class="d-flex flex-column">
+                            <div class="type-helper-text-01 text-secondary mt-8">
+                                {% if review.objectId is not empty %}{{ review.objectId }}{% endif %}
+                            </div>
+                            <div class="type-helper-text-01 text-secondary mb-48">
+                               {% if review.created_at is not empty %}{{ review.created_at|date('M j, Y') }}{% endif %}
+                            </div>
+                        </div>
+                  </div>
+            {% endfor %}
+            </div>
+        </div>
+    {% endset %}
 
-    <div id="profile-content" style="display: none;"></div>
+    {% include 'components/modal.html.twig' with {
+        id: profileReviewsModalId,
+        title: 'mautic.marketplace.profile.reviews.modal_title'|trans,
+        centered: true,
+        fullscreen: true,
+        scrollable: true,
+        size: 'lg',
+        body: profileReviewsModalBody
+    } only %}
+{% endif %}
 
-    <div id="profile-error" style="display: none;">
-        <p id="profile-error-message"></p>
-    </div>
+{% set downloadHistoryContent %}
+    {% if download_history is not empty %}
+        <div class="profile-grid row g-4">
+            {% for historyItem in download_history %}
+                {% set package = historyItem.package|default({}) %}
+                {% set packageName = package.name|default(historyItem.package_name) %}
+                {% set packageType = package.type|default(null) %}
+                {% set packageTypeLabel = packageType == 'mautic-plugin'
+                    ? 'marketplace.package.type.plugin'|trans
+                    : (packageType == 'mautic-theme'
+                        ? 'marketplace.package.type.theme'|trans
+                        : (packageType == 'mautic-resource' ? 'marketplace.package.type.resource'|trans : packageType)) %}
+                <div class="col-12">
+                    <div class="profile-history-item mb-32">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-16">
+                            <div class="min-w-0">
+                                <h3 class="type-heading-02 mb-8 text-break">{{ package.displayname|default(packageName) }}</h3>
+                                <p class="type-body-compact-02 mb-16 text-break">
+                                    {{ package.description|default('marketplace.package.description.none')|trans }}
+                                </p>
+                                <div class="d-flex flex-wrap gap-8 type-helper-text-01 text-secondary">
+                                    {% if packageTypeLabel is not empty %}
+                                        <span>{{ packageTypeLabel }}</span>
+                                    {% endif %}
+                                    {% if historyItem.package_version is not empty %}
+                                        <span>{{ 'mautic.marketplace.profile.download_history.version'|trans({ '%version%': historyItem.package_version }) }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="profile-history-item__meta text-md-end">
+                                {% if historyItem.downloaded_at is not empty %}
+                                    <div class="type-helper-text-01 text-secondary mb-8">
+                                        {{ 'mautic.marketplace.profile.download_history.downloaded_at'|trans }}
+                                    </div>
+                                    <div class="type-body-compact-02 mb-16">{{ historyItem.downloaded_at|date('M j, Y') }}</div>
+                                {% endif %}
+                                {% include 'components/button.html.twig' with {
+                                    buttons: [{
+                                        label: packageName,
+                                        href: path('marketplace_detail', { package: packageName }),
+                                        variant: 'link',
+                                        icon: 'ri-arrow-right-line',
+                                    }]
+                                } only %}
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="mt-0 mb-32">
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="profile-empty-state px-16 py-24">
+            <p class="text-placeholder mb-24">{{ 'mautic.marketplace.profile.download_history.empty_copy'|trans }}</p>
+            {% include 'components/button.html.twig' with {
+                buttons: [{
+                    label: 'mautic.marketplace.profile.download_history.empty_cta',
+                    href: path('marketplace_index'),
+                    variant: 'link',
+                    icon: 'ri-arrow-right-line',
+                }]
+            } only %}
+        </div>
+    {% endif %}
+{% endset %}
+
+{% set packagesContent %}
+    {% if uploaded_packages is not empty %}
+        <div class="profile-grid row g-4">
+            {% for package in uploaded_packages %}
+                <div class="col-12">
+                    {% include 'components/content-item.html.twig' with {
+                        type: 'text',
+                        heading: package.displayname|default(package.name),
+                        copy: package.description|default('marketplace.package.description.none'),
+                        cta: {
+                            label: package.name,
+                            link: path('marketplace_detail', { package: package.name }),
+                        },
+                    } only %}
+                    <hr class="mt-0 mb-32">
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="profile-empty-state px-16 py-24">
+            <p class="text-placeholder mb-24">{{ 'mautic.marketplace.profile.packages.empty_copy'|trans }}</p>
+            {% include 'components/button.html.twig' with {
+                buttons: [{
+                    label: 'mautic.marketplace.profile.packages.empty_cta',
+                    href: path('marketplace_upload_package'),
+                    variant: 'link',
+                    icon: 'ri-arrow-right-line',
+                }]
+            } only %}
+        </div>
+    {% endif %}
+{% endset %}
+
+<div id="profile-tabs" class="mt-64">
+    {% include 'components/tabs.html.twig' with {
+        tabs: [
+            {
+                id: 'profile-download-history',
+                title: 'mautic.marketplace.profile.tabs.download_history',
+                renderIcon: 'ri-download-line',
+                renderTag: downloadHistoryCount > 0 ? { label: downloadHistoryCount ~ '', color: 'gray' } : null,
+                content: downloadHistoryContent
+            },
+            {
+                id: 'profile-uploaded-packages',
+                title: 'mautic.marketplace.profile.tabs.uploaded_packages',
+                renderIcon: 'ri-upload-cloud-line',
+                renderTag: packageCount > 0 ? { label: packageCount ~ '', color: 'gray' } : null,
+                content: packagesContent
+            }
+        ],
+        selectedIndex: 0,
+        variant: 'line'
+    } only %}
 </div>
 {% endblock %}

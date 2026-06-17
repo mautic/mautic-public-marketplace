@@ -12,15 +12,24 @@
             } %}
 
             {% set statCards = [
-                { eyebrow: 'mautic.marketplace.detail.stats.downloads', heading: package.downloads.total ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.favers', heading: package.favers ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.stars', heading: package.githubStars ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.forks', heading: package.githubForks ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.open_issues', heading: package.githubOpenIssues ?? 0 },
-                { eyebrow: 'mautic.marketplace.detail.stats.dependents', heading: package.dependents ?? 0 }
+                { eyebrow: 'mautic.marketplace.detail.stats.downloads', heading: package.downloads.total ?? 0 }
             ] %}
+            {% if package.url %}
+                {% set statCards = statCards|merge([
+                    { eyebrow: 'mautic.marketplace.detail.stats.favers', heading: package.favers ?? 0 },
+                    { eyebrow: 'mautic.marketplace.detail.stats.dependents', heading: package.dependents ?? 0 }
+                ]) %}
+            {% endif %}
+            {% if package.repository %}
+                {% set statCards = statCards|merge([
+                    { eyebrow: 'mautic.marketplace.detail.stats.stars', heading: package.githubStars ?? 0 },
+                    { eyebrow: 'mautic.marketplace.detail.stats.forks', heading: package.githubForks ?? 0 },
+                    { eyebrow: 'mautic.marketplace.detail.stats.open_issues', heading: package.githubOpenIssues ?? 0 }
+                ]) %}
+            {% endif %}
     
             <section>
+                <h3 class="type-heading-01 text-secondary mb-0">{{ 'mautic.marketplace.detail.stats.heading'|trans }}</h3>
                 {% include 'components/card-group.html.twig' with {
                     type: 'static',
                     gridMode: 'condensed',
@@ -31,6 +40,36 @@
 
         </div>
         <div class="col-xs-12 col-md-4">
+            <div class="d-grid mb-12">
+                {% set isPaidPackage = package.pricing|default(0) > 0 %}
+                {% set ctaLabel = isPaidPackage
+                    ? (app.user
+                        ? 'mautic.marketplace.detail.buy'|trans({'%price%': package.pricing})
+                        : 'mautic.marketplace.detail.login_to_buy')
+                    : 'mautic.marketplace.detail.download'
+                %}
+                {% set ctaIcon = isPaidPackage
+                    ? (app.user ? 'ri-shopping-cart-line' : 'ri-login-box-line')
+                    : 'ri-download-line'
+                %}
+                {% set ctaHref = isPaidPackage and not app.user
+                    ? path('auth_login', { returnTo: app.request.requestUri })
+                    : '#'
+                %}
+                {% include 'components/button.html.twig' with {
+                    buttons: [{
+                        label: ctaLabel,
+                        variant: 'primary',
+                        size: '2xl',
+                        icon: ctaIcon,
+                        href: ctaHref,
+                        attributes: {
+                            id: 'package-cta',
+                            'data-turbo': 'false'
+                        }
+                    }]
+                } only %}
+            </div>
             <div class="tile">
                 <!-- Last updated -->
                 <dt class="type-heading-01">{{ 'mautic.marketplace.detail.last_updated'|trans }}</dt>
@@ -68,38 +107,58 @@
                     {% include 'components/tags.html.twig' with { tags: maintainer_tags } %}
                 </dd>
                 {% endif %}
+                {% if package.tags|default([]) is not empty %}
+                <dt class="type-heading-01 mt-24 mb-4">{{ 'mautic.marketplace.detail.tags'|trans }}</dt>
+                <dd class="d-flex flex-wrap gap-4">
+                    {% set package_tags = package.tags|map(tag => ({
+                        label: tag.name ?? tag,
+                        color: 'teal',
+                        attributes: {
+                            href: path('marketplace_index', { query: tag.name ?? tag }),
+                            'data-turbo-frame': '_top'
+                        }
+                    })) %}
+                    {% include 'components/tags.html.twig' with { tags: package_tags } %}
+                </dd>
+                {% endif %}
                 </div>
-                
-                <!-- Repository -->
-                <dt class="type-heading-01 mt-24 mb-8">{{ 'mautic.marketplace.detail.repository'|trans }}</dt>
-                {% if package.repository or package.url %}
+            </div>
+
+            {% if package.repository or package.url %}
+                <div class="d-grid mt-12">
                     {% if package.repository %}
-                    <dd>
-                        <i class="ri-github-fill ri-lg" aria-hidden="true"></i>
-                        <a href="{{ package.repository }}" target="_blank" rel="noopener">
-                            {% set repoParts = package.repository|split('/') %}
-                            {{ 'mautic.marketplace.detail.repository.github'|trans({
+                        {% set repoParts = package.repository|split('/') %}
+                        {% include 'components/card.html.twig' with {
+                            type: 'mini',
+                            href: package.repository,
+                            heading: 'mautic.marketplace.detail.repository.github'|trans({
                                 '%repository%': repoParts[repoParts|length-2] ~ '/' ~ repoParts[repoParts|length-1]
-                            }) }}
-                        </a>
-                    </dd>
-                    {% endif %}
-                    {% if package.url %}
-                    <dd>
-                        <i class="ri-box-2-fill ri-lg" aria-hidden="true"></i>
-                            {% set pkgParts = package.url|split('/') %}
-                            <a href="{{ package.url }}" target="_blank" rel="noopener">
-                                {{ 'mautic.marketplace.detail.repository.packagist'|trans({
-                                    '%package%': pkgParts[pkgParts|length-2] ~ '/' ~ pkgParts[pkgParts|length-1]
-                                }) }}
-                            </a>
-                    </dd>
+                            }),
+                            icon: 'ri-github-fill',
+                            attributes: {
+                                target: '_blank',
+                                rel: 'noopener'
+                            }
+                        } %}
                     {% endif %}
 
-                {% else %}
-                <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
-                {% endif %}
-            </div>
+                    {% if package.url %}
+                        {% set pkgParts = package.url|split('/') %}
+                        {% include 'components/card.html.twig' with {
+                            type: 'mini',
+                            href: package.url,
+                            heading: 'mautic.marketplace.detail.repository.packagist'|trans({
+                                '%package%': pkgParts[pkgParts|length-2] ~ '/' ~ pkgParts[pkgParts|length-1]
+                            }),
+                            icon: 'ri-box-2-fill',
+                            attributes: {
+                                target: '_blank',
+                                rel: 'noopener'
+                            }
+                        } %}
+                    {% endif %}
+                </div>
+            {% endif %}
 
             <!-- Versions -->
 
@@ -161,19 +220,21 @@
 
             <div class="tile mt-12">
                 {% include 'marketplace/detail/module--review-summary.html.twig' %}
+                {% if package.reviews|length > 3 %}
                 <div class="mt-12">
-                {% include 'components/button.html.twig' with {
-                    buttons: [{
-                        label: 'mautic.marketplace.detail.reviews.show_all',
-                        variant: 'link',
-                        attributes: {
-                            'data-bs-toggle': 'modal',
-                            'data-bs-target': '#' ~ reviewsModalId,
-                            'class': 'justify-content-start p-0'
-                        }
-                    }]
-                } only %}
-                </div>
+                        {% include 'components/button.html.twig' with {
+                            buttons: [{
+                                label: 'mautic.marketplace.detail.reviews.show_all',
+                                variant: 'link',
+                                attributes: {
+                                    'data-bs-toggle': 'modal',
+                                    'data-bs-target': '#' ~ reviewsModalId,
+                                    'class': 'justify-content-start p-0'
+                                }
+                            }]
+                        } only %}
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>

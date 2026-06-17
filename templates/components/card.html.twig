@@ -17,6 +17,7 @@
 {% set type = type|default('default') %}
 {% set aspectRatio = aspectRatio|default(type == 'link' ? '2:1' : '4:3') %}
 {% set ctaType = ctaType|default('local') %}
+{% set common_newtab_attributes = (ctaType == 'external' or ctaType == 'new tab') ? {'target': '_blank', 'rel': 'noopener noreferrer'} : {} %}
 
 {% set common_image_content %}
     {% if image is defined and image is not null and image.src is defined and image.src is not empty %}
@@ -36,14 +37,16 @@
     {% if heading is defined %}
         <div class="card__heading-wrapper">
             <h3 class="card-heading
-                {% if type == 'feature--large' %}
-                    type-fluid-heading-04 mb-32
-                {% else %}
-                    type-heading-0{{ type == 'link' ? '2' : '3' }}
-                    {% if type != 'pictogram' and type != 'link' %}
-                        mb-32
-                    {% endif %}
-                {% endif %}
+                {{ type == 'feature--large' 
+                    ? 'type-fluid-heading-04 mb-32' 
+                    : type == 'mini' 
+                        ? 'type-body-compact-01 mb-0' 
+                        : type == 'link' 
+                            ? 'type-heading-02' 
+                            : type == 'pictogram'
+                                ? 'type-heading-03'
+                                : 'type-heading-03 mb-32'
+                }}
                 text-break">{{ heading|trans }}</h3>
         </div>
     {% endif %}
@@ -75,7 +78,8 @@
 
 {% set common_icon_content %}
     {% if icon is defined %}
-        <i class="{{ ctaIcons[ctaType] }} link-primary ri-lg ms-auto" aria-hidden="true"></i>
+        <i class="{{ type == 'mini' ? icon : ctaIcons[ctaType] }} link-primary {{ type == 'mini' ? 'ri-xl' : 'ri-lg' }} ms-auto" aria-hidden="true"></i>
+   
     {% endif %}
 {% endset %}
 
@@ -138,6 +142,7 @@
             className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
             icon: ctaIcons[ctaType],
             href: href,
+            attributes: common_newtab_attributes,
         } %}
 
     {# === LINK TYPE === #}
@@ -157,16 +162,24 @@
             className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
             icon: ctaIcons[ctaType],
             href: href,
+            attributes: common_newtab_attributes,
         } %}
 
     {# === PICTOGRAM TYPE === #}
     {% elseif type == 'pictogram' %}
         {% set cardContent %}
             <div class="card__wrapper">
-                <div class="card__content d-flex fd-column fg-1 pb-64">
+                <div class="card__content d-flex flex-column justify-content-between fg-1">
+                    {% if pictogramPlacement is defined and pictogramPlacement == 'top' %}
+                    <div class="mb-16">
+                        {{ common_pictogram_content }}
+                    </div>
+                    {% endif %}
                     {{ common_heading_content }}
                     {{ common_copy_content }}
-                    {{ common_pictogram_content }}
+                    {% if pictogramPlacement is not defined or pictogramPlacement == 'bottom' %}
+                        {{ common_pictogram_content }}
+                    {% endif %}
                 </div>
             </div>
         {% endset %}
@@ -177,6 +190,7 @@
                 className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
                 icon: ctaIcons[ctaType],
                 href: href,
+                attributes: common_newtab_attributes,
             } %}
         {% else %}
             {% include 'components/tile.html.twig' with {
@@ -197,14 +211,14 @@
                     {{ common_copy_content }}
                     {{ common_custom_content }}
                     {{ common_tags_content }}
+                    {% if ctaCopy is defined or footerCopy is defined or icon is defined %}
+                    <div class="card__footer">
+                        {{ common_cta_copy_content }}
+                        {{ common_footer_copy_content }}
+                        {{ common_icon_content }}
+                    </div>
+                    {% endif %}
                 </div>
-                {% if cta is defined or footerCopy is defined or icon is defined %}
-                <div class="card__footer">
-                    {{ common_cta_copy_content }}
-                    {{ common_footer_copy_content }}
-                    {{ common_icon_content }}
-                </div>
-                {% endif %}
             </div>
         {% endset %}
         {% include 'components/tile.html.twig' with {
@@ -212,7 +226,8 @@
             content: cardContent,
             className: 'card p-0 card--link' ~ (disabled is defined ? ' tile--disabled' : ''),
             icon: ctaIcons[ctaType],
-            href: href,
+            href: href|default(null),
+            attributes: (attributes|default({}))|merge(common_newtab_attributes),
         } %}
 
     {# === FEATURE TYPE === #}
@@ -236,6 +251,7 @@
             content: cardContent,
             className: 'card p-0 card--link',
             href: href,
+            attributes: common_newtab_attributes,
         } %}
 
         {# === FEATURE TYPE === #}
@@ -262,5 +278,24 @@
             className: 'card p-0 card--link',
             href: href,
             icon: ctaIcons[ctaType],
+            attributes: common_newtab_attributes,
         } %}
+
+    {# === MINI TYPE === #}
+    {% elseif type == 'mini' %}
+        {% set cardContent %}
+            <div class="card__content">
+                <div class="d-flex jc-space-between align-items-center gap-16">
+                    {{ common_heading_content }}
+                    {{ common_icon_content }}
+                </div>
+            </div>
+        {% endset %}
+        {% include 'components/tile.html.twig' with {
+            type: 'clickable',
+            content: cardContent,
+            className: 'card p-0 card--link justify-content-center' ~ (className is defined and className is not empty ? ' ' ~ className : ''),
+            href: href|default(null),
+            attributes: (attributes|default({}))|merge(common_newtab_attributes),
+        } only %}
     {% endif %}

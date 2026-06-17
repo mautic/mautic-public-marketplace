@@ -46,9 +46,9 @@ final class RelativeTimeFormatter
 
     private function translateUnit(string $unit, int $count): string
     {
-        $key = sprintf(
+        $key = \sprintf(
             'mautic.marketplace.detail.relative.%s',
-            1 === $count ? $unit : sprintf('%ss', $unit),
+            1 === $count ? $unit : \sprintf('%ss', $unit),
         );
 
         return $this->translator->trans($key, ['%count%' => $count]);

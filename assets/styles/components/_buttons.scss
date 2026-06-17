@@ -11,13 +11,12 @@
   border: 1px solid transparent;
   display: inline-flex;
   align-items: center;
-  height: var(--btn-height);
+  min-height: var(--btn-height);
   line-height: var(--btn-line-height);
   font-size: 14px;
   padding: 0 var(--spacing-05);
   gap: var(--spacing-03);
   justify-content: space-between;
-  width: fit-content;
    @include outline;
   &:hover {
     border: 1px solid transparent;
@@ -57,13 +56,6 @@
   > .caret {
     margin-top: -1px;
   }
-}
-
-.btn ~ .btn,
-.btn ~ .btn-group,
-.btn-group ~ .btn,
-.btn-group ~ .btn-group {
-  margin-left: 5px;
 }
 
 // Hierarchycal buttons
@@ -146,11 +138,6 @@
   padding-right: var(--spacing-10);
   gap: var(--spacing-07);
   &:has(i) {padding-right: var(--spacing-05);}
-  &:not(:has(i)) {
-    padding-left: var(--spacing-07);
-    padding-right: var(--spacing-07);
-    span { display: initial }
-  }
   &.btn--icon-only {
     padding-right: 0;
     span { width: initial;}
@@ -176,7 +163,6 @@
     $disabled-text-color: rgba($black, .4)
   );
   padding-inline: var(--spacing-05);
-  justify-content: center;
   span {gap: var(--spacing-03);}
 
   //// Ghost Danger

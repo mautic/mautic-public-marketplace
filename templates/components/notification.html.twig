@@ -1,0 +1,216 @@
+{% set kind = kind|default('error') %}
+{% set notificationRole = role is defined and role in ['alert', 'log', 'status'] ? role : 'status' %}
+{% set notificationId = 'notification-' ~ random() %}
+
+{% set kindToAlertColorClass = {
+    'error': 'inline-notification--error alert-danger',
+    'info': 'inline-notification--info alert-info',
+    'info-square': 'inline-notification--info alert-info',
+    'success': 'inline-notification--success alert-success',
+    'warning': 'inline-notification--warning alert-warning',
+    'warning-alt': 'inline-notification--warning alert-warning'
+} %}
+
+{% set kindToActionableColorClass = {
+    'error': 'actionable-notification--error alert-danger',
+    'info': 'actionable-notification--info alert-info',
+    'info-square': 'actionable-notification--info alert-info',
+    'success': 'actionable-notification--success alert-success',
+    'warning': 'actionable-notification--warning alert-warning',
+    'warning-alt': 'actionable-notification--warning alert-warning'
+} %}
+
+{% set kindToToastColorClass = {
+    'error': 'toast-notification--error alert-danger',
+    'info': 'toast-notification--info alert-info',
+    'info-square': 'toast-notification--info alert-info',
+    'success': 'toast-notification--success alert-success',
+    'warning': 'toast-notification--warning alert-warning',
+    'warning-alt': 'toast-notification--warning alert-warning'
+} %}
+
+{% set kindToCalloutColorClass = {
+    'info': 'actionable-notification--info alert-info',
+    'info-square': 'actionable-notification--info alert-info',
+    'warning': 'actionable-notification--warning alert-warning',
+    'warning-alt': 'actionable-notification--warning alert-warning'
+} %}
+
+{% set kindToStatus = {
+    'error': 'failed',
+    'info': 'informative',
+    'info-square': 'informative-alt',
+    'success': 'succeeded',
+    'warning': 'caution--minor',
+    'warning-alt': 'caution--minor-alt'
+} %}
+
+{% set kindToIconDescription = {
+    'error': 'mautic.marketplace.notification.error',
+    'info': 'mautic.marketplace.notification.info',
+    'info-square': 'mautic.marketplace.notification.info',
+    'success': 'mautic.marketplace.notification.success',
+    'warning': 'mautic.marketplace.notification.warning',
+    'warning-alt': 'mautic.marketplace.notification.warning'
+} %}
+
+{# === INLINE TYPE === #}
+{% if type is not defined or type == 'inline' %}
+<div role="{{ notificationRole }}" class="alert inline-notification d-flex justify-content-between {{ kindToAlertColorClass[kind] }}">
+    <div class="inline-notification__details d-flex gap-12">
+        <div class="inline-notification__icon">
+            {% include 'components/status-indicator.html.twig' with {
+                status: kindToStatus[kind],
+                accessible: true,
+                size: 20,
+                statusIconDescription: kindToIconDescription[kind],
+                className: 'mt-2'
+            } only %}
+        </div>
+        <div class="inline-notification__text-wrapper d-flex flex-column flex-md-row align-items-center flex-wrap gap-4">
+            <div class="inline-notification__title fw-bold" dir="ltr">{{ title|trans }}</div>
+            <div class="inline-notification__subtitle" dir="ltr">{{ subtitle|trans }}</div>
+        </div>
+    </div>
+    {% if hideCloseButton is not defined or not hideCloseButton %}
+        {% include 'components/button.html.twig' with {
+            buttons: [
+                {
+                    label: 'mautic.core.close',
+                    variant: 'link',
+                    icon_only: true,
+                    icon: 'ri-close-line',
+                    size: 'xs',
+                    attributes: {
+                        class: 'inline-notification__close-button',
+                        id: notificationId ~ '-inline-close'
+                    }
+                }
+            ]
+        } only %}
+    {% endif %}
+</div>
+
+{# === ACTIONABLE TYPE === #}
+{% elseif type == 'actionable' %}
+<div role="alertdialog" class="actionable-notification alert d-flex justify-content-between {{ kindToActionableColorClass[kind] }}" aria-labelledby="{{ notificationId }}-actionable-title">
+    <div class="actionable-notification__details d-flex gap-12">
+        {% include 'components/status-indicator.html.twig' with {
+            status: kindToStatus[kind],
+            accessible: true,
+            size: 20,
+            statusIconDescription: kindToIconDescription[kind],
+            className: 'actionable-notification__icon'
+        } only %}
+        <div class="actionable-notification__text-wrapper">
+            <div class="actionable-notification__content d-flex flex-column gap-4">
+                <div class="actionable-notification__title fw-bold" id="{{ notificationId }}-actionable-title" dir="ltr">{{ title|trans }}</div>
+                <div class="actionable-notification__subtitle" id="{{ notificationId }}-actionable-subtitle" dir="ltr">{{ subtitle|trans }}</div>
+            </div>
+        </div>
+        <div class="actionable-notification__button-wrapper">
+            {% if actionLabel is defined %}
+                {% include 'components/button.html.twig' with {
+                    buttons: [
+                        {
+                            label: actionLabel,
+                            variant: 'tertiary',
+                            size: 'sm',
+                            attributes: {
+                                class: 'actionable-notification__action-button'
+                            }
+                        }
+                    ]
+                } only %}
+            {% endif %}
+        </div>
+    </div>
+    {% if hideCloseButton is not defined or not hideCloseButton %}
+        {% include 'components/button.html.twig' with {
+            buttons: [
+                {
+                    label: 'mautic.core.close',
+                    variant: 'link',
+                    icon_only: true,
+                    icon: 'ri-close-line',
+                    size: 'xs',
+                    attributes: {
+                        class: 'actionable-notification__close-button',
+                        id: notificationId ~ '-actionable-close'
+                    }
+                }
+            ]
+        } only %}
+    {% endif %}
+</div>
+
+{# === TOAST TYPE === #}
+{% elseif type == 'toast' %}
+<div role="{{ notificationRole }}" class="toast-notification alert {{ kindToToastColorClass[kind] }}">
+    {% include 'components/status-indicator.html.twig' with {
+        status: kindToStatus[kind],
+        accessible: true,
+        size: 20,
+        statusIconDescription: kindToIconDescription[kind],
+        className: 'toast-notification__icon'
+    } only %}
+    <div class="toast-notification__details">
+        <div class="toast-notification__title" dir="ltr">{{ title|trans }}</div>
+        <div class="toast-notification__subtitle" dir="ltr">{{ subtitle|trans }}</div>
+        {% if caption is defined %}
+            <div class="toast-notification__caption" dir="ltr">{{ caption|trans }}</div>
+        {% endif %}
+    </div>
+    {% if hideCloseButton is not defined or not hideCloseButton %}
+        {% include 'components/button.html.twig' with {
+            buttons: [
+                {
+                    label: 'mautic.core.close',
+                    variant: 'link',
+                    icon_only: true,
+                    icon: 'ri-close-line',
+                    size: 'xs',
+                    attributes: {
+                        class: 'toast-notification__close-button',
+                        id: notificationId ~ '-toast-close'
+                    }
+                }
+            ]
+        } only %}
+    {% endif %}
+</div>
+
+{# === CALLOUT TYPE === #}
+{% elseif type == 'callout' %}
+<div role="alertdialog" class="actionable-notification alert d-flex justify-content-between {{ kindToCalloutColorClass[kind] }}" aria-labelledby="{{ notificationId }}-actionable-title">
+    <div class="actionable-notification__details d-flex gap-12">
+        {% include 'components/status-indicator.html.twig' with {
+            status: kindToStatus[kind],
+            accessible: true,
+            size: 20,
+            statusIconDescription: kindToIconDescription[kind],
+            className: 'actionable-notification__icon'
+        } only %}
+        <div class="actionable-notification__text-wrapper d-flex flex-column flex-md-row align-items-center flex-wrap gap-4">
+            <div class="actionable-notification__title fw-bold" id="{{ notificationId }}-actionable-title" dir="ltr">{{ title|trans }}</div>
+            <div class="actionable-notification__subtitle" id="{{ notificationId }}-actionable-subtitle" dir="ltr">{{ subtitle|trans }}</div>
+        </div>
+        <div class="actionable-notification__button-wrapper">
+            {% if actionLabel is defined %}
+                {% include 'components/button.html.twig' with {
+                    buttons: [
+                        {
+                            label: actionLabel,
+                            variant: 'tertiary',
+                            size: 'sm',
+                            attributes: {
+                                class: 'actionable-notification__action-button'
+                            }
+                        }
+                    ]
+                } only %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

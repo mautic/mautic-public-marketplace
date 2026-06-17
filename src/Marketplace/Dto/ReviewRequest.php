@@ -9,6 +9,8 @@ use Symfony\Component\HttpFoundation\InputBag;
 
 final class ReviewRequest
 {
+    private const MINIMUM_REVIEW_LENGTH = 50;
+
     public function __construct(
         public readonly int $rating,
         public readonly string $review,
@@ -31,6 +33,10 @@ final class ReviewRequest
 
         if ('' === $review) {
             throw new ReviewValidationException('Review text is required.');
+        }
+
+        if (mb_strlen($review) < self::MINIMUM_REVIEW_LENGTH) {
+            throw new ReviewValidationException(\sprintf('Review text must be at least %d characters.', self::MINIMUM_REVIEW_LENGTH));
         }
 
         return new self($rating, $review);

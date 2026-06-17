@@ -1,5 +1,3 @@
-ALTER TABLE versions ADD COLUMN IF NOT EXISTS validation_errors TEXT DEFAULT NULL;
-
 DO $$
 BEGIN
     IF EXISTS (
@@ -61,6 +59,7 @@ ON CONFLICT (name) DO UPDATE SET
 INSERT INTO versions (
     package_name,
     description,
+    keywords,
     version,
     version_normalized,
     type,
@@ -70,13 +69,137 @@ INSERT INTO versions (
 VALUES (
     'mautic/example-plugin',
     'Example version for local development.',
+    '["example", "plugin", "local-development"]'::jsonb,
     '1.0.0',
     '1.0.0.0',
     'mautic-plugin',
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET
+    keywords = EXCLUDED.keywords;
+
+INSERT INTO packages (
+    name,
+    description,
+    type,
+    repository,
+    github_stars,
+    github_watchers,
+    github_forks,
+    github_open_issues,
+    language,
+    dependents,
+    suggesters,
+    downloads,
+    favers,
+    url,
+    displayname,
+    maintainers,
+    latest_mautic_support,
+    time,
+    created_at,
+    auth0_user_id
+)
+VALUES (
+    'mautic/local-uploaded-plugin',
+    'Local-only package uploaded by the Auth0 test user, with no Packagist URL or GitHub repository.',
+    'mautic-plugin',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    'English',
+    NULL,
+    NULL,
+    '{"total": 0}'::jsonb,
+    NULL,
+    NULL,
+    'Local Uploaded Plugin',
+    '[{"name": "Test User", "avatar_url": "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=identicon"}]'::jsonb,
+    true,
+    NOW() - INTERVAL '1 day',
+    NOW() - INTERVAL '1 day',
+    'auth0|test123'
+)
+ON CONFLICT (name) DO UPDATE SET
+    description = EXCLUDED.description,
+    type = EXCLUDED.type,
+    repository = EXCLUDED.repository,
+    github_stars = EXCLUDED.github_stars,
+    github_watchers = EXCLUDED.github_watchers,
+    github_forks = EXCLUDED.github_forks,
+    github_open_issues = EXCLUDED.github_open_issues,
+    language = EXCLUDED.language,
+    dependents = EXCLUDED.dependents,
+    suggesters = EXCLUDED.suggesters,
+    downloads = EXCLUDED.downloads,
+    favers = EXCLUDED.favers,
+    url = EXCLUDED.url,
+    displayname = EXCLUDED.displayname,
+    maintainers = EXCLUDED.maintainers,
+    latest_mautic_support = EXCLUDED.latest_mautic_support,
+    time = EXCLUDED.time,
+    auth0_user_id = EXCLUDED.auth0_user_id;
+
+INSERT INTO versions (
+    package_name,
+    description,
+    keywords,
+    homepage,
+    version,
+    version_normalized,
+    license,
+    authors,
+    source,
+    dist,
+    type,
+    support,
+    funding,
+    time,
+    extra,
+    require,
+    smv,
+    validation_errors
+)
+VALUES (
+    'mautic/local-uploaded-plugin',
+    'Local uploaded plugin version for testing packages without external sources.',
+    '["local", "uploaded", "plugin"]'::jsonb,
+    NULL,
+    '1.0.0',
+    '1.0.0.0',
+    '["GPL-3.0-or-later"]'::jsonb,
+    '[{"name": "Test User"}]'::jsonb,
+    NULL,
+    NULL,
+    'mautic-plugin',
+    '{}'::jsonb,
+    '[]'::jsonb,
+    NOW() - INTERVAL '1 day',
+    '{}'::jsonb,
+    '{"mautic/core-lib": "^5.0"}'::jsonb,
+    '^5.0',
+    NULL
+)
+ON CONFLICT (package_name, version) DO UPDATE SET
+    description = EXCLUDED.description,
+    keywords = EXCLUDED.keywords,
+    homepage = EXCLUDED.homepage,
+    version_normalized = EXCLUDED.version_normalized,
+    license = EXCLUDED.license,
+    authors = EXCLUDED.authors,
+    source = EXCLUDED.source,
+    dist = EXCLUDED.dist,
+    type = EXCLUDED.type,
+    support = EXCLUDED.support,
+    funding = EXCLUDED.funding,
+    time = EXCLUDED.time,
+    extra = EXCLUDED.extra,
+    require = EXCLUDED.require,
+    smv = EXCLUDED.smv,
+    validation_errors = EXCLUDED.validation_errors;
 
 INSERT INTO packages (
     name,
@@ -121,6 +244,7 @@ ON CONFLICT (name) DO UPDATE SET
 INSERT INTO versions (
     package_name,
     description,
+    keywords,
     version,
     version_normalized,
     type,
@@ -130,13 +254,15 @@ INSERT INTO versions (
 VALUES (
     'mautic/alpha-plugin',
     'Alpha version.',
+    '["alpha", "plugin", "sorting"]'::jsonb,
     '0.1.0',
     '0.1.0.0',
     'mautic-plugin',
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET
+    keywords = EXCLUDED.keywords;
 
 INSERT INTO packages (
     name,
@@ -181,6 +307,7 @@ ON CONFLICT (name) DO UPDATE SET
 INSERT INTO versions (
     package_name,
     description,
+    keywords,
     version,
     version_normalized,
     type,
@@ -190,13 +317,15 @@ INSERT INTO versions (
 VALUES (
     'mautic/zebra-theme',
     'Zebra version.',
+    '["theme", "zebra", "responsive"]'::jsonb,
     '2.0.0',
     '2.0.0.0',
     'mautic-theme',
     '^4.4 || ^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET
+    keywords = EXCLUDED.keywords;
 
 INSERT INTO packages (
     name,
@@ -241,6 +370,7 @@ ON CONFLICT (name) DO UPDATE SET
 INSERT INTO versions (
     package_name,
     description,
+    keywords,
     version,
     version_normalized,
     type,
@@ -250,13 +380,15 @@ INSERT INTO versions (
 VALUES (
     'mautic/welcome-campaign',
     'Welcome campaign v1.',
+    '["campaign", "welcome", "resource", "automation"]'::jsonb,
     '1.0.0',
     '1.0.0.0',
     'mautic-resource',
     '^5.0',
     NOW()
 )
-ON CONFLICT (package_name, version) DO NOTHING;
+ON CONFLICT (package_name, version) DO UPDATE SET
+    keywords = EXCLUDED.keywords;
 
 INSERT INTO packages (
     name,

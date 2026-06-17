@@ -14,7 +14,7 @@ final class SafeHeadingRenderer implements NodeRendererInterface
     {
         Heading::assertInstanceOf($node);
 
-        $tag = 'h' . max($node->getLevel(), 3);
+        $tag = 'h'.max($node->getLevel(), 3);
         $attrs = $node->data->get('attributes');
 
         return new HtmlElement($tag, $attrs, $childRenderer->renderNodes($node->children()));

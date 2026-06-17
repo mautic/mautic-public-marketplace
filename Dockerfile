@@ -27,10 +27,17 @@ RUN php bin/console app:assets:copy \
 FROM php:8.4-apache
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libicu-dev libpq-dev \
-    && docker-php-ext-install intl pdo_pgsql \
+    && apt-get install -y --no-install-recommends libicu-dev libpq-dev libzip-dev \
+    && docker-php-ext-install intl pdo_pgsql zip \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
+
+# Allow campaign ZIP uploads up to the marketplace's 50MB cap (PackageZipUploader::MAX_BYTES).
+# A few MB of headroom on post_max_size covers multipart form overhead.
+RUN printf '%s\n' \
+  'upload_max_filesize = 60M' \
+  'post_max_size = 64M' \
+  > /usr/local/etc/php/conf.d/upload-limits.ini
 
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
@@ -50,6 +57,11 @@ RUN printf '%s\n' \
   'SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' \
   > /etc/apache2/conf-available/marketplace.conf \
   && a2enconf marketplace.conf
+
+# Allow encoded slashes in URLs so package detail routes like
+# /package/vendor%2Fpackage resolve (package names are vendor/package format).
+# Must be in server-level config, not inside <Directory>.
+RUN echo 'AllowEncodedSlashes NoDecode' >> /etc/apache2/apache2.conf
 
 RUN chown -R www-data:www-data /var/www/html/var
 

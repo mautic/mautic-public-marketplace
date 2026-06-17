@@ -39,7 +39,7 @@
                        {% if item.HeaderMenu.onClick is defined %}onclick="{{ item.HeaderMenu.onClick }}"{% endif %}
                        {% if item.HeaderMenu.onKeyDown is defined %}onkeydown="{{ item.HeaderMenu.onKeyDown }}"{% endif %}
                        {% if item.HeaderMenu.onBlur is defined %}onblur="{{ item.HeaderMenu.onBlur }}"{% endif %}
-                       data-toggle="dropdown">{{ item.HeaderMenu.menuLinkName|trans }}
+                       data-bs-toggle="dropdown">{{ item.HeaderMenu.menuLinkName|trans }}
                         <svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" class="header__menu-arrow" xmlns="http://www.w3.org/2000/svg">
                             <path d="M8 11L3 6 3.7 5.3 8 9.6 12.3 5.3 13 6z"></path>
                         </svg>
@@ -62,7 +62,7 @@
                        class="header__menu-item header__menu-title dropdown-toggle" 
                        href="#" tabindex="{{ item.HeaderMenuDropdown.tabIndex|default(0) }}" 
                        aria-label="{{ item.HeaderMenuDropdown.menuLinkName|trans }}"
-                       data-toggle="dropdown">{{ item.HeaderMenuDropdown.menuLinkName|trans }}
+                       data-bs-toggle="dropdown">{{ item.HeaderMenuDropdown.menuLinkName|trans }}
                         <svg focusable="false" preserveAspectRatio="xMidYMid meet" fill="currentColor" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" class="header__menu-arrow" xmlns="http://www.w3.org/2000/svg">
                             <path d="M8 11L3 6 3.7 5.3 8 9.6 12.3 5.3 13 6z"></path>
                         </svg>
@@ -81,30 +81,53 @@
     <div class="header__global {{ Header.children.HeaderGlobal.className|default('') }}">
         {% for item in Header.children.HeaderGlobal.children %}
             {% if item.HeaderGlobalAction is defined %}
-            <span data-toggle="tooltip" data-placement="{{ item.HeaderGlobalAction.tooltipAlignment|default('bottom') }}" title="{{ item.HeaderGlobalAction.ariaLabel|default('')|trans }}">
+            <span data-bs-toggle="tooltip" data-placement="{{ item.HeaderGlobalAction.tooltipAlignment|default('bottom') }}" title="{{ item.HeaderGlobalAction.ariaLabel|default('')|trans }}">
                 <div class="tooltip-trigger__wrapper">
-                    <button aria-label="{{ item.HeaderGlobalAction.ariaLabel|default('')|trans }}"
-                        class="header__action btn btn--lg layout--size-lg btn-ghost btn--icon-only {{ item.HeaderGlobalAction.className|default('') }}"
-                        type="button" onclick="{{ item.HeaderGlobalAction.onClick|default('') }}">
-                        <i class="{{ item.HeaderGlobalAction.renderActionIcon }} fs-20"></i>
-                    </button>
+                    <{{ item.HeaderGlobalAction.href is defined ? 'a' : 'button' }}
+                        {% if item.HeaderGlobalAction.href is defined %}href="{{ item.HeaderGlobalAction.href }}"{% else %}type="button"{% endif %}
+                        aria-label="{{ item.HeaderGlobalAction.ariaLabel|default(item.HeaderGlobalAction.label|default(''))|trans }}"
+                        class="header__action btn btn--lg layout--size-lg btn-ghost {{ item.HeaderGlobalAction.label is not defined ? 'btn--icon-only' : '' }} {{ item.HeaderGlobalAction.className|default('') }}"
+                        {% if item.HeaderGlobalAction.attributes is defined %}
+                            {% for name, value in item.HeaderGlobalAction.attributes %}
+                                {{- ' ' ~ name }}="{{ value }}"
+                            {% endfor %}
+                        {% endif %}
+                        {% if item.HeaderGlobalAction.onClick is defined %}onclick="{{ item.HeaderGlobalAction.onClick }}"{% endif %}>
+                        {% if item.HeaderGlobalAction.renderActionIcon is defined %}
+                            <i class="{{ item.HeaderGlobalAction.renderActionIcon }} ri-lg"></i>
+                        {% endif %}
+                        {% if item.HeaderGlobalAction.label is defined %}
+                            <span>{{ item.HeaderGlobalAction.label|trans }}</span>
+                        {% endif %}
+                    </{{ item.HeaderGlobalAction.href is defined ? 'a' : 'button' }}>
                 </div>
             </span>
             {% elseif item.HeaderGlobalDropdown is defined %}
             <div class="dropdown">
-                <span data-toggle="tooltip" data-placement="{{ item.HeaderGlobalDropdown.tooltipAlignment|default('bottom') }}" title="{{ item.HeaderGlobalDropdown.ariaLabel|default('')|trans }}">
+                <span data-bs-toggle="tooltip" data-placement="{{ item.HeaderGlobalDropdown.tooltipAlignment|default('bottom') }}" title="{{ item.HeaderGlobalDropdown.ariaLabel|default('')|trans }}">
                     <div class="tooltip-trigger__wrapper">
                         <button aria-label="{{ item.HeaderGlobalDropdown.ariaLabel|default('')|trans }}"
-                            class="header__action btn btn--lg layout--size-lg btn-ghost btn--icon-only btn-nospin {{ item.HeaderGlobalDropdown.className|default('') }} dropdown-toggle"
+                            class="header__action btn btn--lg layout--size-lg btn-ghost {{ item.HeaderGlobalDropdown.label is not defined ? 'btn--icon-only' : '' }} btn-nospin {{ item.HeaderGlobalDropdown.className|default('') }}"
                             type="button" 
-                            data-toggle="dropdown" 
+                            data-bs-toggle="dropdown" 
                             aria-haspopup="true" 
                             aria-expanded="false">
-                            <i class="{{ item.HeaderGlobalDropdown.renderDropdownIcon }} fs-20"></i>
+                            {% if item.HeaderGlobalDropdown.renderDropdownIcon is defined %}
+                                <i class="{{ item.HeaderGlobalDropdown.renderDropdownIcon }} ri-lg"></i>
+                            {% endif %}
+                            {% if item.HeaderGlobalDropdown.label is defined %}
+                                <span>{{ item.HeaderGlobalDropdown.label }}</span>
+                            {% endif %}
                         </button>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            {{ item.HeaderGlobalDropdown.renderMenuContent|raw }}
-                        </div>
+                        {% if item.HeaderGlobalDropdown.renderMenuContent is defined and item.HeaderGlobalDropdown.renderMenuContent is iterable %}
+                            {% include 'components/menu.html.twig' with {
+                                label: item.HeaderGlobalDropdown.ariaLabel|default(''),
+                                size: 'md',
+                                menuAlignment: 'end',
+                                className: 'header__menu',
+                                children: item.HeaderGlobalDropdown.renderMenuContent
+                            } only %}
+                        {% endif %}
                     </div>
                 </span>
             </div>

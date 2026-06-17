@@ -1,0 +1,107 @@
+{% set allTypesCount = (type_counts['mautic-plugin'] ?? 0) + (type_counts['mautic-theme'] ?? 0) + (type_counts['mautic-resource'] ?? 0) %}
+{% set compatibilityFilterItems = [] %}
+{% for version in mautic_versions %}
+    {% set compatibilityFilterItems = compatibilityFilterItems|merge([{
+        label: mautic_version_labels[version] ?? version,
+        value: version,
+        checked: version in (filters.mautic ?? [])
+    }]) %}
+{% endfor %}
+{% set languageFilterItems = [] %}
+{% for value, label in language_options %}
+    {% set languageFilterItems = languageFilterItems|merge([{
+        label: label,
+        value: value,
+        checked: value in (filters.language ?? [])
+    }]) %}
+{% endfor %}
+{% set ratingGroupContent %}
+    {% include 'components/radio.html.twig' with {
+        name: 'rating',
+        items: [
+            { label: 'marketplace.index.filters.rating.all', value: '', checked: (filters.rating ?? '') == '' },
+            { label: 'marketplace.index.filters.rating.5', value: '5', checked: (filters.rating ?? '') == 5 },
+            { label: 'marketplace.index.filters.rating.4', value: '4', checked: (filters.rating ?? '') == 4 },
+            { label: 'marketplace.index.filters.rating.3', value: '3', checked: (filters.rating ?? '') == 3 },
+            { label: 'marketplace.index.filters.rating.2', value: '2', checked: (filters.rating ?? '') == 2 },
+            { label: 'marketplace.index.filters.rating.1', value: '1', checked: (filters.rating ?? '') == 1 },
+            { label: 'marketplace.index.filters.rating.unrated', value: 'unrated', checked: (filters.rating ?? '') == 'unrated' }
+        ]
+    } only %}
+{% endset %}
+{% set filterGroups = [
+    {
+        title: 'marketplace.index.filters.compatibility.label',
+        name: 'mautic',
+        filterGroupItemsType: 'checkbox',
+        filterGroupItems: compatibilityFilterItems,
+        expanded: true
+    },
+    {
+        title: 'marketplace.index.filters.type.label',
+        filterGroupItemsType: 'select',
+        filterGroupItems: [
+            { label: 'marketplace.index.filters.type.all_count'|trans({'%count%': allTypesCount}), value: '', checked: (filters.type ?? '') == '' },
+            { label: 'marketplace.index.filters.type.plugin_count'|trans({'%count%': (type_counts['mautic-plugin'] ?? 0)}), value: 'mautic-plugin', checked: (filters.type ?? '') == 'mautic-plugin' },
+            { label: 'marketplace.index.filters.type.theme_count'|trans({'%count%': (type_counts['mautic-theme'] ?? 0)}), value: 'mautic-theme', checked: (filters.type ?? '') == 'mautic-theme' },
+            { label: 'marketplace.index.filters.type.resource_count'|trans({'%count%': (type_counts['mautic-resource'] ?? 0)}), value: 'mautic-resource', checked: (filters.type ?? '') == 'mautic-resource' }
+        ],
+        expanded: true
+    },
+    {
+        title: 'marketplace.index.filters.rating.label',
+        filterGroupItemsType: 'custom',
+        filterGroupItems: ratingGroupContent
+    }
+] %}
+{% if app.user %}
+    {% set filterGroups = filterGroups|merge([{
+        title: 'marketplace.index.filters.account.label',
+        name: 'things_i_rated',
+        filterGroupItemsType: 'checkbox',
+        filterGroupItems: [
+            {
+                label: 'marketplace.index.filters.packages_rated_by_me',
+                value: '1',
+                checked: filters.things_i_rated ?? false
+            },
+            {
+                label: 'marketplace.index.filters.my_submitted_packages',
+                name: 'my_submitted_packages[]',
+                value: '1',
+                checked: filters.my_submitted_packages ?? false
+            }
+        ]
+    }]) %}
+{% endif %}
+{% if languageFilterItems is not empty %}
+    {% set filterGroups = filterGroups|merge([{
+        title: 'marketplace.index.filters.language.label',
+        name: 'language',
+        filterGroupItemsType: 'checkbox',
+        filterGroupItems: languageFilterItems
+    }]) %}
+{% endif %}
+{% set filterGroups = filterGroups|merge([
+    {
+        title: 'marketplace.index.filters.date_range.label',
+        filterGroupItemsType: 'select',
+        filterGroupItems: [
+            { label: 'marketplace.index.filters.date_range.7d', value: '7d', checked: (filters.date_range ?? '') == '7d' },
+            { label: 'marketplace.index.filters.date_range.30d', value: '30d', checked: (filters.date_range ?? '') == '30d' },
+            { label: 'marketplace.index.filters.date_range.90d', value: '90d', checked: (filters.date_range ?? '') == '90d' },
+            { label: 'marketplace.index.filters.date_range.365d', value: '365d', checked: (filters.date_range ?? '') == '365d' }
+        ]
+    }
+]) %}
+{% include 'components/filter-panel.html.twig' with {
+    heading: 'marketplace.index.filters.heading',
+    filterCutoff: 5,
+    filterGroups: filterGroups
+} only %}
+<input type="hidden" name="orderby" value="{{ orderby }}">
+<input type="hidden" name="orderdir" value="{{ orderdir }}">
+{% if marketplace_total_pages <= 1 %}
+<input type="hidden" name="limit" value="{{ filters.limit }}">
+<input type="hidden" name="offset" value="{{ filters.offset }}">
+{% endif %}

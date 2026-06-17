@@ -7,9 +7,9 @@ namespace App\Controller;
 use App\Formatter\LanguageFilterFormatter;
 use App\Formatter\MauticVersionConstraintFormatter;
 use App\Marketplace\MarketplaceApiClient;
+use App\Marketplace\PackageDetailPageContextBuilder;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -23,18 +23,20 @@ final class MarketplaceController extends AbstractController
 
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
+        private readonly PackageDetailPageContextBuilder $detailPageContextBuilder,
         private readonly LanguageFilterFormatter $languageFilterFormatter,
         private readonly MauticVersionConstraintFormatter $mauticVersionConstraintFormatter,
-        #[Autowire(env: 'AUTH0_DOMAIN')]
-        private readonly string $auth0Domain,
-        #[Autowire(env: 'AUTH0_CLIENT_ID')]
-        private readonly string $auth0ClientId,
     ) {
     }
 
     public function homepage(): Response
     {
         return $this->render('marketplace/homepage.html.twig');
+    }
+
+    public function uploadPackage(): Response
+    {
+        return $this->render('marketplace/upload/package.html.twig');
     }
 
     public function index(Request $request): Response
@@ -47,6 +49,14 @@ final class MarketplaceController extends AbstractController
         $query = $request->query->get('query');
         $mauticVersions = $this->normalizeMauticVersions($request->query->all()['mautic'] ?? null);
         $languages = $this->normalizeLanguages($request->query->all()['language'] ?? null);
+        $ratingFilter = $this->normalizeRatingFilter($request->query->get('rating'));
+        $minimumRating = $this->minimumRatingForFilter($ratingFilter);
+        $unratedOnly = 'unrated' === $ratingFilter;
+        $currentUser = $this->getUser();
+        $thingsIRated = null !== $currentUser && $this->isChecked($request->query->all()['things_i_rated'] ?? null);
+        $ratedBy = $thingsIRated ? $currentUser->getUserIdentifier() : null;
+        $mySubmittedPackages = null !== $currentUser && $this->isChecked($request->query->all()['my_submitted_packages'] ?? null);
+        $submittedBy = $mySubmittedPackages ? $currentUser->getUserIdentifier() : null;
         $dateRange = $request->query->get('date_range');
         $popularity = $request->query->get('popularity');
 
@@ -60,6 +70,10 @@ final class MarketplaceController extends AbstractController
                 \is_string($query) ? $query : null,
                 $mauticVersions,
                 $languages,
+                $minimumRating,
+                $unratedOnly,
+                $ratedBy,
+                $submittedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
@@ -67,6 +81,10 @@ final class MarketplaceController extends AbstractController
                 \is_string($query) ? $query : null,
                 $mauticVersions,
                 $languages,
+                $minimumRating,
+                $unratedOnly,
+                $ratedBy,
+                $submittedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
@@ -75,6 +93,10 @@ final class MarketplaceController extends AbstractController
                 \is_string($type) ? $type : null,
                 \is_string($query) ? $query : null,
                 $mauticVersions,
+                $minimumRating,
+                $unratedOnly,
+                $ratedBy,
+                $submittedBy,
                 \is_string($dateRange) ? $dateRange : null,
                 \is_string($popularity) ? $popularity : null,
             );
@@ -95,6 +117,9 @@ final class MarketplaceController extends AbstractController
                     'query' => $query,
                     'mautic' => $mauticVersions,
                     'language' => $languages,
+                    'rating' => $ratingFilter,
+                    'things_i_rated' => $thingsIRated,
+                    'my_submitted_packages' => $mySubmittedPackages,
                     'date_range' => $dateRange,
                     'popularity' => $popularity,
                 ],
@@ -117,37 +142,24 @@ final class MarketplaceController extends AbstractController
                 'query' => $query,
                 'mautic' => $mauticVersions,
                 'language' => $languages,
+                'rating' => $ratingFilter,
+                'things_i_rated' => $thingsIRated,
+                'my_submitted_packages' => $mySubmittedPackages,
                 'date_range' => $dateRange,
                 'popularity' => $popularity,
             ],
-            'auth0_domain' => $this->auth0Domain,
-            'auth0_client_id' => $this->auth0ClientId,
         ]);
     }
 
     public function detail(string $package): Response
     {
-        try {
-            $detail = $this->apiClient->getPackage($package);
-        } catch (SupabaseApiException $exception) {
-            return $this->render('marketplace/detail.html.twig', [
-                'error' => $exception->getMessage(),
-                'package' => null,
-                'name' => $package,
-            ], new Response('', Response::HTTP_BAD_GATEWAY));
+        $page = $this->detailPageContextBuilder->build($package);
+
+        if (Response::HTTP_NOT_FOUND === $page['status_code']) {
+            throw $this->createNotFoundException((string) $page['context']['error']);
         }
 
-        if (!$detail instanceof \App\Marketplace\Dto\PackageDetail) {
-            throw $this->createNotFoundException('Package not found.');
-        }
-
-        return $this->render('marketplace/detail.html.twig', [
-            'error' => null,
-            'package' => $detail,
-            'name' => $package,
-            'auth0_domain' => $this->auth0Domain,
-            'auth0_client_id' => $this->auth0ClientId,
-        ]);
+        return $this->render('marketplace/detail.html.twig', $page['context'], new Response('', $page['status_code']));
     }
 
     private function toInt(mixed $value, int $default): int
@@ -160,9 +172,12 @@ final class MarketplaceController extends AbstractController
     }
 
     /**
+     * @param list<string> $mauticVersions
+     * @param list<string> $languages
+     *
      * @return array<string, int>
      */
-    private function buildTypeCounts(?string $query, array $mauticVersions, array $languages, ?string $dateRange, ?string $popularity): array
+    private function buildTypeCounts(?string $query, array $mauticVersions, array $languages, ?int $minimumRating, bool $unratedOnly, ?string $ratedBy, ?string $submittedBy, ?string $dateRange, ?string $popularity): array
     {
         $baseResult = $this->apiClient->listPackages(
             1,
@@ -173,6 +188,10 @@ final class MarketplaceController extends AbstractController
             $query,
             $mauticVersions,
             $languages,
+            $minimumRating,
+            $unratedOnly,
+            $ratedBy,
+            $submittedBy,
             $dateRange,
             $popularity,
         );
@@ -191,6 +210,10 @@ final class MarketplaceController extends AbstractController
             $query,
             $mauticVersions,
             $languages,
+            $minimumRating,
+            $unratedOnly,
+            $ratedBy,
+            $submittedBy,
             $dateRange,
             $popularity,
         );
@@ -288,5 +311,38 @@ final class MarketplaceController extends AbstractController
         }
 
         return array_values(array_unique($languages));
+    }
+
+    private function normalizeRatingFilter(mixed $value): ?string
+    {
+        if ('unrated' === $value) {
+            return 'unrated';
+        }
+
+        if (null === $value || '' === $value || !is_numeric($value)) {
+            return null;
+        }
+
+        $rating = (int) $value;
+
+        return $rating >= 1 && $rating <= 5 ? (string) $rating : null;
+    }
+
+    private function minimumRatingForFilter(?string $ratingFilter): ?int
+    {
+        if (null === $ratingFilter || 'unrated' === $ratingFilter) {
+            return null;
+        }
+
+        return (int) $ratingFilter;
+    }
+
+    private function isChecked(mixed $value): bool
+    {
+        if (\is_array($value)) {
+            return \in_array('1', $value, true);
+        }
+
+        return '1' === $value || 1 === $value || true === $value;
     }
 }

@@ -99,12 +99,13 @@
             title: groupTitle,
             content: filterGroupContent,
             padding_inline: filterGroupItemsType in ['select', 'custom'] ? false : true,
+            expanded: filterGroup.expanded|default(false),
         }
     ]) %}
 {% endfor %}
 
 {% set tileContent %}
-    <div id="filters-applied" class="mb-16 px-16" hidden aria-live="polite"></div>
+    <div id="filters-applied" class="mb-16 px-16 gap-4 d-flex flex-wrap" hidden aria-live="polite"></div>
     <div class="d-flex justify-content-between align-items-center mb-16 px-16">
         <div class="type-heading-01">{{ heading|trans }}</div>
         <div hidden data-clear-filters-wrapper>

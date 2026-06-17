@@ -30,8 +30,16 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
+# Reclaim disk before loading the new image so deploys don't fail with
+# "no space left on device". Prunes images no longer used by any container
+# (the running app's image is retained), clearing old images from past deploys.
+echo "Reclaiming disk: pruning unused Docker images..."
+docker image prune -af || echo "Warning: failed to prune unused Docker images (continuing)" >&2
+
 if [[ -f "${IMAGE_TAR}" ]]; then
   docker load -i "${IMAGE_TAR}"
+  # The tarball is only needed for the load step; remove it so /tmp doesn't fill up.
+  rm -f "${IMAGE_TAR}" || echo "Warning: failed to remove image tarball ${IMAGE_TAR} (continuing)" >&2
 fi
 
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -51,6 +59,10 @@ docker run -d \
   -p "127.0.0.1:${APP_PORT}:80" \
   "${APP_ENV_FILE_ARG[@]}" \
   "${IMAGE_TAG}"
+
+# The previous image is now unused (replaced by the new container); drop it so
+# old images don't accumulate between deploys.
+docker image prune -af || echo "Warning: failed to prune unused Docker images (continuing)" >&2
 
 PROD_DOMAIN="${APP_DOMAIN:-}"
 PROD_PORT="${APP_DOMAIN_PORT:-8080}"

@@ -15,24 +15,33 @@ marketplace_index:
     path: /browse
     controller: App\Controller\MarketplaceController::index
 
-marketplace_detail:
-    path: /package/{package}
-    controller: App\Controller\MarketplaceController::detail
-    requirements:
-        package: .+
+marketplace_upload_package:
+    path: /upload/package
+    controller: App\Controller\MarketplaceController::uploadPackage
 
 profile_page:
     path: /profile
     controller: App\Controller\ProfileController::index
 
-profile_api:
-    path: /api/profile
-    controller: App\Controller\Api\ProfileApiController::profile
+review_submit:
+    path: /package/{package}/review
+    controller: App\Controller\ReviewController::submit
+    methods: [POST]
+    requirements:
+        package: .+
+
+package_upload:
+    path: /api/package/upload
+    controller: App\Controller\Api\UploadApiController::upload
+    methods: [POST]
+
+publish_upload:
+    path: /publish/upload
+    controller: App\Controller\PublishController::upload
     methods: [GET]
 
-review_api_submit:
-    path: /api/review/{package}
-    controller: App\Controller\Api\ReviewApiController::submit
-    methods: [POST]
+marketplace_detail:
+    path: /package/{package}
+    controller: App\Controller\MarketplaceController::detail
     requirements:
         package: .+

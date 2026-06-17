@@ -7,8 +7,7 @@
     <script src="{{ asset('assets/marketplace.js') }}" defer data-turbo-track="reload"></script>
     {% block importmap %}{{ importmap('app') }}{% endblock %}
 </head>
-<body data-auth0-domain="{{ auth0_domain|default('') }}"
-      data-auth0-client-id="{{ auth0_client_id|default('') }}">
+<body>
       {% include 'components/uishell.html.twig' with {
         Header: {
             ariaLabel: 'mautic.marketplace.header.aria_label',
@@ -30,15 +29,66 @@
                                 children: 'mautic.marketplace.header.browse_templates'
                             }
                         }
+                    ]|merge(app.user ? [
+                        {
+                            HeaderMenuItem: {
+                                href: path('marketplace_upload_package'),
+                                children: 'mautic.marketplace.header.upload_package'
+                            }
+                        }
+                    ] : [])
+                },
+                HeaderGlobal: {
+                    children: app.user ? [
+                        {
+                            HeaderGlobalDropdown: {
+                                ariaLabel: 'mautic.marketplace.header.account',
+                                renderDropdownIcon: 'ri-account-circle-line',
+                                renderMenuContent: [
+                                    {
+                                        menuItem: {
+                                            href: path('profile_page'),
+                                            label: 'mautic.marketplace.header.my_profile'
+                                        }
+                                    },
+                                    {
+                                        menuItem: {
+                                            href: path('auth_logout'),
+                                            label: 'mautic.marketplace.header.logout',
+                                            attributes: {
+                                                'data-turbo': 'false'
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ] : [
+                        {
+                            HeaderGlobalAction: {
+                                href: path('auth_login', { returnTo: app.request.requestUri }),
+                                renderActionIcon: 'ri-login-box-line',
+                                ariaLabel: 'mautic.marketplace.header.login',
+                                attributes: {
+                                    'data-turbo': 'false'
+                                }
+                            }
+                        }
                     ]
                 }
             }
         }
     } %}
-    <main>
-        <div class="container mt-48">
+    <main id="main-content">
+
+            {% for message in app.flashes('success') %}
+                <div class="alert alert--success mb-16">{{ message }}</div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+                <div class="alert alert--error mb-16">{{ message }}</div>
+            {% endfor %}
             {% block body %}{% endblock %}
-        </div>
+
     </main>
 </body>
 </html>
