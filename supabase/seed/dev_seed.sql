@@ -41,7 +41,7 @@ VALUES (
     true,
     NOW() - INTERVAL '5 days',
     NOW() - INTERVAL '5 days',
-    'banners/mautic/example-plugin.jpg'
+    'package-media/banners/mautic_example-plugin.jpg'
 )
 ON CONFLICT (name) DO UPDATE SET
     description = EXCLUDED.description,

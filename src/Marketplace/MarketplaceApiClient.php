@@ -356,11 +356,10 @@ final class MarketplaceApiClient
             $data,
             ['Prefer' => 'return=representation,resolution=merge-duplicates'],
         );
-      
-        return \is_array($result) ? ($result[0] ?? $result) : [];
 
+        return \is_array($result) ? ($result[0] ?? $result) : [];
     }
-  
+
     /**
      * @return list<array<string, mixed>>
      */
