@@ -13,6 +13,7 @@ final class PackageSubmitService
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
         private readonly PackageZipUploader $zipUploader,
+        private readonly PackageImageUploader $imageUploader,
     ) {
     }
 
@@ -38,7 +39,11 @@ final class PackageSubmitService
             $zipPath,
         );
 
-        return $this->upsertPackage($composerData, $distUrl, $user);
+        // Pull the banner image out of the same archive and store it separately so it can be served
+        // as the package preview. Null means the archive had no banner, leaving any existing one intact.
+        $bannerUrl = $this->imageUploader->uploadBannerFromZip((string) $composerData['name'], $zipPath);
+
+        return $this->upsertPackage($composerData, $distUrl, $bannerUrl, $user);
     }
 
     /**
@@ -117,7 +122,7 @@ final class PackageSubmitService
      *
      * @return array{package_name: string, version: string, created: bool}
      */
-    private function upsertPackage(array $composerData, string $distUrl, Auth0User $user): array
+    private function upsertPackage(array $composerData, string $distUrl, ?string $bannerUrl, Auth0User $user): array
     {
         $packageName = (string) $composerData['name'];
         $version = (string) $composerData['version'];
@@ -147,6 +152,11 @@ final class PackageSubmitService
 
         if (\is_string($campaignUuid) && '' !== $campaignUuid) {
             $packageData['campaign_uuid'] = $campaignUuid;
+        }
+
+        // Only set when the archive carried a banner, so re-publishing without one keeps the current image.
+        if (null !== $bannerUrl) {
+            $packageData['banner_url'] = $bannerUrl;
         }
 
         if ($created) {

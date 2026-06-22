@@ -23,6 +23,7 @@ final class PackageSummary
         public readonly ?bool $latestMauticSupport,
         public readonly ?string $validationErrors,
         public readonly ?\DateTimeImmutable $updatedAt,
+        public readonly ?string $bannerURL = null,
     ) {
     }
 }
