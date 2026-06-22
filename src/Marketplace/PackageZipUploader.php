@@ -43,7 +43,7 @@ final class PackageZipUploader
         return $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $contents, 'application/zip');
     }
 
-    // Mirrors PackageImageUploader::slugify so a package's archive and images share the same folder name.
+    // Mirrors PackageImageUploader::slugifyName so a package's archive and images share the same folder name.
     private function slugifyName(string $packageName): string
     {
         return preg_replace('/[^a-z0-9_-]/', '_', strtolower($packageName)) ?? 'package';

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Marketplace;
 
 use App\Marketplace\Exception\SubmitValidationException;
+use App\Supabase\Exception\SupabaseApiException;
 use App\Supabase\SupabaseClient;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -30,6 +31,15 @@ final class PackageImageUploader
         'image/gif' => 'gif',
     ];
 
+    // Mautic packs the banner at the ZIP root as "banner.<ext>" (see CampaignShareService::addImageToZip).
+    private const ALLOWED_EXTENSIONS = [
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+    ];
+
     private const MAX_BYTES = 5 * 1024 * 1024;
 
     public function __construct(
@@ -45,6 +55,34 @@ final class PackageImageUploader
     public function uploadGalleryImage(string $packageName, UploadedFile $file, int $index): string
     {
         return $this->upload($packageName, $file, 'gallery/'.$index);
+    }
+
+    /**
+     * Extracts the banner image packed in a Mautic-shared ZIP, stores it in marketplace-owned storage,
+     * and returns the bucket-relative path to persist in packages.banner_url. Returns null when the
+     * archive carries no banner, so callers leave an existing banner untouched.
+     *
+     * @throws SupabaseApiException
+     */
+    public function uploadBannerFromZip(string $packageName, string $zipPath): ?string
+    {
+        $banner = $this->readBanner($zipPath);
+        if (null === $banner) {
+            return null;
+        }
+
+        [$extension, $contents] = $banner;
+
+        if (\strlen($contents) > self::MAX_BYTES) {
+            // A banner exceeding the limit shouldn't block the whole publish; skip it instead.
+            return null;
+        }
+
+        $objectPath = 'banners/'.$this->slugifyName($packageName).'.'.$extension;
+        $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $contents, self::ALLOWED_EXTENSIONS[$extension]);
+
+        // banner_url stores the bucket-relative path; MarketplaceApiClient::toBannerUrl turns it into a public URL.
+        return self::BUCKET.'/'.$objectPath;
     }
 
     private function upload(string $packageName, UploadedFile $file, string $prefix): string
@@ -69,6 +107,30 @@ final class PackageImageUploader
         return $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $contents, $mime);
     }
 
+    /**
+     * @return array{0: string, 1: string}|null Extension and raw bytes, or null when no banner is present
+     */
+    private function readBanner(string $zipPath): ?array
+    {
+        $zip = new \ZipArchive();
+        if (true !== $zip->open($zipPath)) {
+            return null;
+        }
+
+        try {
+            foreach (array_keys(self::ALLOWED_EXTENSIONS) as $extension) {
+                $contents = $zip->getFromName('banner.'.$extension);
+                if (false !== $contents && '' !== $contents) {
+                    return [$extension, $contents];
+                }
+            }
+
+            return null;
+        } finally {
+            $zip->close();
+        }
+    }
+
     private function slugify(string $packageName): string
     {
         // Preserve the vendor/package "/" so distinct names can't collide into the same
@@ -77,5 +139,11 @@ final class PackageImageUploader
         $slug = trim($slug, '/');
 
         return '' !== $slug ? $slug : 'package';
+    }
+
+    // Flattens vendor/package to a single segment for the banner filename packed from a Mautic share.
+    private function slugifyName(string $packageName): string
+    {
+        return preg_replace('/[^a-z0-9_-]/', '_', strtolower($packageName)) ?? 'package';
     }
 }

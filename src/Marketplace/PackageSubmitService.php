@@ -78,7 +78,10 @@ final class PackageSubmitService
         $request = $this->requestFromComposer($composerData);
         $zipUrl = $this->zipUploader->upload($request->name, $request->version, $zipPath);
 
-        return $this->upsertPackage($composerData, $request, $user, $zipUrl, null, []);
+        // Mautic packs the banner inside the shared ZIP, so extract it here instead of from a form field.
+        $bannerUrl = $this->imageUploader->uploadBannerFromZip($request->name, $zipPath);
+
+        return $this->upsertPackage($composerData, $request, $user, $zipUrl, $bannerUrl, []);
     }
 
     /**
@@ -206,6 +209,7 @@ final class PackageSubmitService
             $packageData['campaign_uuid'] = $campaignUuid;
         }
 
+        // Only set when a banner was provided, so re-publishing without one keeps the current image.
         if (null !== $bannerUrl) {
             $packageData['banner_url'] = $bannerUrl;
         }

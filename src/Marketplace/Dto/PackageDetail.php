@@ -36,6 +36,7 @@ final class PackageDetail
         public readonly ?string $time,
         public readonly ?array $reviews,
         public readonly ?array $versions,
+        public readonly ?string $bannerURL = null,
     ) {
     }
 }
