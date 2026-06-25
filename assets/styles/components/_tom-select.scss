@@ -1,0 +1,130 @@
+// TomSelect, themed to match Mautic's Chosen-based selects: outlined pill tags, an
+// inset focus ring in the brand colour, and the Carbon field tokens the rest of the
+// forms use. Applied to any `select[data-tom-select]` — currently the 600+ entry
+// "Languages" picker, where a native multi-select is unusable.
+
+.ts-wrapper {
+    // The original <select class="form-select"> copies its class onto the wrapper,
+    // which bleeds Bootstrap's non-interactive chevron and reserves padding on the
+    // right (the dead arrow in the old UI). Drop both; we draw our own caret.
+    &.form-select {
+        padding: 0;
+        background-image: none;
+    }
+}
+
+.ts-control {
+    min-height: 40px;
+    padding: 4px 36px 4px 8px; // right gap leaves room for the caret
+    background-color: var(--field, #fff);
+    border: 1px solid var(--border-strong, #8d8d8d);
+    border-radius: 6px;
+    box-shadow: none;
+    color: var(--text-primary, #161616);
+    cursor: text;
+
+    .ts-wrapper.multi.has-items & {
+        padding-bottom: 1px;
+    }
+}
+
+.ts-wrapper:not(.disabled):hover .ts-control {
+    background-color: var(--field-hover, #e8e8e8);
+}
+
+.ts-wrapper.focus .ts-control {
+    background-color: var(--field-hover, #e8e8e8);
+    border-color: transparent;
+    outline: 2px solid var(--focus, #4e5e9e);
+    outline-offset: -2px;
+    box-shadow: none;
+}
+
+// Selected tags — Mautic's outlined pill chips, not TomSelect's solid blue.
+.ts-wrapper.multi .ts-control > .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 3px 5px 3px 0;
+    padding: 2px 8px;
+    background: transparent;
+    border: 1px solid var(--background-inverse, #393939);
+    border-radius: 100px;
+    color: var(--text-primary, #161616);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+
+    &.active {
+        background: var(--layer-hover, #e8e8e8);
+        border-color: var(--background-inverse, #393939);
+        color: var(--text-primary, #161616);
+    }
+
+    .remove {
+        margin-left: 2px;
+        padding: 0 2px;
+        border: 0;
+        color: inherit;
+        font-size: 1rem;
+        line-height: 1;
+        border-radius: 100px;
+
+        &:hover {
+            background: transparent;
+            color: var(--focus, #4e5e9e);
+        }
+    }
+}
+
+// Search input + placeholder.
+.ts-control > input {
+    color: var(--text-primary, #161616);
+
+    &::placeholder {
+        color: var(--text-secondary, #525252);
+        opacity: 1;
+    }
+}
+
+// Caret on the right, flipping when the menu opens (matches Mautic's chosen caret).
+.ts-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    right: 14px;
+    width: 8px;
+    height: 8px;
+    border-right: 1.5px solid var(--text-secondary, #525252);
+    border-bottom: 1.5px solid var(--text-secondary, #525252);
+    transform: translateY(-50%) rotate(45deg);
+    pointer-events: none;
+    transition: transform 150ms cubic-bezier(0.2, 0, 0.38, 0.9);
+}
+
+.ts-wrapper.dropdown-active::after {
+    transform: translateY(-25%) rotate(-135deg);
+}
+
+// Dropdown menu.
+.ts-dropdown {
+    margin-top: 2px;
+    background: var(--field, #fff);
+    border: 1px solid var(--border-strong, #8d8d8d);
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    color: var(--text-primary, #161616);
+
+    .option {
+        padding: 8px 12px;
+    }
+
+    .option:hover,
+    .option.active {
+        background: var(--layer-hover, #e8e8e8);
+        color: var(--text-primary, #161616);
+    }
+}
+
+.ts-dropdown .ts-dropdown-content {
+    max-height: 240px;
+}

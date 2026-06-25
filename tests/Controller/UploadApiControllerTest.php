@@ -11,14 +11,14 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class UploadApiControllerTest extends WebTestCase
 {
-    public function testAnonymousUploadRedirectsToLogin(): void
+    public function testAnonymousUploadReturns401(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/upload', files: [
             'package' => $this->makeUploadedFile(ValidZipFixture::build()),
         ]);
 
-        self::assertResponseRedirects();
+        self::assertResponseStatusCodeSame(401);
     }
 
     public function testGetMethodNotAllowed(): void

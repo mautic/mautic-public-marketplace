@@ -10,6 +10,7 @@ use App\Marketplace\Exception\SubmitValidationException;
 use App\Marketplace\PackageSubmitService;
 use App\Marketplace\PackageZipUploader;
 use App\Supabase\Exception\SupabaseApiException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,7 @@ final class SubmitApiController extends AbstractController
     public function __construct(
         private readonly PackageSubmitService $submitService,
         private readonly ValidatorInterface $validator,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -82,11 +84,39 @@ final class SubmitApiController extends AbstractController
             );
         } catch (SubmitValidationException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        } catch (SupabaseApiException) {
-            return $this->json(['error' => 'Failed to publish package.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (SupabaseApiException $e) {
+            // The detail (HTTP status, storage/PostgREST message) is logged but kept out of the
+            // client response so we don't leak backend internals. The reference ties the user's
+            // report to this exact log entry so support can see what actually failed.
+            $reference = $this->errorReference();
+            $this->logger->error('Package publish failed: Supabase error.', ['reference' => $reference, 'exception' => $e]);
+
+            return $this->json([
+                'error' => \sprintf('We could not publish your package because a backend service did not respond as expected. This is usually temporary — please try again in a moment. If it keeps happening, contact support and quote reference %s.', $reference),
+                'reference' => $reference,
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (\Throwable $e) {
+            // Last-resort guard: anything unexpected still returns JSON the wizard can render
+            // instead of an opaque HTML 500 that surfaces as the generic "something went wrong".
+            $reference = $this->errorReference();
+            $this->logger->error('Package publish failed: unexpected error.', ['reference' => $reference, 'exception' => $e]);
+
+            return $this->json([
+                'error' => \sprintf('Something unexpected went wrong while publishing your package. Please try again. If it keeps happening, contact support and quote reference %s.', $reference),
+                'reference' => $reference,
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         return $this->json($result, Response::HTTP_CREATED);
+    }
+
+    /**
+     * Short code shown to the user and attached to the server-side log so a failed publish
+     * can be traced to its exact stack trace without exposing backend internals to the client.
+     */
+    private function errorReference(): string
+    {
+        return strtoupper(bin2hex(random_bytes(3)));
     }
 
     private function buildSubmitRequest(Request $request): SubmitRequest

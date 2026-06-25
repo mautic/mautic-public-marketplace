@@ -17,6 +17,7 @@
 import { validateForm } from './validation.js';
 
 const GENERIC_ERROR = "Something went wrong while publishing. Please try again, or contact support if it keeps happening.";
+const SESSION_EXPIRED_ERROR = "Your session has expired. Please log in again in another tab, then come back and submit once more.";
 
 function initUploadWizard() {
     const forms = Array.from(document.querySelectorAll('form[data-wizard-step]'))
@@ -37,6 +38,7 @@ function initUploadWizard() {
     let detectedType = '';
 
     showStep(1);
+    initMultiselectDropdowns();
 
     forms.forEach((form) => {
         const step = Number(form.dataset.wizardStep);
@@ -118,14 +120,23 @@ function initUploadWizard() {
         }
     }
 
+    // Prefill every field the campaign-share archive already carries (composer.json
+    // top-level + extra.mautic.*), so a shared campaign doesn't re-prompt for metadata
+    // the author entered in Mautic. Field IDs span steps 2–4; all steps are in the DOM.
     function prefillBasics(data) {
         detectedType = typeof data.type === 'string' ? data.type : '';
         applyCategoryOptions(data.type);
         setValue('package-name', data.name);
         setValue('package-version', data.version);
+        setValue('package-headline', data.headline);
         setValue('package-description', data.description);
         if (Array.isArray(data.keywords) && data.keywords.length > 0) {
             setValue('package-keywords', data.keywords.join(', '));
+        }
+        checkValues('languages[]', data.languages);
+        checkValues('works_with[]', data.works_with);
+        if (typeof data.price === 'number' && data.price > 0) {
+            setValue('package-price', String(data.price));
         }
     }
 
@@ -153,6 +164,13 @@ function initUploadWizard() {
 
             let data = null;
             try { data = await response.json(); } catch (e) { /* non-JSON; surfaced below */ }
+
+            // An expired session makes the firewall reject the request (401), or — if a
+            // redirect slipped through — fetch silently follows it to the login page. Either
+            // way, tell the user to re-authenticate instead of showing a generic failure.
+            if (response.status === 401 || response.redirected) {
+                throw new Error((data && data.error) || SESSION_EXPIRED_ERROR);
+            }
 
             if (!response.ok) {
                 throw new Error(formatError(data));
@@ -198,8 +216,8 @@ function initUploadWizard() {
         appendValue(body, 'packagist_url', 'package-packagist-url');
         appendValue(body, 'documentation', 'package-documentation');
 
-        // Multi-value selects / checkbox groups → repeated [] fields.
-        selectedOptions('package-languages').forEach((value) => body.append('languages[]', value));
+        // Multi-value checkbox groups → repeated [] fields.
+        checkedValues('languages[]').forEach((value) => body.append('languages[]', value));
         checkedValues('works_with[]').forEach((value) => body.append('works_with[]', value));
 
         // Images: form names differ from the API's expected fields.
@@ -290,16 +308,50 @@ function fileById(id) {
     return el?.files && el.files.length > 0 ? el.files[0] : null;
 }
 
-function selectedOptions(id) {
-    const el = document.getElementById(id);
-    if (!el || !el.selectedOptions) {
-        return [];
-    }
-    return Array.from(el.selectedOptions).map((option) => option.value);
+// Reflects the number of checked options on a Bootstrap-dropdown multiselect's
+// toggle button (the menu stays open via data-bs-auto-close="outside"), so the
+// collapsed control still shows how many items are selected.
+function initMultiselectDropdowns() {
+    document.querySelectorAll('[data-multiselect]').forEach((container) => {
+        const toggle = container.querySelector('[data-multiselect-toggle]');
+        const labelEl = container.querySelector('[data-multiselect-label]');
+        if (!toggle || !labelEl) {
+            return;
+        }
+
+        const placeholder = toggle.dataset.placeholder || '';
+        const countLabel = toggle.dataset.countLabel || '%count% selected';
+        const checkboxes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
+
+        const sync = () => {
+            const count = checkboxes.filter((cb) => cb.checked).length;
+            labelEl.textContent = 0 === count ? placeholder : countLabel.replace('%count%', count);
+        };
+
+        checkboxes.forEach((cb) => cb.addEventListener('change', sync));
+        sync();
+    });
 }
 
 function checkedValues(name) {
     return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked')).map((el) => el.value);
+}
+
+// Tick the checkbox-group inputs whose value is in `values`. Dispatches `change`
+// on each toggled input so the multiselect toggle label and field validation pick
+// the new state up, exactly as if the user had clicked them.
+function checkValues(name, values) {
+    if (!Array.isArray(values) || values.length === 0) {
+        return;
+    }
+    const wanted = new Set(values.map(String));
+    document.querySelectorAll('input[name="' + name + '"]').forEach((input) => {
+        const shouldCheck = wanted.has(input.value);
+        if (input.checked !== shouldCheck) {
+            input.checked = shouldCheck;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
 }
 
 function formatError(data) {

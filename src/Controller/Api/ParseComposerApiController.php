@@ -45,12 +45,29 @@ final class ParseComposerApiController extends AbstractController
             : [];
         $license = $data['license'] ?? null;
 
+        // Mautic's campaign-share flow packs the wizard's metadata into extra.mautic.*
+        // (the same fields PackageSubmitService reads for direct uploads), so surface
+        // them here too — otherwise the wizard re-asks for headline/languages/etc. the
+        // archive already carries.
+        $mauticExtra = \is_array($data['extra']['mautic'] ?? null) ? $data['extra']['mautic'] : [];
+        $languages = \is_array($mauticExtra['languages'] ?? null)
+            ? array_values(array_filter($mauticExtra['languages'], 'is_string'))
+            : [];
+        $worksWith = \is_array($mauticExtra['works-with'] ?? null)
+            ? array_values(array_filter($mauticExtra['works-with'], 'is_string'))
+            : [];
+        $priceAmount = $mauticExtra['price']['amount'] ?? null;
+
         return $this->json([
             'name' => $data['name'],
             'version' => $data['version'],
             'type' => $data['type'],
+            'headline' => isset($mauticExtra['headline']) ? (string) $mauticExtra['headline'] : null,
             'description' => $data['description'] ?? null,
             'keywords' => $keywords,
+            'languages' => $languages,
+            'works_with' => $worksWith,
+            'price' => is_numeric($priceAmount) ? (float) $priceAmount : null,
             'license' => $license,
             'authors' => $authors,
             'require' => $require,

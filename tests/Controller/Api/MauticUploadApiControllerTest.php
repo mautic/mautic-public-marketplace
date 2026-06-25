@@ -21,12 +21,12 @@ final class MauticUploadApiControllerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testAnonymousRedirectsToLogin(): void
+    public function testAnonymousReturns401(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/mautic-upload');
 
-        self::assertResponseRedirects();
+        self::assertResponseStatusCodeSame(401);
     }
 
     public function testGetMethodNotAllowed(): void

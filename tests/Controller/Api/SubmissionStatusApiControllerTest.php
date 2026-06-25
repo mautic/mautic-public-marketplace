@@ -9,12 +9,12 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class SubmissionStatusApiControllerTest extends WebTestCase
 {
-    public function testAnonymousIsRedirected(): void
+    public function testAnonymousReturns401(): void
     {
         $client = self::createClient();
         $client->request('GET', '/api/package/mautic/example-plugin/submission-status');
 
-        self::assertResponseRedirects();
+        self::assertResponseStatusCodeSame(401);
     }
 
     public function testReturnsStatusForOwner(): void

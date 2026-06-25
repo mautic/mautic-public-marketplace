@@ -21,12 +21,12 @@ final class ParseComposerApiControllerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testAnonymousIsRedirected(): void
+    public function testAnonymousReturns401(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/parse-composer');
 
-        self::assertResponseRedirects();
+        self::assertResponseStatusCodeSame(401);
     }
 
     public function testParseReturnsComposerFields(): void
@@ -49,6 +49,47 @@ final class ParseComposerApiControllerTest extends WebTestCase
         self::assertSame('mautic-resource', $data['type']);
         self::assertSame(['test', 'campaign'], $data['keywords']);
         self::assertSame('^5.0', $data['mautic_version_constraint']);
+        // Defaults when the archive carries no extra.mautic share metadata.
+        self::assertNull($data['headline']);
+        self::assertSame([], $data['languages']);
+        self::assertSame([], $data['works_with']);
+        self::assertNull($data['price']);
+    }
+
+    public function testParseReturnsMauticShareMetadata(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        $this->zipPath = PackageZipFactory::create([
+            'name' => 'testuser/test-campaign',
+            'description' => 'A test campaign for the marketplace.',
+            'type' => 'mautic-resource',
+            'version' => '1.0.0',
+            'keywords' => ['test', 'campaign'],
+            'license' => 'MIT',
+            'require' => ['mautic/core-lib' => '^5.0'],
+            'extra' => ['mautic' => [
+                'minimum-version' => '5.0',
+                'headline' => 'Stuck campaigns A, B, C, D',
+                'languages' => ['en', 'de'],
+                'works-with' => ['7.x', '6.x'],
+                'price' => ['amount' => 12.5],
+            ]],
+        ]);
+        $client->request(
+            'POST',
+            '/api/package/parse-composer',
+            [],
+            ['zip' => new UploadedFile($this->zipPath, 'package.zip', 'application/zip', null, true)],
+        );
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame('Stuck campaigns A, B, C, D', $data['headline']);
+        self::assertSame(['en', 'de'], $data['languages']);
+        self::assertSame(['7.x', '6.x'], $data['works_with']);
+        self::assertSame(12.5, $data['price']);
     }
 
     public function testParseRejectsZipWithoutComposer(): void

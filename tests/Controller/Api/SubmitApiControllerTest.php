@@ -21,12 +21,15 @@ final class SubmitApiControllerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testAnonymousSubmitRedirectsToLogin(): void
+    public function testAnonymousSubmitReturns401(): void
     {
         $client = self::createClient();
         $client->request('POST', '/api/package/submit');
 
-        self::assertResponseRedirects();
+        // API routes return a JSON 401 (not a redirect) so the wizard's fetch() can detect
+        // an expired session instead of silently following a redirect to the login page.
+        self::assertResponseStatusCodeSame(401);
+        self::assertJson((string) $client->getResponse()->getContent());
     }
 
     public function testGetMethodNotAllowed(): void
