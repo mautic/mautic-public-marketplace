@@ -18,6 +18,11 @@ final class MarketplaceApiClient
         private readonly SupabaseClient $supabaseClient,
         #[Autowire(env: 'SUPABASE_API_BASE')]
         private readonly string $supabaseBaseUrl,
+        // Browser-facing storage host for public image URLs. Empty in production, where
+        // SUPABASE_API_BASE is already public; set to the host-mapped port (e.g.
+        // http://127.0.0.1:8000) in local dev, where the API base is an internal Docker host.
+        #[Autowire(env: 'SUPABASE_PUBLIC_URL')]
+        private readonly string $supabasePublicUrl = '',
     ) {
     }
 
@@ -479,7 +484,17 @@ final class MarketplaceApiClient
             return null;
         }
 
-        return \sprintf('%s/storage/v1/object/public/%s', rtrim($this->supabaseBaseUrl, '/'), ltrim($path, '/'));
+        // Tolerate rows that stored the full storage URL (with the server-side host)
+        // instead of the bucket-relative path: keep only the part after the public
+        // prefix so the browser-facing URL is rebuilt from the public base below.
+        $marker = '/storage/v1/object/public/';
+        if (false !== ($pos = strpos($path, $marker))) {
+            $path = substr($path, $pos + \strlen($marker));
+        }
+
+        $base = '' !== $this->supabasePublicUrl ? $this->supabasePublicUrl : $this->supabaseBaseUrl;
+
+        return \sprintf('%s/storage/v1/object/public/%s', rtrim($base, '/'), ltrim($path, '/'));
     }
 
     private function toDateTime(mixed $value): ?\DateTimeImmutable

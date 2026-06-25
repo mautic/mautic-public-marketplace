@@ -104,7 +104,11 @@ final class PackageImageUploader
         $extension = self::MIME_EXTENSIONS[$mime];
         $objectPath = $this->slugify($packageName).'/'.$prefix.'.'.$extension;
 
-        return $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $contents, $mime);
+        $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $contents, $mime);
+
+        // Persist the bucket-relative path (not the server-side full URL), matching
+        // uploadBannerFromZip(); the browser-facing URL is built at render time.
+        return self::BUCKET.'/'.$objectPath;
     }
 
     /**
