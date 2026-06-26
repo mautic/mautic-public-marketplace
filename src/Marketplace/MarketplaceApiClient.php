@@ -283,7 +283,42 @@ final class MarketplaceApiClient
             $this->toArray($row['reviews'] ?? null),
             $versions,
             $this->toBannerUrl($row['banner_url'] ?? null),
+            $this->toGalleryImages($row['gallery'] ?? null),
         );
+    }
+
+    /**
+     * Maps the stored gallery rows ({url, alt}) to what the detail template expects
+     * ({src, alt}), building a browser-reachable URL for each image the same way as
+     * the banner.
+     *
+     * @return list<array{src: string, alt: string}>|null
+     */
+    private function toGalleryImages(mixed $gallery): ?array
+    {
+        if (!\is_array($gallery)) {
+            return null;
+        }
+
+        $images = [];
+        foreach ($gallery as $item) {
+            if (!\is_array($item)) {
+                continue;
+            }
+
+            $url = $item['url'] ?? $item['src'] ?? null;
+            $src = \is_string($url) ? $this->toBannerUrl($url) : null;
+            if (null === $src) {
+                continue;
+            }
+
+            $images[] = [
+                'src' => $src,
+                'alt' => \is_string($item['alt'] ?? null) ? $item['alt'] : '',
+            ];
+        }
+
+        return [] === $images ? null : $images;
     }
 
     /**

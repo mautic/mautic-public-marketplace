@@ -37,6 +37,8 @@ final class PackageDetail
         public readonly ?array $reviews,
         public readonly ?array $versions,
         public readonly ?string $bannerURL = null,
+        /** @var list<array{src: string, alt: string}>|null */
+        public readonly ?array $gallery = null,
     ) {
     }
 }
