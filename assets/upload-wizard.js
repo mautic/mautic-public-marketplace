@@ -133,7 +133,7 @@ function initUploadWizard() {
         if (Array.isArray(data.keywords) && data.keywords.length > 0) {
             setValue('package-keywords', data.keywords.join(', '));
         }
-        checkValues('languages[]', data.languages);
+        selectValues('package-languages', data.languages);
         checkValues('works_with[]', data.works_with);
         if (typeof data.price === 'number' && data.price > 0) {
             setValue('package-price', String(data.price));
@@ -216,8 +216,9 @@ function initUploadWizard() {
         appendValue(body, 'packagist_url', 'package-packagist-url');
         appendValue(body, 'documentation', 'package-documentation');
 
-        // Multi-value checkbox groups → repeated [] fields.
-        checkedValues('languages[]').forEach((value) => body.append('languages[]', value));
+        // Languages is a multi-select (TomSelect), not a checkbox group, so read its
+        // selected options; works_with is a checkbox group.
+        selectedValues('package-languages').forEach((value) => body.append('languages[]', value));
         checkedValues('works_with[]').forEach((value) => body.append('works_with[]', value));
 
         // Images: form names differ from the API's expected fields.
@@ -335,6 +336,42 @@ function initMultiselectDropdowns() {
 
 function checkedValues(name) {
     return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked')).map((el) => el.value);
+}
+
+// Selected option values of a <select>. Reads straight from the TomSelect widget when
+// present (most reliable for multi-selects), otherwise the native selected options.
+// Skips the empty placeholder value.
+function selectedValues(id) {
+    const select = document.getElementById(id);
+    if (!select) {
+        return [];
+    }
+    let values;
+    if (select.tomselect) {
+        const current = select.tomselect.getValue();
+        values = Array.isArray(current) ? current : [current];
+    } else {
+        values = Array.from(select.selectedOptions).map((option) => option.value);
+    }
+    return values.filter((value) => '' !== value && null != value);
+}
+
+// Pre-select <select> options by value, syncing the TomSelect widget when present so
+// prefilled values (e.g. languages carried in a shared archive) show as chips.
+function selectValues(id, values) {
+    const select = document.getElementById(id);
+    if (!select || !Array.isArray(values) || values.length === 0) {
+        return;
+    }
+    const wanted = new Set(values.map(String));
+    Array.from(select.options).forEach((option) => {
+        option.selected = wanted.has(option.value);
+    });
+    if (select.tomselect) {
+        select.tomselect.setValue(values, true);
+    } else {
+        select.dispatchEvent(new Event('change'));
+    }
 }
 
 // Tick the checkbox-group inputs whose value is in `values`. Dispatches `change`

@@ -24,6 +24,7 @@ final class PackageSummary
         public readonly ?string $validationErrors,
         public readonly ?\DateTimeImmutable $updatedAt,
         public readonly ?string $bannerURL = null,
+        public readonly ?string $headline = null,
     ) {
     }
 }

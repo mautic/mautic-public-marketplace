@@ -202,6 +202,10 @@ final class PackageSubmitService
             'github_url' => $request->github_url,
             'packagist_url' => $request->packagist_url,
             'documentation' => $request->documentation,
+            // The detail page renders the GitHub/Packagist links from repository/url
+            // (Packagist-sync columns); mirror the upload's URLs there so they show.
+            'repository' => $request->github_url,
+            'url' => $request->packagist_url,
             'ip_ownership_accepted' => $request->ip_ownership_accepted,
         ];
 

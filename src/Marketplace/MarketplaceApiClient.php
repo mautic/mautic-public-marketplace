@@ -123,6 +123,7 @@ final class MarketplaceApiClient
                 $row['validation_errors'] ?? null,
                 $this->toDateTime($row['time'] ?? null),
                 $this->toBannerUrl($row['banner_url'] ?? null),
+                isset($row['headline']) ? (string) $row['headline'] : null,
             );
         }
 
