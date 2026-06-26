@@ -11,6 +11,7 @@ use App\Marketplace\Dto\ReviewRequest;
 use App\Supabase\Exception\SupabaseApiException;
 use App\Supabase\SupabaseClient;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Intl\Languages;
 
 final class MarketplaceApiClient
 {
@@ -284,7 +285,33 @@ final class MarketplaceApiClient
             $versions,
             $this->toBannerUrl($row['banner_url'] ?? null),
             $this->toGalleryImages($row['gallery'] ?? null),
+            $this->toLanguageNames($row['languages'] ?? null),
         );
+    }
+
+    /**
+     * Resolves the author-selected language codes (e.g. "cs") to their English names
+     * (e.g. "Czech") for display, falling back to the raw value when it isn't a known
+     * ISO code (so already-named or custom values still show).
+     *
+     * @return list<string>|null
+     */
+    private function toLanguageNames(mixed $languages): ?array
+    {
+        if (!\is_array($languages)) {
+            return null;
+        }
+
+        $names = [];
+        foreach ($languages as $value) {
+            if (!\is_string($value) || '' === $value) {
+                continue;
+            }
+
+            $names[] = Languages::exists($value) ? Languages::getName($value) : $value;
+        }
+
+        return [] === $names ? null : $names;
     }
 
     /**

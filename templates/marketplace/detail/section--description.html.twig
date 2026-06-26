@@ -86,7 +86,9 @@
                 <!-- Language -->
                 <div class="mt-24">
                     <dt class="type-heading-01">{{ 'mautic.marketplace.detail.language'|trans }}</dt>
-                    {% if package.language %}
+                    {% if package.languages is defined and package.languages is not empty %}
+                    <dd>{{ package.languages|join(', ') }}</dd>
+                    {% elseif package.language %}
                     <dd>{{ package.language }}</dd>
                     {% else %}
                     <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
