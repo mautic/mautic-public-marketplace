@@ -29,3 +29,19 @@
         left: 0;
     }
 }
+
+// When the field in an input group is disabled, blend the addon into the same
+// disabled look and drop the separator so the whole control reads as inactive.
+.input-group:has(.form-control:disabled) .input-group-text {
+    background-color: var(--bs-secondary-bg);
+    color: var(--text-disabled);
+
+    > i {
+        color: var(--text-disabled);
+    }
+
+    &.prepend::after,
+    &.append::before {
+        display: none;
+    }
+}

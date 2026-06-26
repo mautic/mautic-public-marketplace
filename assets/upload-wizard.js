@@ -37,6 +37,10 @@ function initUploadWizard() {
     // category select, which the backend has no column for yet.
     let detectedType = '';
 
+    // The visible step, kept in sync by showStep() so the progress-indicator clicks
+    // know whether a target is a backward jump or a forward (validated) advance.
+    let currentStep = 1;
+
     showStep(1);
     initMultiselectDropdowns();
 
@@ -57,6 +61,25 @@ function initUploadWizard() {
 
         form.querySelectorAll('[data-wizard-nav="back"]').forEach((btn) => {
             btn.addEventListener('click', () => goTo(step - 1));
+        });
+    });
+
+    // Progress-indicator steps are navigable: going back jumps straight there, going
+    // forward behaves like Next (validates the current step, then advances/parses).
+    document.querySelectorAll('[data-wizard-goto]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const target = Number(btn.dataset.wizardGoto);
+            if (!Number.isFinite(target) || target === currentStep) {
+                return;
+            }
+            if (target < currentStep) {
+                goTo(target);
+                return;
+            }
+            const currentForm = stepByNumber.get(currentStep);
+            if (currentForm) {
+                handleForward(currentForm, currentStep, currentStep === lastStep ? 'submit' : 'next');
+            }
         });
     });
 
@@ -242,10 +265,14 @@ function initUploadWizard() {
     }
 
     function goTo(step) {
+        if (!Number.isFinite(step)) {
+            return;
+        }
         showStep(Math.min(Math.max(step, 1), lastStep));
     }
 
     function showStep(step) {
+        currentStep = step;
         stepByNumber.forEach((form, number) => {
             form.hidden = number !== step;
         });
