@@ -83,8 +83,10 @@
                 label: 'mautic.marketplace.upload.package.field.version.label'|trans,
                 required: true,
                 placeholder: 'mautic.marketplace.upload.package.field.version.placeholder'|trans,
+                helpText: 'mautic.marketplace.upload.package.field.version.help'|trans,
                 attributes: {
-                    pattern: '[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?'
+                    pattern: '[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?',
+                    readonly: 'readonly'
                 },
                 validation: {
                     rules: ['notBlank'],

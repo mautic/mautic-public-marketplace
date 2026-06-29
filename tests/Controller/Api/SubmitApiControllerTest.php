@@ -164,6 +164,22 @@ final class SubmitApiControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
+    public function testSubmitRejectsPublishingOverAnotherUsersPackage(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        // mautic/zebra-theme is owned by auth0|other; test123 must not be able to
+        // publish over it (supply-chain takeover guard).
+        $fields = $this->validFormFields();
+        $fields['name'] = 'mautic/zebra-theme';
+        $client->request('POST', '/api/package/submit', $fields, ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(400);
+        $payload = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('another user', $payload['error']);
+    }
+
     /**
      * @return array<string, mixed>
      */

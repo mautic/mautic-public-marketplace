@@ -179,6 +179,17 @@ final class PackageSubmitService
         }
 
         $created = null === $existingPackage;
+
+        // Supply-chain guard: only the original submitter may publish new versions of an
+        // existing package. Refuse to update a package owned by someone else (or update
+        // is in effect an ownership takeover under the same name).
+        if (!$created) {
+            $existingOwner = $existingPackage['auth0_user_id'] ?? null;
+            if (\is_string($existingOwner) && '' !== $existingOwner && $existingOwner !== $user->getUserIdentifier()) {
+                throw new SubmitValidationException('A package with this name already exists and belongs to another user. You can only publish updates to packages you submitted.');
+            }
+        }
+
         $status = \is_array($existingPackage) ? ($existingPackage['status'] ?? 'pending') : 'pending';
         if (!\is_string($status) || '' === $status) {
             $status = 'pending';
