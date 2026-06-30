@@ -52,7 +52,8 @@ final class ParseComposerApiControllerTest extends WebTestCase
         // Defaults when the archive carries no extra.mautic share metadata.
         self::assertNull($data['headline']);
         self::assertSame([], $data['languages']);
-        self::assertSame([], $data['works_with']);
+        // works_with is derived from the default composer's minimum-version (5.0).
+        self::assertSame(['5.x'], $data['works_with']);
         self::assertNull($data['price']);
     }
 
