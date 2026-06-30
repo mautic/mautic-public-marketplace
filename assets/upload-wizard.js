@@ -148,7 +148,6 @@ function initUploadWizard() {
     // the author entered in Mautic. Field IDs span steps 2–4; all steps are in the DOM.
     function prefillBasics(data) {
         detectedType = typeof data.type === 'string' ? data.type : '';
-        applyCategoryOptions(data.type);
         setValue('package-name', data.name);
         setValue('package-version', data.version);
         setValue('package-headline', data.headline);
@@ -229,7 +228,7 @@ function initUploadWizard() {
         appendValue(body, 'name', 'package-name');
         appendValue(body, 'version', 'package-version');
         // `category` is the package type the backend validates against composer.json.
-        body.append('category', detectedType || valueById('package-category'));
+        body.append('category', detectedType);
         appendValue(body, 'headline', 'package-headline');
         appendValue(body, 'keywords', 'package-keywords');
         appendValue(body, 'description', 'package-description');
@@ -287,40 +286,6 @@ function setValue(id, value) {
     if (el && typeof value === 'string' && value !== '') {
         el.value = value;
     }
-}
-
-// Rebuild the category <select> so its options match the package type detected
-// from composer.json. Option sets are emitted server-side (translated) as JSON;
-// any placeholder option (empty value) is preserved.
-function applyCategoryOptions(type) {
-    const select = document.getElementById('package-category');
-    const dataEl = document.getElementById('package-category-options-data');
-    if (!select || !dataEl) {
-        return;
-    }
-
-    let optionsByType;
-    try {
-        optionsByType = JSON.parse(dataEl.textContent);
-    } catch (e) {
-        return;
-    }
-
-    const options = optionsByType[type] || optionsByType['mautic-plugin'];
-    if (!Array.isArray(options)) {
-        return;
-    }
-
-    const placeholders = Array.from(select.options).filter((option) => option.value === '');
-    select.innerHTML = '';
-    placeholders.forEach((option) => select.appendChild(option));
-    options.forEach((option) => {
-        const el = document.createElement('option');
-        el.value = option.value;
-        el.textContent = option.label;
-        select.appendChild(el);
-    });
-    select.value = '';
 }
 
 function valueById(id) {

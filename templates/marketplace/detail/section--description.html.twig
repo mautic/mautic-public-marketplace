@@ -94,6 +94,12 @@
                     <dd class="text-helper">{{ 'mautic.marketplace.detail.unknown'|trans }}</dd>
                     {% endif %}
 
+                <!-- License -->
+                {% if package.license is defined and package.license %}
+                <dt class="type-heading-01 mt-24 mb-4">{{ 'mautic.marketplace.detail.license'|trans }}</dt>
+                <dd>{{ package.license }}</dd>
+                {% endif %}
+
                 <!-- Maintainers -->
                 {% if package.maintainers %}
                 <dt class="type-heading-01 mt-24 mb-4">{{ 'mautic.marketplace.detail.maintainers'|trans }}</dt>

@@ -287,6 +287,7 @@ final class MarketplaceApiClient
             $this->toBannerUrl($row['banner_url'] ?? null),
             $this->toGalleryImages($row['gallery'] ?? null),
             $this->toLanguageNames($row['languages'] ?? null),
+            $this->toLicense($versions),
         );
     }
 
@@ -313,6 +314,26 @@ final class MarketplaceApiClient
         }
 
         return [] === $names ? null : $names;
+    }
+
+    /** Picks the per-version composer license (array or string) and returns it for display, e.g. "MIT". */
+    private function toLicense(mixed $versions): ?string
+    {
+        if (!\is_array($versions)) {
+            return null;
+        }
+
+        foreach ($versions as $version) {
+            $license = \is_array($version) ? ($version['license'] ?? null) : null;
+            if (\is_array($license)) {
+                $license = implode(', ', array_filter(array_map('strval', $license)));
+            }
+            if (\is_string($license) && '' !== $license) {
+                return $license;
+            }
+        }
+
+        return null;
     }
 
     /**

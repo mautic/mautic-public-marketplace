@@ -1,67 +1,4 @@
 <section aria-labelledby="upload-step-2-heading" class="d-flex flex-column gap-32">
-    {% set package_type = package.type|default('mautic-plugin') %}
-    {% set plugin_category_options = [
-        { value: 'access-control', label: 'mautic.marketplace.upload.package.category.access_control'|trans },
-        { value: 'accessibility', label: 'mautic.marketplace.upload.package.category.accessibility'|trans },
-        { value: 'administration-tools', label: 'mautic.marketplace.upload.package.category.administration_tools'|trans },
-        { value: 'artificial-intelligence', label: 'mautic.marketplace.upload.package.category.artificial_intelligence'|trans },
-        { value: 'automation', label: 'mautic.marketplace.upload.package.category.automation'|trans },
-        { value: 'content-display', label: 'mautic.marketplace.upload.package.category.content_display'|trans },
-        { value: 'content-editing-experience', label: 'mautic.marketplace.upload.package.category.content_editing_experience'|trans },
-        { value: 'decoupled', label: 'mautic.marketplace.upload.package.category.decoupled'|trans },
-        { value: 'developer-tools', label: 'mautic.marketplace.upload.package.category.developer_tools'|trans },
-        { value: 'e-commerce', label: 'mautic.marketplace.upload.package.category.e_commerce'|trans },
-        { value: 'import-export', label: 'mautic.marketplace.upload.package.category.import_export'|trans },
-        { value: 'integrations', label: 'mautic.marketplace.upload.package.category.integrations'|trans },
-        { value: 'media', label: 'mautic.marketplace.upload.package.category.media'|trans },
-        { value: 'multilingual', label: 'mautic.marketplace.upload.package.category.multilingual'|trans },
-        { value: 'performance', label: 'mautic.marketplace.upload.package.category.performance'|trans },
-        { value: 'seo', label: 'mautic.marketplace.upload.package.category.seo'|trans },
-        { value: 'security', label: 'mautic.marketplace.upload.package.category.security'|trans },
-        { value: 'user-engagement', label: 'mautic.marketplace.upload.package.category.user_engagement'|trans }
-    ] %}
-    {% set theme_category_options = [
-        { value: 'modern', label: 'mautic.marketplace.upload.package.category.modern'|trans },
-        { value: 'minimal', label: 'mautic.marketplace.upload.package.category.minimal'|trans },
-        { value: 'corporate', label: 'mautic.marketplace.upload.package.category.corporate'|trans },
-        { value: 'creative', label: 'mautic.marketplace.upload.package.category.creative'|trans },
-        { value: 'editorial', label: 'mautic.marketplace.upload.package.category.editorial'|trans },
-        { value: 'dark', label: 'mautic.marketplace.upload.package.category.dark'|trans },
-        { value: 'accessible', label: 'mautic.marketplace.upload.package.category.accessible'|trans },
-        { value: 'bold', label: 'mautic.marketplace.upload.package.category.bold'|trans },
-        { value: 'elegant', label: 'mautic.marketplace.upload.package.category.elegant'|trans },
-        { value: 'playful', label: 'mautic.marketplace.upload.package.category.playful'|trans },
-        { value: 'luxury', label: 'mautic.marketplace.upload.package.category.luxury'|trans },
-        { value: 'retro', label: 'mautic.marketplace.upload.package.category.retro'|trans },
-        { value: 'geometric', label: 'mautic.marketplace.upload.package.category.geometric'|trans },
-        { value: 'illustrated', label: 'mautic.marketplace.upload.package.category.illustrated'|trans },
-        { value: 'high-contrast', label: 'mautic.marketplace.upload.package.category.high_contrast'|trans },
-        { value: 'clean', label: 'mautic.marketplace.upload.package.category.clean'|trans },
-        { value: 'vibrant', label: 'mautic.marketplace.upload.package.category.vibrant'|trans }
-    ] %}
-    {% set resource_category_options = [
-        { value: 'welcome-campaign', label: 'mautic.marketplace.upload.package.category.welcome_campaign'|trans },
-        { value: 'lead-nurturing-campaign', label: 'mautic.marketplace.upload.package.category.lead_nurturing_campaign'|trans },
-        { value: 'newsletter-campaign', label: 'mautic.marketplace.upload.package.category.newsletter_campaign'|trans },
-        { value: 're-engagement-campaign', label: 'mautic.marketplace.upload.package.category.re_engagement_campaign'|trans },
-        { value: 'event-campaign', label: 'mautic.marketplace.upload.package.category.event_campaign'|trans },
-        { value: 'e-commerce-campaign', label: 'mautic.marketplace.upload.package.category.e_commerce_campaign'|trans },
-        { value: 'promotional-campaign', label: 'mautic.marketplace.upload.package.category.promotional_campaign'|trans },
-        { value: 'product-launch-campaign', label: 'mautic.marketplace.upload.package.category.product_launch_campaign'|trans },
-        { value: 'webinar-campaign', label: 'mautic.marketplace.upload.package.category.webinar_campaign'|trans },
-        { value: 'customer-retention-campaign', label: 'mautic.marketplace.upload.package.category.customer_retention_campaign'|trans },
-        { value: 'post-purchase-campaign', label: 'mautic.marketplace.upload.package.category.post_purchase_campaign'|trans }
-    ] %}
-    {% set category_options = package_type == 'mautic-theme' ? theme_category_options : package_type == 'mautic-resource' ? resource_category_options : plugin_category_options %}
-
-    {# All category sets, so upload-wizard.js can swap the options to match the
-       package type detected from composer.json in step 1 (the initial render
-       defaults to plugin categories because the type isn't known server-side). #}
-    <script type="application/json" id="package-category-options-data">{{ {
-        'mautic-plugin': plugin_category_options,
-        'mautic-theme': theme_category_options,
-        'mautic-resource': resource_category_options
-    }|json_encode|raw }}</script>
 
     <div class="row g-24">
         <div class="col-12 col-md-6">
@@ -94,16 +31,6 @@
                         patternMismatch: 'mautic.marketplace.upload.package.validation.version.pattern'|trans
                     }
                 }
-            } only %}
-        </div>
-        <div class="col-12">
-            {% include 'components/select.html.twig' with {
-                name: 'category',
-                id: 'package-category',
-                label: 'mautic.marketplace.upload.package.field.category.label'|trans,
-                placeholder: 'mautic.marketplace.upload.package.field.category.placeholder'|trans,
-                required: true,
-                options: category_options
             } only %}
         </div>
         <div class="col-12">
