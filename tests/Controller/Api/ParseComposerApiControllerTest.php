@@ -92,6 +92,31 @@ final class ParseComposerApiControllerTest extends WebTestCase
         self::assertSame(12.5, $data['price']);
     }
 
+    public function testParseDerivesWorksWithFromMinimumVersion(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        $this->zipPath = PackageZipFactory::create([
+            'name' => 'testuser/test-campaign',
+            'description' => 'A test campaign for the marketplace.',
+            'type' => 'mautic-resource',
+            'version' => '1.0.0',
+            // No works-with: the minimum-version should still prefill the checkboxes.
+            'extra' => ['mautic' => ['minimum-version' => '7.0']],
+        ]);
+        $client->request(
+            'POST',
+            '/api/package/parse-composer',
+            [],
+            ['zip' => new UploadedFile($this->zipPath, 'package.zip', 'application/zip', null, true)],
+        );
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame(['7.x'], $data['works_with']);
+    }
+
     public function testParseRejectsZipWithoutComposer(): void
     {
         $client = self::createClient();

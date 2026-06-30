@@ -53,9 +53,21 @@ final class ParseComposerApiController extends AbstractController
         $languages = \is_array($mauticExtra['languages'] ?? null)
             ? array_values(array_filter($mauticExtra['languages'], 'is_string'))
             : [];
+        // Map versions to the "<major>.x" form the checkboxes use, falling back to minimum-version.
+        $toMajor = static fn (string $v): ?string => preg_match('/^v?(\d+)/', $v, $m) ? $m[1].'.x' : null;
+
         $worksWith = \is_array($mauticExtra['works-with'] ?? null)
-            ? array_values(array_filter($mauticExtra['works-with'], 'is_string'))
+            ? array_values(array_filter(array_map($toMajor, array_filter($mauticExtra['works-with'], 'is_string'))))
             : [];
+
+        if ([] === $worksWith && \is_string($mauticExtra['minimum-version'] ?? null)) {
+            $minimumMajor = $toMajor($mauticExtra['minimum-version']);
+            if (null !== $minimumMajor) {
+                $worksWith = [$minimumMajor];
+            }
+        }
+
+        $worksWith = array_values(array_unique($worksWith));
         $priceAmount = $mauticExtra['price']['amount'] ?? null;
 
         return $this->json([
