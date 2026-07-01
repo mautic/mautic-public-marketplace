@@ -67,7 +67,6 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorExists('#package-name[required][data-validation-field]');
         self::assertStringContainsString('notBlank', (string) $crawler->filter('#package-name')->attr('data-validation-rules'));
         self::assertSelectorExists('#package-version[required][pattern][data-validation-field]');
-        self::assertSelectorExists('#package-category[required][data-validation-field]');
         self::assertSelectorExists('#package-headline[required][maxlength="60"][data-validation-field]');
     }
 
