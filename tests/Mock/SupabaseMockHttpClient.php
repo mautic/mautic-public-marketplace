@@ -12,6 +12,17 @@ final class SupabaseMockHttpClient extends MockHttpClient
     public function __construct()
     {
         parent::__construct(static function (string $method, string $url, array $options = []): MockResponse {
+            if (str_contains($url, '/storage/v1/object/')) {
+                return new MockResponse(
+                    json_encode(['Key' => 'package-media/mock-object']),
+                    ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+                );
+            }
+
+            if ('PATCH' === $method && str_contains($url, '/rest/v1/packages')) {
+                return new MockResponse('[]', ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
             if ('POST' === $method && !str_contains($url, '/rpc/')) {
                 return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
             }
@@ -244,36 +255,6 @@ final class SupabaseMockHttpClient extends MockHttpClient
         );
     }
 
-    private static function packageByNameResponse(string $url): MockResponse
-    {
-        $params = self::parseParams($url, 'GET', []);
-        $nameFilter = $params['name'] ?? '';
-        $packageName = str_replace('eq.', '', $nameFilter);
-
-        $all = self::allPackages();
-
-        if (isset($all[$packageName])) {
-            $pkg = $all[$packageName];
-            $data = [[
-                'name' => $pkg['name'],
-                'displayname' => $pkg['displayname'],
-                'description' => $pkg['description'],
-                'type' => $pkg['type'],
-            ]];
-
-            return new MockResponse(
-                json_encode($data),
-                ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
-            );
-        }
-
-        // Package not found — return empty array
-        return new MockResponse(
-            '[]',
-            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
-        );
-    }
-
     private static function compatibleMauticVersionsResponse(): MockResponse
     {
         $versions = [];
@@ -401,6 +382,44 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'created_at' => (new \DateTimeImmutable('-1 day'))->format('c'),
             ],
         ];
+    }
+
+    private static function packageByNameResponse(string $url): MockResponse
+    {
+        $params = self::parseParams($url, 'GET', []);
+        $nameFilter = $params['name'] ?? '';
+        $packageName = str_replace('eq.', '', (string) $nameFilter);
+
+        $existing = [
+            'mautic/example-plugin' => [
+                'name' => 'mautic/example-plugin',
+                'displayname' => 'Example Plugin',
+                'description' => 'Example package for local development.',
+                'type' => 'mautic-plugin',
+                'auth0_user_id' => 'auth0|test123',
+                'status' => 'published',
+                'time' => '2026-01-01T00:00:00+00:00',
+            ],
+            'mautic/zebra-theme' => [
+                'name' => 'mautic/zebra-theme',
+                'displayname' => 'Zebra Theme',
+                'auth0_user_id' => 'auth0|other',
+                'status' => 'published',
+                'time' => '2026-01-01T00:00:00+00:00',
+            ],
+        ];
+
+        if (isset($existing[$packageName])) {
+            return new MockResponse(
+                json_encode([$existing[$packageName]]),
+                ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+            );
+        }
+
+        return new MockResponse(
+            '[]',
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
     }
 
     private static function userPackagesResponse(string $url): MockResponse

@@ -6,6 +6,7 @@ namespace App\Supabase;
 
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
@@ -99,7 +100,7 @@ final class SupabaseClient
         $objectUrl = $this->baseUri.'/storage/v1/object/'.$bucket.'/'.ltrim($objectPath, '/');
 
         // Delete any existing object at this path first, then POST without upsert.
-        // Supabase Storage's upsert path triggers a server-side "delete old version"
+        // Supabase Storage's upsert flow triggers a server-side "delete old version"
         // step that crashes in local file-backend mode (TypeError on undefined path),
         // so we bypass it by always issuing a clean POST. 404 on delete is expected
         // when the path is new and is ignored.
@@ -120,10 +121,16 @@ final class SupabaseClient
             ],
         ]);
 
-        $status = $response->getStatusCode();
+        try {
+            $status = $response->getStatusCode();
+            $content = $response->getContent(false);
+        } catch (TransportExceptionInterface $e) {
+            throw new SupabaseApiException(\sprintf('Supabase storage upload failed: %s', $e->getMessage()), 0, $e);
+        }
+
         if ($status >= 400) {
-            $payload = $response->toArray(false);
-            $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
+            $payload = $this->safeDecode($content);
+            $message = $this->extractErrorMessage($payload) ?? ('' !== trim($content) ? $content : \sprintf('HTTP %d', $status));
             throw new SupabaseApiException(\sprintf('Supabase storage upload failed (%s).', $message));
         }
 
@@ -132,15 +139,48 @@ final class SupabaseClient
 
     private function decodeResponse(ResponseInterface $response): mixed
     {
-        $status = $response->getStatusCode();
-        $payload = $response->toArray(false);
+        // getContent(false) never throws on a 4xx/5xx status (we inspect it ourselves) and,
+        // unlike toArray(), never throws on a non-JSON body — so a proxy/storage HTML error
+        // page or an empty response surfaces as a handled SupabaseApiException instead of an
+        // uncaught JsonException that the API controllers can't translate into a JSON error.
+        try {
+            $status = $response->getStatusCode();
+            $content = $response->getContent(false);
+        } catch (TransportExceptionInterface $e) {
+            throw new SupabaseApiException(\sprintf('Supabase request failed: %s', $e->getMessage()), 0, $e);
+        }
 
         if ($status >= 400) {
-            $message = $this->extractErrorMessage($payload) ?? \sprintf('HTTP %d', $status);
+            $payload = $this->safeDecode($content);
+            $message = $this->extractErrorMessage($payload) ?? ('' !== trim($content) ? $content : \sprintf('HTTP %d', $status));
             throw new SupabaseApiException(\sprintf('Supabase API error (%s).', $message));
         }
 
+        // A successful but empty body (e.g. a 204 from a return=minimal mutation) decodes to
+        // nothing; callers guard for arrays, so normalise it to an empty array.
+        if ('' === trim($content)) {
+            return [];
+        }
+
+        $payload = $this->safeDecode($content);
+        if (null === $payload) {
+            throw new SupabaseApiException('Supabase returned a non-JSON response.');
+        }
+
         return $payload;
+    }
+
+    private function safeDecode(string $content): mixed
+    {
+        if ('' === trim($content)) {
+            return null;
+        }
+
+        try {
+            return json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
+        }
     }
 
     private function extractErrorMessage(mixed $payload): ?string

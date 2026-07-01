@@ -26,3 +26,14 @@
     grid-template-columns: 1fr max-content;
     min-width: 0;
 }
+
+// Multiselect dropdown: the checkbox group's validation feedback lives inside the
+// collapsed menu, so mirror its invalid state onto the toggle button — otherwise
+// a required-but-empty field gives no visible cue while the menu is closed.
+.dropdown[data-multiselect]:has(.is-invalid) > [data-multiselect-toggle] {
+    border-color: var(--bs-form-invalid-border-color);
+
+    &:focus {
+        box-shadow: 0 0 0 .25rem rgba(var(--bs-danger-rgb), .25);
+    }
+}

@@ -5,130 +5,171 @@ declare(strict_types=1);
 namespace App\Marketplace;
 
 use App\Auth0\Auth0User;
+use App\Marketplace\Dto\SubmitRequest;
 use App\Marketplace\Exception\SubmitValidationException;
-use App\Supabase\Exception\SupabaseApiException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class PackageSubmitService
 {
     public function __construct(
         private readonly MarketplaceApiClient $apiClient,
-        private readonly PackageZipUploader $zipUploader,
+        private readonly ComposerJsonReader $composerReader,
         private readonly PackageImageUploader $imageUploader,
+        private readonly PackageZipUploader $zipUploader,
     ) {
     }
 
     /**
-     * Reads composer.json from an already-saved ZIP and creates/updates the package.
-     * Caller manages the file lifetime (typically a Symfony UploadedFile, auto-cleaned by PHP at request shutdown).
+     * @param list<UploadedFile> $galleryFiles
      *
-     * @return array{package_name: string, version: string, created: bool}
+     * @return array{package_name: string, version: string, status: string, created: bool}
      *
      * @throws SubmitValidationException
-     * @throws SupabaseApiException
      */
-    public function submitFromFile(string $zipPath, Auth0User $user): array
-    {
-        $composerData = $this->readComposerJson($zipPath);
-        $this->validateComposerData($composerData);
+    public function submit(
+        string $zipPath,
+        SubmitRequest $request,
+        Auth0User $user,
+        ?UploadedFile $bannerFile = null,
+        array $galleryFiles = [],
+    ): array {
+        $composerData = $this->composerReader->read($zipPath);
+        $this->composerReader->validate($composerData);
+        $this->ensureComposerMatchesRequest($composerData, $request);
 
-        // Copy the archive into marketplace-owned storage so installs don't depend on
-        // the originating Mautic instance staying reachable.
-        $distUrl = $this->zipUploader->upload(
-            (string) $composerData['name'],
-            (string) $composerData['version'],
-            $zipPath,
-        );
+        $zipUrl = $this->zipUploader->upload($request->name, $request->version, $zipPath);
 
-        // Pull the banner image out of the same archive and store it separately so it can be served
-        // as the package preview. Null means the archive had no banner, leaving any existing one intact.
-        $bannerUrl = $this->imageUploader->uploadBannerFromZip((string) $composerData['name'], $zipPath);
+        $bannerUrl = null;
+        if ($bannerFile instanceof UploadedFile) {
+            $bannerUrl = $this->imageUploader->uploadBanner($request->name, $bannerFile);
+        }
 
-        return $this->upsertPackage($composerData, $distUrl, $bannerUrl, $user);
+        $gallery = [];
+        foreach ($galleryFiles as $index => $file) {
+            $url = $this->imageUploader->uploadGalleryImage($request->name, $file, $index);
+            $gallery[] = [
+                'url' => $url,
+                'alt' => $request->gallery_alt[$index] ?? '',
+            ];
+        }
+
+        return $this->upsertPackage($composerData, $request, $user, $zipUrl, $bannerUrl, $gallery);
     }
 
     /**
-     * @return array<string, mixed>
+     * Mautic-source upload: the ZIP already carries banner/gallery and all metadata in
+     * extra.mautic.*, so no form fields or separate image files are needed. Synthesizes
+     * a SubmitRequest from composer.json and delegates to the same upsert pipeline.
+     *
+     * @return array{package_name: string, version: string, status: string, created: bool}
+     *
+     * @throws SubmitValidationException
      */
-    private function readComposerJson(string $zipPath): array
+    public function submitFromMauticShare(string $zipPath, Auth0User $user): array
     {
-        $zip = new \ZipArchive();
-        $result = $zip->open($zipPath);
+        $composerData = $this->composerReader->read($zipPath);
+        $this->composerReader->validate($composerData);
 
-        if (true !== $result) {
-            throw new SubmitValidationException('The uploaded file is not a valid ZIP archive.');
-        }
-
-        try {
-            $composerJson = $zip->getFromName('composer.json');
-
-            if (false === $composerJson) {
-                // Try one level deep only (e.g. "folder/composer.json"), not deeper paths like "vendor/x/composer.json"
-                for ($i = 0; $i < $zip->numFiles; ++$i) {
-                    $name = $zip->getNameIndex($i);
-                    if (false !== $name && str_ends_with($name, '/composer.json') && 1 === substr_count($name, '/')) {
-                        $composerJson = $zip->getFromIndex($i);
-                        break;
-                    }
-                }
-            }
-
-            if (false === $composerJson || '' === $composerJson) {
-                throw new SubmitValidationException('The ZIP archive does not contain a composer.json file.');
-            }
-
-            $data = json_decode($composerJson, true);
-
-            if (!\is_array($data)) {
-                throw new SubmitValidationException('The composer.json file contains invalid JSON.');
-            }
-
-            return $data;
-        } finally {
-            $zip->close();
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function validateComposerData(array $data): void
-    {
-        if (!isset($data['name']) || !\is_string($data['name']) || '' === trim($data['name'])) {
-            throw new SubmitValidationException('composer.json must contain a "name" field.');
-        }
-
-        if (!preg_match('#^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9](([_.]|-{1,2})?[a-z0-9]+)*$#', $data['name'])) {
-            throw new SubmitValidationException('composer.json "name" must be a valid package name (vendor/package).');
-        }
-
-        [$vendor] = explode('/', $data['name'], 2);
+        [$vendor] = explode('/', (string) $composerData['name'], 2);
         if ('unknown-vendor' === $vendor) {
             throw new SubmitValidationException('The campaign is missing a vendor name. Please fill in a vendor name in Mautic when sharing the campaign, then try again.');
         }
 
-        $type = $data['type'] ?? null;
-        $allowedTypes = ['mautic-plugin', 'mautic-theme', 'mautic-resource'];
-        if (!\in_array($type, $allowedTypes, true)) {
-            throw new SubmitValidationException(\sprintf('composer.json "type" must be one of: %s.', implode(', ', $allowedTypes)));
-        }
+        $request = $this->requestFromComposer($composerData);
+        $zipUrl = $this->zipUploader->upload($request->name, $request->version, $zipPath);
 
-        if (!isset($data['version']) || !\is_string($data['version']) || '' === trim($data['version'])) {
-            throw new SubmitValidationException('composer.json must contain a "version" field.');
-        }
+        // Mautic packs the banner inside the shared ZIP, so extract it here instead of from a form field.
+        $bannerUrl = $this->imageUploader->uploadBannerFromZip($request->name, $zipPath);
+
+        return $this->upsertPackage($composerData, $request, $user, $zipUrl, $bannerUrl, []);
+    }
+
+    /**
+     * File-based upload entry (browser-mediated push from Mautic). All metadata lives in
+     * the ZIP's composer.json, so this delegates to the same Mautic-share pipeline.
+     *
+     * @return array{package_name: string, version: string, status: string, created: bool}
+     *
+     * @throws SubmitValidationException
+     */
+    public function submitFromFile(string $zipPath, Auth0User $user): array
+    {
+        return $this->submitFromMauticShare($zipPath, $user);
     }
 
     /**
      * @param array<string, mixed> $composerData
-     *
-     * @return array{package_name: string, version: string, created: bool}
      */
-    private function upsertPackage(array $composerData, string $distUrl, ?string $bannerUrl, Auth0User $user): array
+    private function requestFromComposer(array $composerData): SubmitRequest
     {
-        $packageName = (string) $composerData['name'];
-        $version = (string) $composerData['version'];
-        $type = (string) $composerData['type'];
+        $extra = $composerData['extra']['mautic'] ?? [];
+        $worksWith = \is_array($extra['works-with'] ?? null) ? array_values(array_filter(array_map('strval', $extra['works-with']))) : [];
+        $languages = \is_array($extra['languages'] ?? null) ? array_values(array_filter(array_map('strval', $extra['languages']))) : [];
+        $price = $extra['price']['amount'] ?? 0;
+        $keywords = \is_array($composerData['keywords'] ?? null) ? array_values(array_filter(array_map('strval', $composerData['keywords']))) : [];
+
+        if ([] === $worksWith) {
+            $minVersion = $extra['minimum-version'] ?? null;
+            if (\is_string($minVersion) && '' !== $minVersion) {
+                $worksWith = [$minVersion];
+            }
+        }
+
+        return new SubmitRequest(
+            name: (string) $composerData['name'],
+            version: (string) $composerData['version'],
+            category: (string) $composerData['type'],
+            headline: (string) ($extra['headline'] ?? ''),
+            keywords: $keywords,
+            description: (string) ($composerData['description'] ?? ''),
+            languages: $languages,
+            works_with: $worksWith,
+            // License + ownership are UI-form-only concerns; Mautic share-flow uploads carry
+            // their declared licence inside composer.json (handled by upsertPackage).
+            license_type: 'mautic-share',
+            price: (float) $price,
+            ip_ownership_accepted: true,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $composerData
+     */
+    private function ensureComposerMatchesRequest(array $composerData, SubmitRequest $request): void
+    {
+        // The package name is intentionally NOT enforced against composer.json:
+        // the upload form lets publishers set the marketplace name, so the
+        // submitted $request->name takes priority and is used throughout the
+        // pipeline (storage paths, upsert identity). Type and version must still
+        // match composer.json to keep the published artifact self-consistent.
+        if (($composerData['type'] ?? null) !== $request->category) {
+            throw new SubmitValidationException('Submitted category does not match composer.json type.');
+        }
+
+        if (($composerData['version'] ?? null) !== $request->version) {
+            throw new SubmitValidationException('Submitted version does not match composer.json.');
+        }
+    }
+
+    /**
+     * @param array<string, mixed>                  $composerData
+     * @param list<array{url: string, alt: string}> $gallery
+     *
+     * @return array{package_name: string, version: string, status: string, created: bool}
+     */
+    private function upsertPackage(
+        array $composerData,
+        SubmitRequest $request,
+        Auth0User $user,
+        string $zipUrl,
+        ?string $bannerUrl,
+        array $gallery,
+    ): array {
+        $packageName = $request->name;
         $campaignUuid = $composerData['extra']['mautic']['campaign-uuid'] ?? null;
 
+        // Dedupe shared campaigns by their stable UUID first so re-shares update the same
+        // package even if the user renamed it; fall back to lookup by package name.
         $existingPackage = null;
         if (\is_string($campaignUuid) && '' !== $campaignUuid) {
             $existingPackage = $this->apiClient->getPackageByCampaignUuid($campaignUuid);
@@ -136,60 +177,102 @@ final class PackageSubmitService
         if (null === $existingPackage) {
             $existingPackage = $this->apiClient->getPackageByName($packageName);
         }
+
         $created = null === $existingPackage;
+
+        // Supply-chain guard: only the original submitter may publish new versions of an
+        // existing package. Refuse to update a package owned by someone else (or update
+        // is in effect an ownership takeover under the same name).
+        if (!$created) {
+            $existingOwner = $existingPackage['auth0_user_id'] ?? null;
+            if (\is_string($existingOwner) && '' !== $existingOwner && $existingOwner !== $user->getUserIdentifier()) {
+                throw new SubmitValidationException('A package with this name already exists and belongs to another user. You can only publish updates to packages you submitted.');
+            }
+        }
+
+        $status = \is_array($existingPackage) ? ($existingPackage['status'] ?? 'pending') : 'pending';
+        if (!\is_string($status) || '' === $status) {
+            $status = 'pending';
+        }
 
         $maintainerName = $user->getName() ?? $user->getEmail() ?? 'Anonymous';
 
         $packageData = [
             'name' => $packageName,
             'displayname' => $composerData['extra']['mautic']['display-name'] ?? $this->toDisplayName($packageName),
-            'description' => $composerData['description'] ?? null,
-            'type' => $type,
+            'description' => $request->description,
+            'type' => $request->category,
             'time' => (new \DateTimeImmutable())->format('c'),
             'maintainers' => [['name' => $maintainerName]],
             'auth0_user_id' => $user->getUserIdentifier(),
+            'headline' => $request->headline,
+            'languages' => $request->languages,
+            'works_with' => $request->works_with,
+            'price' => $request->price,
+            'license_type' => $request->license_type,
+            'github_url' => $request->github_url,
+            'packagist_url' => $request->packagist_url,
+            'documentation' => $request->documentation,
+            // The detail page renders the GitHub/Packagist links from repository/url
+            // (Packagist-sync columns); mirror the upload's URLs there so they show.
+            'repository' => $request->github_url,
+            'url' => $request->packagist_url,
+            'ip_ownership_accepted' => $request->ip_ownership_accepted,
         ];
 
         if (\is_string($campaignUuid) && '' !== $campaignUuid) {
             $packageData['campaign_uuid'] = $campaignUuid;
         }
 
-        // Only set when the archive carried a banner, so re-publishing without one keeps the current image.
+        // Only set when a banner was provided, so re-publishing without one keeps the current image.
         if (null !== $bannerUrl) {
             $packageData['banner_url'] = $bannerUrl;
         }
 
-        if ($created) {
-            $packageData['downloads'] = ['total' => 0];
-            $this->apiClient->createPackage($packageData);
-        } else {
-            $existingName = (string) ($existingPackage['name'] ?? $packageName);
-            unset($packageData['name']);
-            $this->apiClient->updatePackage($existingName, $packageData);
-            $packageName = $existingName;
+        if ([] !== $gallery) {
+            $packageData['gallery'] = $gallery;
         }
 
-        $smv = $this->extractMauticVersion($composerData);
+        if ($created) {
+            $packageData['downloads'] = ['total' => 0];
+            $packageData['status'] = 'pending';
+            $this->apiClient->createPackage($packageData);
+            $status = 'pending';
+        } else {
+            // A campaign_uuid match may resolve to a package stored under a
+            // different name. Override is enabled, so the submitted name wins:
+            // rename the existing row in place (the child FKs cascade the rename
+            // via ON UPDATE CASCADE) and carry the new name to the version record.
+            $existingName = (string) ($existingPackage['name'] ?? $request->name);
+            $packageData['status'] = $status;
+            $this->apiClient->updatePackage($existingName, $packageData);
+            $packageName = $request->name;
+        }
+
+        $smv = $this->composerReader->extractMauticVersion($composerData);
 
         $versionData = [
             'package_name' => $packageName,
-            'version' => $version,
-            'version_normalized' => $this->normalizeVersion($version),
-            'description' => $composerData['description'] ?? null,
-            'keywords' => $composerData['keywords'] ?? null,
-            'license' => $composerData['license'] ?? null,
+            'version' => $request->version,
+            'version_normalized' => $this->composerReader->normalizeVersion($request->version),
+            'description' => $request->description,
+            'keywords' => $request->keywords,
+            'license' => $composerData['license'] ?? [$request->license_type],
             'authors' => $composerData['authors'] ?? null,
-            'type' => $type,
-            'dist' => ['url' => $distUrl, 'type' => 'zip'],
+            'type' => $request->category,
+            'dist' => ['type' => 'zip', 'url' => $zipUrl],
             'time' => (new \DateTimeImmutable())->format('c'),
             'smv' => $smv,
+            'require' => $composerData['require'] ?? null,
+            'extra' => $composerData['extra'] ?? null,
         ];
 
         $this->apiClient->upsertVersion($versionData);
 
         return [
             'package_name' => $packageName,
-            'version' => $version,
+            'version' => $request->version,
+            'status' => $status,
             'created' => $created,
         ];
     }
@@ -200,40 +283,5 @@ final class PackageSubmitService
         $name = end($parts);
 
         return ucwords(str_replace(['-', '_'], ' ', $name));
-    }
-
-    /**
-     * @param array<string, mixed> $composerData
-     */
-    private function extractMauticVersion(array $composerData): ?string
-    {
-        $require = $composerData['require'] ?? [];
-        if (!\is_array($require)) {
-            return null;
-        }
-
-        $mauticConstraint = $require['mautic/core-lib'] ?? $require['mautic/core'] ?? $require['mautic/mautic'] ?? null;
-        if (!\is_string($mauticConstraint)) {
-            return $composerData['extra']['mautic']['minimum-version'] ?? null;
-        }
-
-        // Extract the base version number from constraint (e.g. "^5.0" -> "5.0")
-        if (preg_match('/(\d+\.\d+)/', $mauticConstraint, $matches)) {
-            return $matches[1];
-        }
-
-        return $mauticConstraint;
-    }
-
-    private function normalizeVersion(string $version): string
-    {
-        $version = ltrim($version, 'vV');
-
-        $parts = explode('.', $version);
-        while (\count($parts) < 4) {
-            $parts[] = '0';
-        }
-
-        return implode('.', \array_slice($parts, 0, 4));
     }
 }

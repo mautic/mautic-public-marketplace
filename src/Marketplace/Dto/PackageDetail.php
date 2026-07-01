@@ -37,6 +37,11 @@ final class PackageDetail
         public readonly ?array $reviews,
         public readonly ?array $versions,
         public readonly ?string $bannerURL = null,
+        /** @var list<array{src: string, alt: string}>|null */
+        public readonly ?array $gallery = null,
+        /** @var list<string>|null Author-selected language names, e.g. ["Czech", "English"] */
+        public readonly ?array $languages = null,
+        public readonly ?string $license = null,
     ) {
     }
 }

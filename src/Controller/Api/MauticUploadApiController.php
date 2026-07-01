@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-final class UploadApiController extends AbstractController
+final class MauticUploadApiController extends AbstractController
 {
     public function __construct(
         private readonly PackageSubmitService $submitService,
@@ -25,6 +25,10 @@ final class UploadApiController extends AbstractController
     ) {
     }
 
+    /**
+     * Receives a ZIP pushed from a Mautic instance via the browser-as-proxy popup.
+     * No form fields — all metadata lives inside composer.json's extra.mautic.*.
+     */
     #[IsGranted('ROLE_USER')]
     public function upload(Request $request): JsonResponse
     {
@@ -32,7 +36,6 @@ final class UploadApiController extends AbstractController
         $user = $this->getUser();
 
         $file = $request->files->get('package');
-
         if (!$file instanceof UploadedFile) {
             return $this->json(
                 ['error' => 'No package file uploaded. Expected a multipart/form-data field named "package".'],
@@ -55,11 +58,11 @@ final class UploadApiController extends AbstractController
         }
 
         try {
-            $result = $this->submitService->submitFromFile($file->getPathname(), $user);
+            $result = $this->submitService->submitFromMauticShare($file->getPathname(), $user);
         } catch (SubmitValidationException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         } catch (SupabaseApiException $e) {
-            $this->logger->error('Package upload failed at marketplace storage layer.', [
+            $this->logger->error('Mautic share upload failed at marketplace storage layer.', [
                 'filename' => $file->getClientOriginalName(),
                 'exception' => $e,
             ]);

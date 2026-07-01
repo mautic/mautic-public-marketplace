@@ -11,6 +11,7 @@ use App\Marketplace\Dto\ReviewRequest;
 use App\Supabase\Exception\SupabaseApiException;
 use App\Supabase\SupabaseClient;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Intl\Languages;
 
 final class MarketplaceApiClient
 {
@@ -18,6 +19,11 @@ final class MarketplaceApiClient
         private readonly SupabaseClient $supabaseClient,
         #[Autowire(env: 'SUPABASE_API_BASE')]
         private readonly string $supabaseBaseUrl,
+        // Browser-facing storage host for public image URLs. Empty in production, where
+        // SUPABASE_API_BASE is already public; set to the host-mapped port (e.g.
+        // http://127.0.0.1:8000) in local dev, where the API base is an internal Docker host.
+        #[Autowire(env: 'SUPABASE_PUBLIC_URL')]
+        private readonly string $supabasePublicUrl = '',
     ) {
     }
 
@@ -117,6 +123,7 @@ final class MarketplaceApiClient
                 $row['validation_errors'] ?? null,
                 $this->toDateTime($row['time'] ?? null),
                 $this->toBannerUrl($row['banner_url'] ?? null),
+                isset($row['headline']) ? (string) $row['headline'] : null,
             );
         }
 
@@ -278,7 +285,89 @@ final class MarketplaceApiClient
             $this->toArray($row['reviews'] ?? null),
             $versions,
             $this->toBannerUrl($row['banner_url'] ?? null),
+            $this->toGalleryImages($row['gallery'] ?? null),
+            $this->toLanguageNames($row['languages'] ?? null),
+            $this->toLicense($versions),
         );
+    }
+
+    /**
+     * Resolves the author-selected language codes (e.g. "cs") to their English names
+     * (e.g. "Czech") for display, falling back to the raw value when it isn't a known
+     * ISO code (so already-named or custom values still show).
+     *
+     * @return list<string>|null
+     */
+    private function toLanguageNames(mixed $languages): ?array
+    {
+        if (!\is_array($languages)) {
+            return null;
+        }
+
+        $names = [];
+        foreach ($languages as $value) {
+            if (!\is_string($value) || '' === $value) {
+                continue;
+            }
+
+            $names[] = Languages::exists($value) ? Languages::getName($value) : $value;
+        }
+
+        return [] === $names ? null : $names;
+    }
+
+    /** Picks the per-version composer license (array or string) and returns it for display, e.g. "MIT". */
+    private function toLicense(mixed $versions): ?string
+    {
+        if (!\is_array($versions)) {
+            return null;
+        }
+
+        foreach ($versions as $version) {
+            $license = \is_array($version) ? ($version['license'] ?? null) : null;
+            if (\is_array($license)) {
+                $license = implode(', ', array_filter(array_map('strval', $license)));
+            }
+            if (\is_string($license) && '' !== $license) {
+                return $license;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Maps the stored gallery rows ({url, alt}) to what the detail template expects
+     * ({src, alt}), building a browser-reachable URL for each image the same way as
+     * the banner.
+     *
+     * @return list<array{src: string, alt: string}>|null
+     */
+    private function toGalleryImages(mixed $gallery): ?array
+    {
+        if (!\is_array($gallery)) {
+            return null;
+        }
+
+        $images = [];
+        foreach ($gallery as $item) {
+            if (!\is_array($item)) {
+                continue;
+            }
+
+            $url = $item['url'] ?? $item['src'] ?? null;
+            $src = \is_string($url) ? $this->toBannerUrl($url) : null;
+            if (null === $src) {
+                continue;
+            }
+
+            $images[] = [
+                'src' => $src,
+                'alt' => \is_string($item['alt'] ?? null) ? $item['alt'] : '',
+            ];
+        }
+
+        return [] === $images ? null : $images;
     }
 
     /**
@@ -295,7 +384,7 @@ final class MarketplaceApiClient
             return null;
         }
 
-        return $data[0] ?? null;
+        return \is_array($data[0] ?? null) ? $data[0] : null;
     }
 
     /**
@@ -312,7 +401,7 @@ final class MarketplaceApiClient
             return null;
         }
 
-        return $data[0] ?? null;
+        return \is_array($data[0] ?? null) ? $data[0] : null;
     }
 
     /**
@@ -479,7 +568,17 @@ final class MarketplaceApiClient
             return null;
         }
 
-        return \sprintf('%s/storage/v1/object/public/%s', rtrim($this->supabaseBaseUrl, '/'), ltrim($path, '/'));
+        // Tolerate rows that stored the full storage URL (with the server-side host)
+        // instead of the bucket-relative path: keep only the part after the public
+        // prefix so the browser-facing URL is rebuilt from the public base below.
+        $marker = '/storage/v1/object/public/';
+        if (false !== ($pos = strpos($path, $marker))) {
+            $path = substr($path, $pos + \strlen($marker));
+        }
+
+        $base = '' !== $this->supabasePublicUrl ? $this->supabasePublicUrl : $this->supabaseBaseUrl;
+
+        return \sprintf('%s/storage/v1/object/public/%s', rtrim($base, '/'), ltrim($path, '/'));
     }
 
     private function toDateTime(mixed $value): ?\DateTimeImmutable

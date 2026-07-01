@@ -34,9 +34,18 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertPageTitleContains('Mautic Marketplace');
     }
 
-    public function testPackageUploadPageLoads(): void
+    public function testPackageUploadPageRedirectsAnonymousUsers(): void
     {
         $client = self::createClient();
+        $client->request('GET', '/upload/package');
+
+        self::assertResponseRedirects('/auth/login?returnTo=/upload/package');
+    }
+
+    public function testPackageUploadPageLoadsForAuthenticatedUsers(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/upload/package');
 
         self::assertResponseIsSuccessful();
@@ -49,6 +58,7 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPackageUploadBasicsStepRendersValidationAttributes(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/upload/package?step=2');
         $crawler = $client->getCrawler();
 
@@ -57,13 +67,13 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorExists('#package-name[required][data-validation-field]');
         self::assertStringContainsString('notBlank', (string) $crawler->filter('#package-name')->attr('data-validation-rules'));
         self::assertSelectorExists('#package-version[required][pattern][data-validation-field]');
-        self::assertSelectorExists('#package-category[required][data-validation-field]');
         self::assertSelectorExists('#package-headline[required][maxlength="60"][data-validation-field]');
     }
 
     public function testPackageUploadDetailsStepRendersValidationAttributes(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/upload/package?step=3');
         $crawler = $client->getCrawler();
 
@@ -80,12 +90,13 @@ final class MarketplaceControllerTest extends WebTestCase
     public function testPackageUploadPricingLegalStepRendersValidationAttributes(): void
     {
         $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
         $client->request('GET', '/upload/package?step=4');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('form.needs-validation[novalidate]');
         self::assertSelectorExists('#package-license-type[required][data-validation-field]');
-        self::assertSelectorExists('#package-price-control[required][min="0"][step="0.01"][data-validation-field]');
+        self::assertSelectorExists('#package-price-control[min="0"][step="0.01"][data-validation-field]');
         self::assertSelectorExists('fieldset[data-validation-name="legal_confirmation[]"][data-validation-required="true"]');
     }
 

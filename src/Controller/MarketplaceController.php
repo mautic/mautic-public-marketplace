@@ -6,7 +6,9 @@ namespace App\Controller;
 
 use App\Formatter\LanguageFilterFormatter;
 use App\Formatter\MauticVersionConstraintFormatter;
+use App\Marketplace\LanguageOptions;
 use App\Marketplace\MarketplaceApiClient;
+use App\Marketplace\MauticVersionsProvider;
 use App\Marketplace\PackageDetailPageContextBuilder;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,6 +28,8 @@ final class MarketplaceController extends AbstractController
         private readonly PackageDetailPageContextBuilder $detailPageContextBuilder,
         private readonly LanguageFilterFormatter $languageFilterFormatter,
         private readonly MauticVersionConstraintFormatter $mauticVersionConstraintFormatter,
+        private readonly LanguageOptions $languageOptions,
+        private readonly MauticVersionsProvider $mauticVersionsProvider,
     ) {
     }
 
@@ -36,7 +40,12 @@ final class MarketplaceController extends AbstractController
 
     public function uploadPackage(): Response
     {
-        return $this->render('marketplace/upload/package.html.twig');
+        return $this->render('marketplace/upload/package.html.twig', [
+            'language_options' => $this->languageOptions->all(),
+            // Backend-managed major versions (from Packagist, cached) so the "Works with"
+            // checkboxes track new Mautic releases without editing the template.
+            'mautic_versions' => $this->mauticVersionsProvider->getSupportedVersions(),
+        ]);
     }
 
     public function index(Request $request): Response

@@ -2,21 +2,29 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Controller;
+namespace App\Tests\Controller\Api;
 
 use App\Auth0\Auth0User;
-use App\Tests\Fixtures\ValidZipFixture;
+use App\Tests\Mock\PackageZipFactory;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-final class UploadApiControllerTest extends WebTestCase
+final class MauticUploadApiControllerTest extends WebTestCase
 {
-    public function testAnonymousUploadReturns401(): void
+    private string $zipPath = '';
+
+    protected function tearDown(): void
+    {
+        if ('' !== $this->zipPath && file_exists($this->zipPath)) {
+            unlink($this->zipPath);
+        }
+        parent::tearDown();
+    }
+
+    public function testAnonymousReturns401(): void
     {
         $client = self::createClient();
-        $client->request('POST', '/api/package/upload', files: [
-            'package' => $this->makeUploadedFile(ValidZipFixture::build()),
-        ]);
+        $client->request('POST', '/api/package/mautic-upload');
 
         self::assertResponseStatusCodeSame(401);
     }
@@ -24,7 +32,7 @@ final class UploadApiControllerTest extends WebTestCase
     public function testGetMethodNotAllowed(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/api/package/upload');
+        $client->request('GET', '/api/package/mautic-upload');
 
         self::assertResponseStatusCodeSame(405);
     }
@@ -33,7 +41,7 @@ final class UploadApiControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
-        $client->request('POST', '/api/package/upload');
+        $client->request('POST', '/api/package/mautic-upload');
 
         self::assertResponseStatusCodeSame(400);
         $data = json_decode((string) $client->getResponse()->getContent(), true);
@@ -44,8 +52,8 @@ final class UploadApiControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
-        $client->request('POST', '/api/package/upload', files: [
-            'package' => $this->makeUploadedFile(ValidZipFixture::build()),
+        $client->request('POST', '/api/package/mautic-upload', files: [
+            'package' => $this->validZipUpload(),
         ]);
 
         self::assertResponseStatusCodeSame(201);
@@ -55,27 +63,17 @@ final class UploadApiControllerTest extends WebTestCase
         self::assertTrue($data['created']);
     }
 
-    public function testSuccessfulUploadWithBanner(): void
-    {
-        $client = self::createClient();
-        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
-        $zipBytes = ValidZipFixture::build(null, ['banner.png' => 'png-banner-bytes']);
-        $client->request('POST', '/api/package/upload', files: [
-            'package' => $this->makeUploadedFile($zipBytes),
-        ]);
-
-        self::assertResponseStatusCodeSame(201);
-        $data = json_decode((string) $client->getResponse()->getContent(), true);
-        self::assertSame('testuser/test-campaign', $data['package_name']);
-        self::assertTrue($data['created']);
-    }
-
     public function testUploadWithNonZipBytesReturnsError(): void
     {
         $client = self::createClient();
         $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
-        $client->request('POST', '/api/package/upload', files: [
-            'package' => $this->makeUploadedFile('this is not a zip file at all'),
+
+        $tmp = tempnam(sys_get_temp_dir(), 'upload_test_');
+        file_put_contents($tmp, 'this is not a zip file at all');
+        $this->zipPath = $tmp;
+
+        $client->request('POST', '/api/package/mautic-upload', files: [
+            'package' => new UploadedFile($tmp, 'campaign.zip', 'application/zip', test: true),
         ]);
 
         self::assertResponseStatusCodeSame(400);
@@ -87,14 +85,16 @@ final class UploadApiControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
-        $zipBytes = ValidZipFixture::build(json_encode([
+
+        $this->zipPath = PackageZipFactory::create([
             'name' => 'unknown-vendor/test-campaign',
             'description' => 'Placeholder vendor.',
             'type' => 'mautic-resource',
             'version' => '1.0.0',
-        ]));
-        $client->request('POST', '/api/package/upload', files: [
-            'package' => $this->makeUploadedFile($zipBytes),
+        ]);
+
+        $client->request('POST', '/api/package/mautic-upload', files: [
+            'package' => new UploadedFile($this->zipPath, 'campaign.zip', 'application/zip', test: true),
         ]);
 
         self::assertResponseStatusCodeSame(400);
@@ -102,14 +102,26 @@ final class UploadApiControllerTest extends WebTestCase
         self::assertStringContainsString('missing a vendor name', $data['error']);
     }
 
-    private function makeUploadedFile(string $contents, string $originalName = 'campaign.zip'): UploadedFile
+    public function testUploadWithoutComposerJsonIsRejected(): void
     {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'upload_test_');
-        if (false === $tmpFile) {
-            throw new \RuntimeException('Failed to create temp file for test upload.');
-        }
-        file_put_contents($tmpFile, $contents);
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
 
-        return new UploadedFile($tmpFile, $originalName, 'application/zip', test: true);
+        $this->zipPath = PackageZipFactory::create(omitComposer: true);
+
+        $client->request('POST', '/api/package/mautic-upload', files: [
+            'package' => new UploadedFile($this->zipPath, 'campaign.zip', 'application/zip', test: true),
+        ]);
+
+        self::assertResponseStatusCodeSame(400);
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('composer.json', $data['error']);
+    }
+
+    private function validZipUpload(): UploadedFile
+    {
+        $this->zipPath = PackageZipFactory::create();
+
+        return new UploadedFile($this->zipPath, 'campaign.zip', 'application/zip', test: true);
     }
 }

@@ -17,6 +17,8 @@
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.4.*",
         "symfony/http-client": "7.4.*",
+        "symfony/intl": "7.4.*",
+        "symfony/mime": "7.4.*",
         "symfony/monolog-bundle": "^4.0",
         "symfony/runtime": "7.4.*",
         "symfony/security-bundle": "7.4.*",
