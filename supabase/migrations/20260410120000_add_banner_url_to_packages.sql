@@ -1,1 +1,1 @@
-ALTER TABLE packages ADD COLUMN banner_url TEXT;
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS banner_url TEXT;
