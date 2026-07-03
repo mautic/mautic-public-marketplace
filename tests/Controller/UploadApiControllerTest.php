@@ -70,6 +70,26 @@ final class UploadApiControllerTest extends WebTestCase
         self::assertTrue($data['created']);
     }
 
+    public function testSuccessfulUploadWithBannerAndGallery(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $zipBytes = ValidZipFixture::build(null, [
+            'banner.png' => 'png-banner-bytes',
+            'gallery/image_1.png' => 'png-gallery-bytes',
+            'gallery/image_1.alt.txt' => 'First screenshot',
+            'gallery/image_2.jpg' => 'jpg-gallery-bytes',
+        ]);
+        $client->request('POST', '/api/package/upload', files: [
+            'package' => $this->makeUploadedFile($zipBytes),
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame('testuser/test-campaign', $data['package_name']);
+        self::assertTrue($data['created']);
+    }
+
     public function testUploadWithNonZipBytesReturnsError(): void
     {
         $client = self::createClient();

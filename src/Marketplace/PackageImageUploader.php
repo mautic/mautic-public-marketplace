@@ -85,6 +85,58 @@ final class PackageImageUploader
         return self::BUCKET.'/'.$objectPath;
     }
 
+    /**
+     * Extracts the gallery images packed in a Mautic-shared ZIP (gallery/image_N.<ext> with an
+     * optional gallery/image_N.alt.txt alongside, see CampaignShareService::share), stores them
+     * in marketplace-owned storage, and returns entries shaped for packages.gallery. Returns an
+     * empty list when the archive carries no gallery images.
+     *
+     * @return list<array{url: string, alt: string}>
+     *
+     * @throws SupabaseApiException
+     */
+    public function uploadGalleryFromZip(string $packageName, string $zipPath): array
+    {
+        $zip = new \ZipArchive();
+        if (true !== $zip->open($zipPath)) {
+            return [];
+        }
+
+        $gallery = [];
+
+        try {
+            // Mautic's share form allows up to 8 gallery images, numbered from 1.
+            for ($i = 1; $i <= 8; ++$i) {
+                foreach (self::ALLOWED_EXTENSIONS as $extension => $mime) {
+                    $contents = $zip->getFromName('gallery/image_'.$i.'.'.$extension);
+                    if (false === $contents || '' === $contents) {
+                        continue;
+                    }
+
+                    if (\strlen($contents) > self::MAX_BYTES) {
+                        // An oversized gallery image shouldn't block the whole publish; skip it.
+                        continue 2;
+                    }
+
+                    $objectPath = $this->slugify($packageName).'/gallery/'.$i.'.'.$extension;
+                    $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $contents, $mime);
+
+                    $alt = $zip->getFromName('gallery/image_'.$i.'.alt.txt');
+                    $gallery[] = [
+                        'url' => self::BUCKET.'/'.$objectPath,
+                        'alt' => \is_string($alt) ? trim($alt) : '',
+                    ];
+
+                    continue 2;
+                }
+            }
+
+            return $gallery;
+        } finally {
+            $zip->close();
+        }
+    }
+
     private function upload(string $packageName, UploadedFile $file, string $prefix): string
     {
         $mime = $file->getMimeType() ?? '';
