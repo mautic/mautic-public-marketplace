@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Auth0\Auth0User;
 use App\Formatter\LanguageFilterFormatter;
 use App\Formatter\MauticVersionConstraintFormatter;
+use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\LanguageOptions;
 use App\Marketplace\MarketplaceApiClient;
 use App\Marketplace\MauticVersionsProvider;
 use App\Marketplace\PackageDetailPageContextBuilder;
 use App\Supabase\Exception\SupabaseApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -169,6 +172,94 @@ final class MarketplaceController extends AbstractController
         }
 
         return $this->render('marketplace/detail.html.twig', $page['context'], new Response('', $page['status_code']));
+    }
+
+    public function download(string $package): RedirectResponse
+    {
+        try {
+            $detail = $this->apiClient->getPackage($package);
+        } catch (SupabaseApiException) {
+            $detail = null;
+        }
+
+        if (null === $detail) {
+            throw $this->createNotFoundException(\sprintf('Package "%s" not found.', $package));
+        }
+
+        [$distUrl, $version] = $this->latestDist($detail->versions ?? []);
+
+        if (null === $distUrl) {
+            throw $this->createNotFoundException(\sprintf('Package "%s" has no downloadable archive.', $package));
+        }
+
+        $user = $this->getUser();
+        if ($user instanceof Auth0User) {
+            try {
+                $this->apiClient->recordDownload($detail->name, $version, $user->getUserIdentifier());
+            } catch (SupabaseApiException) {
+                // History is best-effort; never block the download on it.
+            }
+        }
+
+        return new RedirectResponse($this->downloadUrl($detail, $distUrl, $version));
+    }
+
+    /**
+     * Builds the browser-facing archive URL. For marketplace-hosted archives, the
+     * storage ?download parameter names the saved file after the package (e.g.
+     * "Open House Re-engagement 1.0.0.zip") instead of the bare version number.
+     */
+    private function downloadUrl(PackageDetail $detail, string $distUrl, ?string $version): string
+    {
+        $url = $this->apiClient->toPublicStorageUrl($distUrl);
+
+        if (!str_contains($url, '/storage/v1/object/public/')) {
+            // Externally hosted dist — leave the URL untouched.
+            return $url;
+        }
+
+        $name = trim($detail->displayName ?? '');
+        if ('' === $name) {
+            $name = str_contains($detail->name, '/') ? explode('/', $detail->name, 2)[1] : $detail->name;
+        }
+
+        // Strip characters that are unsafe in filenames across platforms.
+        $name = trim((string) preg_replace('#[/\\\\:*?"<>|]+#', ' ', $name));
+        $filename = trim($name.' '.($version ?? '')).'.zip';
+
+        return $url.'?download='.rawurlencode($filename);
+    }
+
+    /**
+     * Resolves the archive URL of the latest downloadable version, preferring
+     * stable versions over dev ones — mirroring how Mautic picks a version
+     * when installing from the marketplace API.
+     *
+     * @param array<mixed> $versions
+     *
+     * @return array{0: ?string, 1: ?string} Dist URL and version string
+     */
+    private function latestDist(array $versions): array
+    {
+        $fallback = [null, null];
+
+        foreach ($versions as $version) {
+            if (!\is_array($version) || !\is_string($version['dist']['url'] ?? null) || '' === $version['dist']['url']) {
+                continue;
+            }
+
+            $name = \is_string($version['version'] ?? null) ? $version['version'] : null;
+
+            if (null === $name || !str_starts_with($name, 'dev-')) {
+                return [$version['dist']['url'], $name];
+            }
+
+            if ([null, null] === $fallback) {
+                $fallback = [$version['dist']['url'], $name];
+            }
+        }
+
+        return $fallback;
     }
 
     private function toInt(mixed $value, int $default): int

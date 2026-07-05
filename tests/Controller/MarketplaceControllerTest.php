@@ -34,6 +34,33 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertPageTitleContains('Mautic Marketplace');
     }
 
+    public function testPackageDownloadRedirectsToArchive(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/example-plugin/download');
+
+        self::assertResponseRedirects('https://storage.example.test/package-media/dist/mautic_example-plugin/1.0.0.zip');
+    }
+
+    public function testPackageDownloadRecordsHistoryForAuthenticatedUsers(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/package/mautic/example-plugin/download');
+
+        self::assertResponseRedirects('https://storage.example.test/package-media/dist/mautic_example-plugin/1.0.0.zip');
+    }
+
+    public function testDownloadButtonLinksToDownloadRoute(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/example-plugin');
+
+        self::assertResponseIsSuccessful();
+        $href = $client->getCrawler()->filter('#package-cta')->attr('href');
+        self::assertSame('/package/mautic/example-plugin/download', $href);
+    }
+
     public function testPackageUploadPageRedirectsAnonymousUsers(): void
     {
         $client = self::createClient();

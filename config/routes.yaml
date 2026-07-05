@@ -72,6 +72,14 @@ publish_upload:
     controller: App\Controller\PublishController::upload
     methods: [GET]
 
+# Must precede marketplace_detail: its greedy {package} would otherwise swallow /download.
+marketplace_package_download:
+    path: /package/{package}/download
+    controller: App\Controller\MarketplaceController::download
+    methods: [GET]
+    requirements:
+        package: .+
+
 marketplace_detail:
     path: /package/{package}
     controller: App\Controller\MarketplaceController::detail

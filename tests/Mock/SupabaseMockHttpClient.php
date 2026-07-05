@@ -315,7 +315,12 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'language' => $pkg['language'],
                 'versions' => [
                     '1.0.0' => [
+                        'version' => '1.0.0',
                         'smv' => $pkg['smv'],
+                        'dist' => [
+                            'type' => 'zip',
+                            'url' => 'https://storage.example.test/package-media/dist/'.str_replace('/', '_', (string) $pkg['name']).'/1.0.0.zip',
+                        ],
                     ],
                 ],
                 'reviews' => [],
