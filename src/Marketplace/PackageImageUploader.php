@@ -108,14 +108,20 @@ final class PackageImageUploader
             // Mautic's share form allows up to 8 gallery images, numbered from 1.
             for ($i = 1; $i <= 8; ++$i) {
                 foreach (self::ALLOWED_EXTENSIONS as $extension => $mime) {
-                    $contents = $zip->getFromName('gallery/image_'.$i.'.'.$extension);
-                    if (false === $contents || '' === $contents) {
+                    $stat = $zip->statName('gallery/image_'.$i.'.'.$extension);
+                    if (false === $stat) {
                         continue;
                     }
 
-                    if (\strlen($contents) > self::MAX_BYTES) {
-                        // An oversized gallery image shouldn't block the whole publish; skip it.
+                    if ($stat['size'] > self::MAX_BYTES) {
+                        // Reject on the declared uncompressed size before decompressing, so a
+                        // crafted entry (zip bomb) can't exhaust memory; skip the oversized image.
                         continue 2;
+                    }
+
+                    $contents = $zip->getFromName('gallery/image_'.$i.'.'.$extension);
+                    if (false === $contents || '' === $contents) {
+                        continue;
                     }
 
                     $objectPath = $this->slugify($packageName).'/gallery/'.$i.'.'.$extension;
@@ -175,6 +181,17 @@ final class PackageImageUploader
 
         try {
             foreach (array_keys(self::ALLOWED_EXTENSIONS) as $extension) {
+                $stat = $zip->statName('banner.'.$extension);
+                if (false === $stat) {
+                    continue;
+                }
+
+                if ($stat['size'] > self::MAX_BYTES) {
+                    // Reject on the declared uncompressed size before decompressing, so a
+                    // crafted entry (zip bomb) can't exhaust memory; treat it as no banner.
+                    continue;
+                }
+
                 $contents = $zip->getFromName('banner.'.$extension);
                 if (false !== $contents && '' !== $contents) {
                     return [$extension, $contents];

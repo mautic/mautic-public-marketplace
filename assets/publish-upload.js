@@ -27,7 +27,7 @@ function initPublishUpload() {
         }
         switch (response.status) {
             case 413:
-                return 'The campaign archive is too large to upload. The maximum allowed size is 64 MB — try removing large images or assets from the campaign and publish again.';
+                return 'The campaign archive is too large to upload. The maximum allowed size is 50 MB — try removing large images or assets from the campaign and publish again.';
             case 401:
             case 403:
                 return 'Your marketplace session has expired or you are not allowed to publish. Please log in again and retry.';
