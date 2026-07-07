@@ -515,7 +515,7 @@ final class MarketplaceApiClient
         ]);
     }
 
-    public function recordDownload(string $packageName, ?string $version, string $auth0UserId): void
+    public function recordDownload(string $packageName, ?string $version, ?string $auth0UserId): void
     {
         $this->supabaseClient->mutate('POST', '/rest/v1/download_history', [
             'auth0_user_id' => $auth0UserId,

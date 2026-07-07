@@ -9,9 +9,24 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 final class SupabaseMockHttpClient extends MockHttpClient
 {
+    /**
+     * Bodies POSTed to /rest/v1/download_history, captured so tests can assert
+     * that a download was recorded (and for whom).
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $recordedDownloads = [];
+
     public function __construct()
     {
-        parent::__construct(static function (string $method, string $url, array $options = []): MockResponse {
+        parent::__construct(function (string $method, string $url, array $options = []): MockResponse {
+            if ('POST' === $method && str_contains($url, '/rest/v1/download_history')) {
+                $decoded = json_decode((string) ($options['body'] ?? ''), true);
+                $this->recordedDownloads[] = \is_array($decoded) ? $decoded : [];
+
+                return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
             if (str_contains($url, '/storage/v1/object/')) {
                 return new MockResponse(
                     json_encode(['Key' => 'package-media/mock-object']),

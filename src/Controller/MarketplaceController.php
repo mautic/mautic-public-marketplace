@@ -193,12 +193,13 @@ final class MarketplaceController extends AbstractController
         }
 
         $user = $this->getUser();
-        if ($user instanceof Auth0User) {
-            try {
-                $this->apiClient->recordDownload($detail->name, $version, $user->getUserIdentifier());
-            } catch (SupabaseApiException) {
-                // History is best-effort; never block the download on it.
-            }
+        $downloadedBy = $user instanceof Auth0User ? $user->getUserIdentifier() : null;
+        try {
+            // Record every download, including anonymous ones (null user id), so the
+            // history reflects total pulls and not just those from signed-in users.
+            $this->apiClient->recordDownload($detail->name, $version, $downloadedBy);
+        } catch (SupabaseApiException) {
+            // History is best-effort; never block the download on it.
         }
 
         return new RedirectResponse($this->downloadUrl($detail, $distUrl, $version));

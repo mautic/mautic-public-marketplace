@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Auth0\Auth0User;
+use App\Tests\Mock\SupabaseMockHttpClient;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class MarketplaceControllerTest extends WebTestCase
@@ -49,6 +50,25 @@ final class MarketplaceControllerTest extends WebTestCase
         $client->request('GET', '/package/mautic/example-plugin/download');
 
         self::assertResponseRedirects('https://storage.example.test/package-media/dist/mautic_example-plugin/1.0.0.zip');
+
+        $recorded = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedDownloads;
+        self::assertCount(1, $recorded);
+        self::assertSame('auth0|test123', $recorded[0]['auth0_user_id']);
+        self::assertSame('mautic/example-plugin', $recorded[0]['package_name']);
+        self::assertSame('1.0.0', $recorded[0]['package_version']);
+    }
+
+    public function testPackageDownloadRecordsHistoryForAnonymousUsers(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/example-plugin/download');
+
+        self::assertResponseRedirects('https://storage.example.test/package-media/dist/mautic_example-plugin/1.0.0.zip');
+
+        $recorded = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedDownloads;
+        self::assertCount(1, $recorded);
+        self::assertNull($recorded[0]['auth0_user_id']);
+        self::assertSame('mautic/example-plugin', $recorded[0]['package_name']);
     }
 
     public function testDownloadButtonLinksToDownloadRoute(): void
