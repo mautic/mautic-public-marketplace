@@ -20,3 +20,6 @@ security:
         - { path: ^/upload/package, roles: ROLE_USER }
         - { path: ^/api/package, roles: ROLE_USER }
         - { path: ^/publish, roles: ROLE_USER }
+        - { path: ^/stripe/connect, roles: ROLE_USER }
+        - { path: ^/package/.+/buy$, roles: ROLE_USER }
+        - { path: ^/package/.+/purchase/, roles: ROLE_USER }

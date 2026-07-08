@@ -1,3 +1,4 @@
+import './stimulus_bootstrap.js';
 // TomSelect base CSS first, so our themed override (in app.scss) wins the cascade.
 import 'tom-select/dist/css/tom-select.default.min.css';
 import './styles/app.scss';

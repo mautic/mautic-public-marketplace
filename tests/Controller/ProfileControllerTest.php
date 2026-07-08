@@ -40,4 +40,16 @@ final class ProfileControllerTest extends WebTestCase
         self::assertSelectorExists('#profile-uploaded-packages a[href="/package/mautic/example-plugin"]');
         self::assertSelectorExists('a[href="/auth/logout"]');
     }
+
+    public function testProfileShowsStripeConnectCtaWhenNotConnected(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        $client->request('GET', '/profile');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#profile-stripe-connect[href="/stripe/connect/onboard"]');
+        self::assertSelectorTextContains('#profile-stripe-connect', 'Connect with Stripe');
+    }
 }

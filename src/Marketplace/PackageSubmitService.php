@@ -7,6 +7,8 @@ namespace App\Marketplace;
 use App\Auth0\Auth0User;
 use App\Marketplace\Dto\SubmitRequest;
 use App\Marketplace\Exception\SubmitValidationException;
+use App\Stripe\Exception\StripeConnectException;
+use App\Stripe\StripeConnectClient;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class PackageSubmitService
@@ -16,6 +18,7 @@ final class PackageSubmitService
         private readonly ComposerJsonReader $composerReader,
         private readonly PackageImageUploader $imageUploader,
         private readonly PackageZipUploader $zipUploader,
+        private readonly StripeConnectClient $stripe,
     ) {
     }
 
@@ -209,6 +212,8 @@ final class PackageSubmitService
             'languages' => $request->languages,
             'works_with' => $request->works_with,
             'price' => $request->price,
+            'pricing_model' => $request->pricing_model,
+            'currency' => $request->currency,
             'license_type' => $request->license_type,
             'github_url' => $request->github_url,
             'packagist_url' => $request->packagist_url,
@@ -231,6 +236,10 @@ final class PackageSubmitService
 
         if ([] !== $gallery) {
             $packageData['gallery'] = $gallery;
+        }
+
+        if ('paid' === $request->pricing_model) {
+            $this->attachStripePricing($packageData, $request, $user, $created);
         }
 
         if ($created) {
@@ -275,6 +284,49 @@ final class PackageSubmitService
             'status' => $status,
             'created' => $created,
         ];
+    }
+
+    /**
+     * Requires the vendor to be onboarded onto Stripe and, on first publish, creates the
+     * Stripe product/price for the paid package. Stores the Stripe references and the
+     * vendor's connected-account id on the package so checkout can route the split.
+     *
+     * @param array<string, mixed> $packageData
+     *
+     * @throws SubmitValidationException
+     */
+    private function attachStripePricing(array &$packageData, SubmitRequest $request, Auth0User $user, bool $created): void
+    {
+        $account = $this->apiClient->getStripeConnectAccount($user->getUserIdentifier());
+        if (null === $account || !$account['details_submitted']) {
+            throw new SubmitValidationException('Connect your Stripe account before publishing a paid package.');
+        }
+
+        $packageData['vendor_stripe_account_id'] = $account['stripe_account_id'];
+
+        // Create the Stripe product/price once, on first publish. Re-publishing keeps the
+        // existing references (they are simply not re-sent, so the update leaves them intact).
+        if (!$created || !$this->stripe->isConfigured()) {
+            return;
+        }
+
+        $displayName = \is_string($packageData['displayname'] ?? null) && '' !== $packageData['displayname']
+            ? (string) $packageData['displayname']
+            : $request->name;
+
+        try {
+            $references = $this->stripe->createProductWithPrice(
+                $displayName,
+                $request->description,
+                (int) round($request->price * 100),
+                (string) $request->currency,
+            );
+        } catch (StripeConnectException $exception) {
+            throw new SubmitValidationException($exception->getMessage());
+        }
+
+        $packageData['stripe_product_id'] = $references['product_id'];
+        $packageData['stripe_price_id'] = $references['price_id'];
     }
 
     private function toDisplayName(string $packageName): string

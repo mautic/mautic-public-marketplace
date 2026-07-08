@@ -233,7 +233,9 @@ function initUploadWizard() {
         appendValue(body, 'keywords', 'package-keywords');
         appendValue(body, 'description', 'package-description');
         appendValue(body, 'license_type', 'package-license-type');
+        appendValue(body, 'pricing_model', 'package-pricing-model');
         appendValue(body, 'price', 'package-price');
+        appendValue(body, 'currency', 'package-currency');
         appendValue(body, 'github_url', 'package-github-url');
         appendValue(body, 'packagist_url', 'package-packagist-url');
         appendValue(body, 'documentation', 'package-documentation');

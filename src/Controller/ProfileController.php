@@ -44,11 +44,18 @@ final class ProfileController extends AbstractController
             $downloadHistory = [];
         }
 
+        try {
+            $stripeAccount = $this->apiClient->getStripeConnectAccount($user->getUserIdentifier());
+        } catch (SupabaseApiException) {
+            $stripeAccount = null;
+        }
+
         return $this->render('profile/index.html.twig', [
             'reviews' => $reviews,
             'auth0_profile_url' => $this->auth0Client->createUserDashboardUrl($user->getUserIdentifier()),
             'uploaded_packages' => $uploadedPackages,
             'download_history' => $downloadHistory,
+            'stripe_account' => $stripeAccount,
         ]);
     }
 }

@@ -42,6 +42,14 @@ final class PackageDetail
         /** @var list<string>|null Author-selected language names, e.g. ["Czech", "English"] */
         public readonly ?array $languages = null,
         public readonly ?string $license = null,
+        public readonly ?string $pricingModel = null,
+        public readonly ?float $price = null,
+        public readonly ?string $currency = null,
     ) {
+    }
+
+    public function isPaid(): bool
+    {
+        return 'paid' === $this->pricingModel && null !== $this->price && $this->price > 0;
     }
 }

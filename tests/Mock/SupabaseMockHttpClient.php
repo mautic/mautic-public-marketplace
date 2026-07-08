@@ -43,6 +43,18 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 return self::downloadHistoryResponse($url);
             }
 
+            if ('GET' === $method && str_contains($url, '/rest/v1/stripe_connect_accounts')) {
+                // No connected account by default, so the profile shows the "Connect" CTA.
+                return new MockResponse('[]', ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
+            if ('GET' === $method && str_contains($url, '/rest/v1/purchases')) {
+                // "auth0|buyer" owns their packages (exercises the purchased UI); everyone else owns nothing.
+                $owns = str_contains($url, 'auth0_user_id=eq.auth0%7Cbuyer') || str_contains($url, 'auth0_user_id=eq.auth0|buyer');
+
+                return new MockResponse($owns ? '[{"id": 1}]' : '[]', ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
             if ('GET' === $method && str_contains($url, '/rest/v1/packages') && !str_contains($url, '/rpc/')) {
                 return self::userPackagesResponse($url);
             }
@@ -119,6 +131,9 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'average_rating' => 4.0,
                 'total_review' => 1,
                 'auth0_user_id' => 'auth0|other',
+                'pricing_model' => 'paid',
+                'price' => 9.99,
+                'currency' => 'EUR',
             ],
             'mautic/welcome-campaign' => [
                 'name' => 'mautic/welcome-campaign',
@@ -313,6 +328,9 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'favers' => $pkg['favers'],
                 'time' => $pkg['time'],
                 'language' => $pkg['language'],
+                'pricing_model' => $pkg['pricing_model'] ?? 'free',
+                'price' => $pkg['price'] ?? null,
+                'currency' => $pkg['currency'] ?? null,
                 'versions' => [
                     '1.0.0' => [
                         'smv' => $pkg['smv'],
@@ -406,6 +424,11 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'auth0_user_id' => 'auth0|other',
                 'status' => 'published',
                 'time' => '2026-01-01T00:00:00+00:00',
+                'pricing_model' => 'paid',
+                'price' => 9.99,
+                'currency' => 'EUR',
+                'stripe_price_id' => null,
+                'vendor_stripe_account_id' => null,
             ],
         ];
 

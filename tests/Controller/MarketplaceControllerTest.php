@@ -34,6 +34,58 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertPageTitleContains('Mautic Marketplace');
     }
 
+    public function testFreePackageDetailShowsFreeLabelAndDownloadCta(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/example-plugin');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Free', $client->getCrawler()->filter('.detail-header')->text());
+        self::assertSelectorTextContains('#package-cta', 'Download');
+    }
+
+    public function testPaidPackageDetailShowsPriceAndLoginToBuyForAnonymous(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/zebra-theme');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('9.99 EUR', $client->getCrawler()->filter('.detail-header')->text());
+        self::assertSelectorTextContains('#package-cta', 'Log in to buy');
+    }
+
+    public function testPaidPackageDetailShowsBuyCtaForAuthenticatedUser(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/package/mautic/zebra-theme');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('#package-cta', 'Buy this package for 9.99 EUR');
+    }
+
+    public function testPaidPackageDetailShowsPurchasedStateAndDownloadCtaForOwner(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|buyer', 'Buyer', 'buyer@example.com', null), 'main');
+        $client->request('GET', '/package/mautic/zebra-theme');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#package-purchased-badge');
+        self::assertSelectorTextContains('#package-cta', 'Download');
+    }
+
+    public function testBrowseCardsShowFreeAndPriceBadges(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/browse');
+
+        self::assertResponseIsSuccessful();
+        $cards = $client->getCrawler()->filter('.card-group')->text();
+        self::assertStringContainsString('Free', $cards);
+        self::assertStringContainsString('9.99 EUR', $cards);
+    }
+
     public function testPackageUploadPageRedirectsAnonymousUsers(): void
     {
         $client = self::createClient();

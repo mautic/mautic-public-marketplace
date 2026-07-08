@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Marketplace\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 final class SubmitRequest
 {
@@ -47,8 +48,14 @@ final class SubmitRequest
         #[Assert\NotBlank(message: 'License type is required.')]
         public readonly string $license_type = '',
 
+        #[Assert\Choice(choices: ['free', 'paid'], message: 'Invalid pricing model.')]
+        public readonly string $pricing_model = 'free',
+
         #[Assert\PositiveOrZero(message: 'Price must be zero or greater.')]
         public readonly float $price = 0.0,
+
+        #[Assert\Length(max: 3, maxMessage: 'Currency must be a 3-letter ISO code.')]
+        public readonly ?string $currency = null,
 
         #[Assert\IsTrue(message: 'You must accept the ownership and Terms and Conditions.')]
         public readonly bool $ip_ownership_accepted = false,
@@ -65,5 +72,28 @@ final class SubmitRequest
 
         public readonly array $gallery_alt = [],
     ) {
+    }
+
+    /**
+     * A paid package must carry a real price and currency; free packages leave both unset.
+     */
+    #[Assert\Callback]
+    public function validatePaidPricing(ExecutionContextInterface $context): void
+    {
+        if ('paid' !== $this->pricing_model) {
+            return;
+        }
+
+        if ($this->price <= 0) {
+            $context->buildViolation('A paid package must have a price greater than zero.')
+                ->atPath('price')
+                ->addViolation();
+        }
+
+        if (null === $this->currency || '' === trim($this->currency)) {
+            $context->buildViolation('A paid package must have a currency.')
+                ->atPath('currency')
+                ->addViolation();
+        }
     }
 }

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Auth0\Auth0User;
 use App\Formatter\LanguageFilterFormatter;
 use App\Formatter\MauticVersionConstraintFormatter;
+use App\Marketplace\Dto\PackageDetail;
 use App\Marketplace\LanguageOptions;
 use App\Marketplace\MarketplaceApiClient;
 use App\Marketplace\MauticVersionsProvider;
@@ -168,7 +170,28 @@ final class MarketplaceController extends AbstractController
             throw $this->createNotFoundException((string) $page['context']['error']);
         }
 
-        return $this->render('marketplace/detail.html.twig', $page['context'], new Response('', $page['status_code']));
+        $context = $page['context'];
+        $context['purchased'] = $this->hasPurchasedPackage($package, $context['package'] ?? null);
+
+        return $this->render('marketplace/detail.html.twig', $context, new Response('', $page['status_code']));
+    }
+
+    private function hasPurchasedPackage(string $package, mixed $detail): bool
+    {
+        if (!$detail instanceof PackageDetail || !$detail->isPaid()) {
+            return false;
+        }
+
+        $user = $this->getUser();
+        if (!$user instanceof Auth0User) {
+            return false;
+        }
+
+        try {
+            return $this->apiClient->hasPurchased($user->getUserIdentifier(), $package);
+        } catch (SupabaseApiException) {
+            return false;
+        }
     }
 
     private function toInt(mixed $value, int $default): int
