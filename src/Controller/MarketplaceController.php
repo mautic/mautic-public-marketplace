@@ -13,6 +13,7 @@ use App\Marketplace\MarketplaceApiClient;
 use App\Marketplace\MauticVersionsProvider;
 use App\Marketplace\PackageDetailPageContextBuilder;
 use App\Supabase\Exception\SupabaseApiException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +34,7 @@ final class MarketplaceController extends AbstractController
         private readonly MauticVersionConstraintFormatter $mauticVersionConstraintFormatter,
         private readonly LanguageOptions $languageOptions,
         private readonly MauticVersionsProvider $mauticVersionsProvider,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -178,7 +180,13 @@ final class MarketplaceController extends AbstractController
     {
         try {
             $detail = $this->apiClient->getPackage($package);
-        } catch (SupabaseApiException) {
+        } catch (SupabaseApiException $exception) {
+            // Surfaced to the visitor as a 404 below, so leave a trace that the
+            // real cause was an API failure and not a missing package.
+            $this->logger->error('Could not load the package for download.', [
+                'exception' => $exception,
+                'package' => $package,
+            ]);
             $detail = null;
         }
 
@@ -198,8 +206,13 @@ final class MarketplaceController extends AbstractController
             // Record every download, including anonymous ones (null user id), so the
             // history reflects total pulls and not just those from signed-in users.
             $this->apiClient->recordDownload($detail->name, $version, $downloadedBy);
-        } catch (SupabaseApiException) {
+        } catch (SupabaseApiException $exception) {
             // History is best-effort; never block the download on it.
+            $this->logger->warning('Could not record the package download in the download history.', [
+                'exception' => $exception,
+                'package' => $detail->name,
+                'version' => $version,
+            ]);
         }
 
         return new RedirectResponse($this->downloadUrl($detail, $distUrl, $version));
