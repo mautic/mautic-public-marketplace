@@ -58,6 +58,29 @@ final class PackageImageUploaderTest extends KernelTestCase
         self::assertNull($this->uploader->uploadBannerFromZip('testuser/no-banner', $zipPath));
     }
 
+    public function testUploadsGalleryImagesWithAltTexts(): void
+    {
+        $zipPath = $this->makeZip([
+            'gallery/image_1.png' => 'png-bytes',
+            'gallery/image_1.alt.txt' => 'First screenshot',
+            'gallery/image_2.jpg' => 'jpg-bytes',
+        ]);
+
+        $result = $this->uploader->uploadGalleryFromZip('testuser/test-campaign', $zipPath);
+
+        self::assertSame([
+            ['url' => 'package-media/testuser/test-campaign/gallery/1.png', 'alt' => 'First screenshot'],
+            ['url' => 'package-media/testuser/test-campaign/gallery/2.jpg', 'alt' => ''],
+        ], $result);
+    }
+
+    public function testReturnsEmptyGalleryWhenArchiveHasNoGalleryImages(): void
+    {
+        $zipPath = $this->makeZip(['composer.json' => '{}', 'banner.png' => 'png-bytes']);
+
+        self::assertSame([], $this->uploader->uploadGalleryFromZip('testuser/no-gallery', $zipPath));
+    }
+
     /**
      * @param array<string, string> $entries
      */

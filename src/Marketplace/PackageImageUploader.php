@@ -85,6 +85,64 @@ final class PackageImageUploader
         return self::BUCKET.'/'.$objectPath;
     }
 
+    /**
+     * Extracts the gallery images packed in a Mautic-shared ZIP (gallery/image_N.<ext> with an
+     * optional gallery/image_N.alt.txt alongside, see CampaignShareService::share), stores them
+     * in marketplace-owned storage, and returns entries shaped for packages.gallery. Returns an
+     * empty list when the archive carries no gallery images.
+     *
+     * @return list<array{url: string, alt: string}>
+     *
+     * @throws SupabaseApiException
+     */
+    public function uploadGalleryFromZip(string $packageName, string $zipPath): array
+    {
+        $zip = new \ZipArchive();
+        if (true !== $zip->open($zipPath)) {
+            return [];
+        }
+
+        $gallery = [];
+
+        try {
+            // Mautic's share form allows up to 8 gallery images, numbered from 1.
+            for ($i = 1; $i <= 8; ++$i) {
+                foreach (self::ALLOWED_EXTENSIONS as $extension => $mime) {
+                    $stat = $zip->statName('gallery/image_'.$i.'.'.$extension);
+                    if (false === $stat) {
+                        continue;
+                    }
+
+                    if ($stat['size'] > self::MAX_BYTES) {
+                        // Reject on the declared uncompressed size before decompressing, so a
+                        // crafted entry (zip bomb) can't exhaust memory; skip the oversized image.
+                        continue 2;
+                    }
+
+                    $contents = $zip->getFromName('gallery/image_'.$i.'.'.$extension);
+                    if (false === $contents || '' === $contents) {
+                        continue;
+                    }
+
+                    $objectPath = $this->slugify($packageName).'/gallery/'.$i.'.'.$extension;
+                    $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $contents, $mime);
+
+                    $alt = $zip->getFromName('gallery/image_'.$i.'.alt.txt');
+                    $gallery[] = [
+                        'url' => self::BUCKET.'/'.$objectPath,
+                        'alt' => \is_string($alt) ? trim($alt) : '',
+                    ];
+
+                    continue 2;
+                }
+            }
+
+            return $gallery;
+        } finally {
+            $zip->close();
+        }
+    }
+
     private function upload(string $packageName, UploadedFile $file, string $prefix): string
     {
         $mime = $file->getMimeType() ?? '';
@@ -123,6 +181,17 @@ final class PackageImageUploader
 
         try {
             foreach (array_keys(self::ALLOWED_EXTENSIONS) as $extension) {
+                $stat = $zip->statName('banner.'.$extension);
+                if (false === $stat) {
+                    continue;
+                }
+
+                if ($stat['size'] > self::MAX_BYTES) {
+                    // Reject on the declared uncompressed size before decompressing, so a
+                    // crafted entry (zip bomb) can't exhaust memory; treat it as no banner.
+                    continue;
+                }
+
                 $contents = $zip->getFromName('banner.'.$extension);
                 if (false !== $contents && '' !== $contents) {
                     return [$extension, $contents];

@@ -87,6 +87,10 @@ server {
     listen 80;
     server_name ${PROD_DOMAIN};
 
+    # Keep in sync with post_max_size in the Dockerfile; nginx defaults to 1M
+    # which rejects package uploads with 413 before they reach the app.
+    client_max_body_size 64M;
+
     location / {
         proxy_pass http://127.0.0.1:${PROD_PORT};
         proxy_set_header Host \$host;
@@ -103,6 +107,10 @@ NGINX_CONF
 server {
     listen 80;
     server_name ${STAGING_DOMAIN};
+
+    # Keep in sync with post_max_size in the Dockerfile; nginx defaults to 1M
+    # which rejects package uploads with 413 before they reach the app.
+    client_max_body_size 64M;
 
     location / {
         proxy_pass http://127.0.0.1:${STAGING_PORT};
