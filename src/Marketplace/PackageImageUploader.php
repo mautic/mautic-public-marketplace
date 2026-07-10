@@ -87,9 +87,11 @@ final class PackageImageUploader
     }
 
     /**
-     * Extracts the gallery images packed in a Mautic-shared ZIP ("assets/gallery/image_N.<ext>",
-     * or the ZIP root for older archives), stores them in marketplace-owned storage and returns
-     * entries for packages.gallery. Alt texts come from the sibling "image_N.alt.txt" files.
+     * Extracts the gallery images packed in a Mautic-shared ZIP ("assets/gallery/image_N.<ext>"
+     * with an optional "image_N.alt.txt" alongside, or the ZIP root for older archives — see
+     * CampaignShareService::buildShareZip), stores them in marketplace-owned storage, and
+     * returns entries shaped for packages.gallery. Returns an empty list when the archive
+     * carries no gallery images.
      *
      * @return list<array{url: string, alt: string}>
      *
@@ -110,20 +112,25 @@ final class PackageImageUploader
                     continue;
                 }
 
-                $extension = 'jpeg' === $matches[2] ? 'jpg' : $matches[2];
                 if (!isset(self::ALLOWED_EXTENSIONS[$matches[2]])) {
                     continue;
                 }
 
+                $stat = $zip->statIndex($i);
+                if (false === $stat || $stat['size'] > self::MAX_BYTES) {
+                    // Reject on the declared uncompressed size before decompressing, so a
+                    // crafted entry (zip bomb) can't exhaust memory; skip the oversized image.
+                    continue;
+                }
+
                 $contents = $zip->getFromName($entry);
-                if (false === $contents || '' === $contents || \strlen($contents) > self::MAX_BYTES) {
-                    // An unreadable or oversized image shouldn't block the whole publish; skip it.
+                if (false === $contents || '' === $contents) {
                     continue;
                 }
 
                 $alt = $zip->getFromName(substr($entry, 0, -\strlen('.'.$matches[2])).'.alt.txt');
                 $images[(int) $matches[1]] = [
-                    'extension' => $extension,
+                    'extension' => $matches[2],
                     'contents' => $contents,
                     'mime' => self::ALLOWED_EXTENSIONS[$matches[2]],
                     'alt' => \is_string($alt) ? trim($alt) : '',
@@ -136,8 +143,8 @@ final class PackageImageUploader
         ksort($images);
 
         $gallery = [];
-        foreach (array_values($images) as $index => $image) {
-            $objectPath = $this->slugify($packageName).'/gallery/'.$index.'.'.$image['extension'];
+        foreach ($images as $slot => $image) {
+            $objectPath = $this->slugify($packageName).'/gallery/'.$slot.'.'.$image['extension'];
             $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $image['contents'], $image['mime']);
 
             $gallery[] = [
@@ -188,6 +195,17 @@ final class PackageImageUploader
         try {
             foreach (['assets/banner.', 'banner.'] as $prefix) {
                 foreach (array_keys(self::ALLOWED_EXTENSIONS) as $extension) {
+                    $stat = $zip->statName($prefix.$extension);
+                    if (false === $stat) {
+                        continue;
+                    }
+
+                    if ($stat['size'] > self::MAX_BYTES) {
+                        // Reject on the declared uncompressed size before decompressing, so a
+                        // crafted entry (zip bomb) can't exhaust memory; treat it as no banner.
+                        continue;
+                    }
+
                     $contents = $zip->getFromName($prefix.$extension);
                     if (false !== $contents && '' !== $contents) {
                         return [$extension, $contents];

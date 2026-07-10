@@ -67,7 +67,7 @@ final class PackageImageUploaderTest extends KernelTestCase
         self::assertSame('package-media/banners/testuser_assets-banner.png', $result);
     }
 
-    public function testUploadsGalleryImagesWithAltTexts(): void
+    public function testUploadsGalleryImagesWithAltTextsFromAssetsDirectory(): void
     {
         $zipPath = $this->makeZip([
             'assets/gallery/image_1.png' => 'png-bytes',
@@ -78,8 +78,8 @@ final class PackageImageUploaderTest extends KernelTestCase
         $gallery = $this->uploader->uploadGalleryFromZip('testuser/with-gallery', $zipPath);
 
         self::assertSame([
-            ['url' => 'package-media/testuser/with-gallery/gallery/0.png', 'alt' => 'First screenshot'],
-            ['url' => 'package-media/testuser/with-gallery/gallery/1.jpg', 'alt' => ''],
+            ['url' => 'package-media/testuser/with-gallery/gallery/1.png', 'alt' => 'First screenshot'],
+            ['url' => 'package-media/testuser/with-gallery/gallery/2.jpg', 'alt' => ''],
         ], $gallery);
     }
 
@@ -88,18 +88,20 @@ final class PackageImageUploaderTest extends KernelTestCase
         $zipPath = $this->makeZip([
             'gallery/image_1.png' => 'png-bytes',
             'gallery/image_1.alt.txt' => 'Legacy layout',
+            'gallery/image_2.jpg' => 'jpg-bytes',
         ]);
 
         $gallery = $this->uploader->uploadGalleryFromZip('testuser/legacy-gallery', $zipPath);
 
         self::assertSame([
-            ['url' => 'package-media/testuser/legacy-gallery/gallery/0.png', 'alt' => 'Legacy layout'],
+            ['url' => 'package-media/testuser/legacy-gallery/gallery/1.png', 'alt' => 'Legacy layout'],
+            ['url' => 'package-media/testuser/legacy-gallery/gallery/2.jpg', 'alt' => ''],
         ], $gallery);
     }
 
-    public function testReturnsEmptyGalleryWhenArchiveHasNoImages(): void
+    public function testReturnsEmptyGalleryWhenArchiveHasNoGalleryImages(): void
     {
-        $zipPath = $this->makeZip(['composer.json' => '{}', 'entity_data.json' => '[]']);
+        $zipPath = $this->makeZip(['composer.json' => '{}', 'banner.png' => 'png-bytes']);
 
         self::assertSame([], $this->uploader->uploadGalleryFromZip('testuser/no-gallery', $zipPath));
     }
