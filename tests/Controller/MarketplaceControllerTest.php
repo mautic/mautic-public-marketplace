@@ -71,6 +71,62 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSame('mautic/example-plugin', $recorded[0]['package_name']);
     }
 
+    public function testPackageDownloadBundlesBannerAndGalleryImages(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/welcome-campaign/download');
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('content-type', 'application/zip');
+        self::assertStringContainsString(
+            'Welcome Campaign 1.0.1.zip',
+            (string) $client->getResponse()->headers->get('content-disposition'),
+        );
+
+        $names = $this->zipEntryNames($client->getInternalResponse()->getContent());
+
+        self::assertContains('entity_data.json', $names);
+        self::assertContains('composer.json', $names);
+        self::assertContains('banner.png', $names);
+        self::assertContains('gallery/image_1.png', $names);
+        self::assertContains('gallery/image_1.alt.txt', $names);
+    }
+
+    public function testPackageDownloadServesTheNewestVersion(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/welcome-campaign/download');
+
+        self::assertResponseIsSuccessful();
+
+        // The mock lists 1.0.0 before 1.0.1; the newest version must win regardless.
+        $recorded = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedDownloads;
+        self::assertCount(1, $recorded);
+        self::assertSame('1.0.1', $recorded[0]['package_version']);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function zipEntryNames(string $zipContents): array
+    {
+        $tmpPath = (string) tempnam(sys_get_temp_dir(), 'test-download-');
+        file_put_contents($tmpPath, $zipContents);
+
+        $zip = new \ZipArchive();
+        self::assertTrue($zip->open($tmpPath), 'The downloaded response is not a readable ZIP archive.');
+
+        $names = [];
+        for ($i = 0; $i < $zip->numFiles; ++$i) {
+            $names[] = (string) $zip->getNameIndex($i);
+        }
+
+        $zip->close();
+        unlink($tmpPath);
+
+        return $names;
+    }
+
     public function testDownloadButtonLinksToDownloadRoute(): void
     {
         $client = self::createClient();
