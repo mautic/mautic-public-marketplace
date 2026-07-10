@@ -78,10 +78,12 @@ final class PackageSubmitService
         $request = $this->requestFromComposer($composerData);
         $zipUrl = $this->zipUploader->upload($request->name, $request->version, $zipPath);
 
-        // Mautic packs the banner inside the shared ZIP, so extract it here instead of from a form field.
+        // Mautic packs the banner and gallery inside the shared ZIP, so extract them here
+        // instead of from form fields.
         $bannerUrl = $this->imageUploader->uploadBannerFromZip($request->name, $zipPath);
+        $gallery = $this->imageUploader->uploadGalleryFromZip($request->name, $zipPath);
 
-        return $this->upsertPackage($composerData, $request, $user, $zipUrl, $bannerUrl, []);
+        return $this->upsertPackage($composerData, $request, $user, $zipUrl, $bannerUrl, $gallery);
     }
 
     /**

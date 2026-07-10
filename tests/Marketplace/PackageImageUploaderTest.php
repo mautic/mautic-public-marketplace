@@ -58,6 +58,52 @@ final class PackageImageUploaderTest extends KernelTestCase
         self::assertNull($this->uploader->uploadBannerFromZip('testuser/no-banner', $zipPath));
     }
 
+    public function testReadsBannerFromAssetsDirectory(): void
+    {
+        $zipPath = $this->makeZip(['assets/banner.png' => 'png-bytes']);
+
+        $result = $this->uploader->uploadBannerFromZip('testuser/assets-banner', $zipPath);
+
+        self::assertSame('package-media/banners/testuser_assets-banner.png', $result);
+    }
+
+    public function testUploadsGalleryImagesWithAltTexts(): void
+    {
+        $zipPath = $this->makeZip([
+            'assets/gallery/image_1.png' => 'png-bytes',
+            'assets/gallery/image_1.alt.txt' => 'First screenshot',
+            'assets/gallery/image_2.jpg' => 'jpg-bytes',
+        ]);
+
+        $gallery = $this->uploader->uploadGalleryFromZip('testuser/with-gallery', $zipPath);
+
+        self::assertSame([
+            ['url' => 'package-media/testuser/with-gallery/gallery/0.png', 'alt' => 'First screenshot'],
+            ['url' => 'package-media/testuser/with-gallery/gallery/1.jpg', 'alt' => ''],
+        ], $gallery);
+    }
+
+    public function testReadsGalleryFromLegacyZipRoot(): void
+    {
+        $zipPath = $this->makeZip([
+            'gallery/image_1.png' => 'png-bytes',
+            'gallery/image_1.alt.txt' => 'Legacy layout',
+        ]);
+
+        $gallery = $this->uploader->uploadGalleryFromZip('testuser/legacy-gallery', $zipPath);
+
+        self::assertSame([
+            ['url' => 'package-media/testuser/legacy-gallery/gallery/0.png', 'alt' => 'Legacy layout'],
+        ], $gallery);
+    }
+
+    public function testReturnsEmptyGalleryWhenArchiveHasNoImages(): void
+    {
+        $zipPath = $this->makeZip(['composer.json' => '{}', 'entity_data.json' => '[]']);
+
+        self::assertSame([], $this->uploader->uploadGalleryFromZip('testuser/no-gallery', $zipPath));
+    }
+
     /**
      * @param array<string, string> $entries
      */

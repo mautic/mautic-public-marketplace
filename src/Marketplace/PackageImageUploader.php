@@ -31,7 +31,8 @@ final class PackageImageUploader
         'image/gif' => 'gif',
     ];
 
-    // Mautic packs the banner at the ZIP root as "banner.<ext>" (see CampaignShareService::addImageToZip).
+    // Mautic packs the banner as "assets/banner.<ext>" (see CampaignShareService::addImageToZip);
+    // older share archives used the ZIP root, so both locations are read.
     private const ALLOWED_EXTENSIONS = [
         'png' => 'image/png',
         'jpg' => 'image/jpeg',
@@ -85,6 +86,69 @@ final class PackageImageUploader
         return self::BUCKET.'/'.$objectPath;
     }
 
+    /**
+     * Extracts the gallery images packed in a Mautic-shared ZIP ("assets/gallery/image_N.<ext>",
+     * or the ZIP root for older archives), stores them in marketplace-owned storage and returns
+     * entries for packages.gallery. Alt texts come from the sibling "image_N.alt.txt" files.
+     *
+     * @return list<array{url: string, alt: string}>
+     *
+     * @throws SupabaseApiException
+     */
+    public function uploadGalleryFromZip(string $packageName, string $zipPath): array
+    {
+        $zip = new \ZipArchive();
+        if (true !== $zip->open($zipPath)) {
+            return [];
+        }
+
+        $images = [];
+        try {
+            for ($i = 0; $i < $zip->numFiles; ++$i) {
+                $entry = (string) $zip->getNameIndex($i);
+                if (1 !== preg_match('#^(?:assets/)?gallery/image_(\d+)\.([a-z]+)$#', $entry, $matches)) {
+                    continue;
+                }
+
+                $extension = 'jpeg' === $matches[2] ? 'jpg' : $matches[2];
+                if (!isset(self::ALLOWED_EXTENSIONS[$matches[2]])) {
+                    continue;
+                }
+
+                $contents = $zip->getFromName($entry);
+                if (false === $contents || '' === $contents || \strlen($contents) > self::MAX_BYTES) {
+                    // An unreadable or oversized image shouldn't block the whole publish; skip it.
+                    continue;
+                }
+
+                $alt = $zip->getFromName(substr($entry, 0, -\strlen('.'.$matches[2])).'.alt.txt');
+                $images[(int) $matches[1]] = [
+                    'extension' => $extension,
+                    'contents' => $contents,
+                    'mime' => self::ALLOWED_EXTENSIONS[$matches[2]],
+                    'alt' => \is_string($alt) ? trim($alt) : '',
+                ];
+            }
+        } finally {
+            $zip->close();
+        }
+
+        ksort($images);
+
+        $gallery = [];
+        foreach (array_values($images) as $index => $image) {
+            $objectPath = $this->slugify($packageName).'/gallery/'.$index.'.'.$image['extension'];
+            $this->supabaseClient->uploadStorageObject(self::BUCKET, $objectPath, $image['contents'], $image['mime']);
+
+            $gallery[] = [
+                'url' => self::BUCKET.'/'.$objectPath,
+                'alt' => $image['alt'],
+            ];
+        }
+
+        return $gallery;
+    }
+
     private function upload(string $packageName, UploadedFile $file, string $prefix): string
     {
         $mime = $file->getMimeType() ?? '';
@@ -122,10 +186,12 @@ final class PackageImageUploader
         }
 
         try {
-            foreach (array_keys(self::ALLOWED_EXTENSIONS) as $extension) {
-                $contents = $zip->getFromName('banner.'.$extension);
-                if (false !== $contents && '' !== $contents) {
-                    return [$extension, $contents];
+            foreach (['assets/banner.', 'banner.'] as $prefix) {
+                foreach (array_keys(self::ALLOWED_EXTENSIONS) as $extension) {
+                    $contents = $zip->getFromName($prefix.$extension);
+                    if (false !== $contents && '' !== $contents) {
+                        return [$extension, $contents];
+                    }
                 }
             }
 

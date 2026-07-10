@@ -85,11 +85,13 @@ final class MarketplaceControllerTest extends WebTestCase
 
         $names = $this->zipEntryNames($client->getInternalResponse()->getContent());
 
+        // Images live under assets/ so the archive keeps the Mautic export layout
+        // and the import flow restores them into the media directory.
         self::assertContains('entity_data.json', $names);
         self::assertContains('composer.json', $names);
-        self::assertContains('banner.png', $names);
-        self::assertContains('gallery/image_1.png', $names);
-        self::assertContains('gallery/image_1.alt.txt', $names);
+        self::assertContains('assets/banner.png', $names);
+        self::assertContains('assets/gallery/image_1.png', $names);
+        self::assertContains('assets/gallery/image_1.alt.txt', $names);
     }
 
     public function testPackageDownloadServesTheNewestVersion(): void

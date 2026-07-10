@@ -56,15 +56,14 @@ final class PackageDownloadArchiveBuilder
 
         $added = false;
 
-        // Mautic share-flow archives already carry banner/gallery entries; keep
-        // the publisher's originals and only fill in what is missing.
-        if (null !== $detail->bannerURL && [] === preg_grep('#^banner\.#', $entries)) {
-            $added = $this->addImage($zip, $detail->bannerURL, 'banner', $detail->name);
+        // Added images live under assets/ to match the Mautic export layout; legacy root-level entries count as already present.
+        if (null !== $detail->bannerURL && [] === preg_grep('#^(assets/)?banner\.#', $entries)) {
+            $added = $this->addImage($zip, $detail->bannerURL, 'assets/banner', $detail->name);
         }
 
-        if (null !== $detail->gallery && [] === preg_grep('#^gallery/#', $entries)) {
+        if (null !== $detail->gallery && [] === preg_grep('#^(assets/)?gallery/#', $entries)) {
             foreach ($detail->gallery as $index => $image) {
-                $baseName = 'gallery/image_'.($index + 1);
+                $baseName = 'assets/gallery/image_'.($index + 1);
                 if (!$this->addImage($zip, $image['src'], $baseName, $detail->name)) {
                     continue;
                 }
