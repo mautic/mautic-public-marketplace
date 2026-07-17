@@ -58,20 +58,45 @@ final class PackageImageUploaderTest extends KernelTestCase
         self::assertNull($this->uploader->uploadBannerFromZip('testuser/no-banner', $zipPath));
     }
 
-    public function testUploadsGalleryImagesWithAltTexts(): void
+    public function testReadsBannerFromAssetsDirectory(): void
+    {
+        $zipPath = $this->makeZip(['assets/banner.png' => 'png-bytes']);
+
+        $result = $this->uploader->uploadBannerFromZip('testuser/assets-banner', $zipPath);
+
+        self::assertSame('package-media/banners/testuser_assets-banner.png', $result);
+    }
+
+    public function testUploadsGalleryImagesWithAltTextsFromAssetsDirectory(): void
+    {
+        $zipPath = $this->makeZip([
+            'assets/gallery/image_1.png' => 'png-bytes',
+            'assets/gallery/image_1.alt.txt' => 'First screenshot',
+            'assets/gallery/image_2.jpg' => 'jpg-bytes',
+        ]);
+
+        $gallery = $this->uploader->uploadGalleryFromZip('testuser/with-gallery', $zipPath);
+
+        self::assertSame([
+            ['url' => 'package-media/testuser/with-gallery/gallery/1.png', 'alt' => 'First screenshot'],
+            ['url' => 'package-media/testuser/with-gallery/gallery/2.jpg', 'alt' => ''],
+        ], $gallery);
+    }
+
+    public function testReadsGalleryFromLegacyZipRoot(): void
     {
         $zipPath = $this->makeZip([
             'gallery/image_1.png' => 'png-bytes',
-            'gallery/image_1.alt.txt' => 'First screenshot',
+            'gallery/image_1.alt.txt' => 'Legacy layout',
             'gallery/image_2.jpg' => 'jpg-bytes',
         ]);
 
-        $result = $this->uploader->uploadGalleryFromZip('testuser/test-campaign', $zipPath);
+        $gallery = $this->uploader->uploadGalleryFromZip('testuser/legacy-gallery', $zipPath);
 
         self::assertSame([
-            ['url' => 'package-media/testuser/test-campaign/gallery/1.png', 'alt' => 'First screenshot'],
-            ['url' => 'package-media/testuser/test-campaign/gallery/2.jpg', 'alt' => ''],
-        ], $result);
+            ['url' => 'package-media/testuser/legacy-gallery/gallery/1.png', 'alt' => 'Legacy layout'],
+            ['url' => 'package-media/testuser/legacy-gallery/gallery/2.jpg', 'alt' => ''],
+        ], $gallery);
     }
 
     public function testReturnsEmptyGalleryWhenArchiveHasNoGalleryImages(): void

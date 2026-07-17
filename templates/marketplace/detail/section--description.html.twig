@@ -54,7 +54,7 @@
                 %}
                 {% set ctaHref = isPaidPackage and not app.user
                     ? path('auth_login', { returnTo: app.request.requestUri })
-                    : '#'
+                    : path('marketplace_package_download', { package: package.name })
                 %}
                 {% include 'components/button.html.twig' with {
                     buttons: [{

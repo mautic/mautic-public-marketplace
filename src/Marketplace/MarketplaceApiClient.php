@@ -515,6 +515,15 @@ final class MarketplaceApiClient
         ]);
     }
 
+    public function recordDownload(string $packageName, ?string $version, ?string $auth0UserId): void
+    {
+        $this->supabaseClient->mutate('POST', '/rest/v1/download_history', [
+            'auth0_user_id' => $auth0UserId,
+            'package_name' => $packageName,
+            'package_version' => $version,
+        ]);
+    }
+
     private function toInt(mixed $value): ?int
     {
         if (null === $value || '' === $value) {
@@ -568,12 +577,23 @@ final class MarketplaceApiClient
             return null;
         }
 
-        // Tolerate rows that stored the full storage URL (with the server-side host)
-        // instead of the bucket-relative path: keep only the part after the public
-        // prefix so the browser-facing URL is rebuilt from the public base below.
+        return $this->toPublicStorageUrl($path);
+    }
+
+    /**
+     * Rebuilds a storage object URL (or bucket-relative path) against the browser-facing
+     * storage base. Rows may store URLs with the server-side host (e.g. the in-cluster
+     * Supabase hostname), which browsers can't reach — only the object path is kept and
+     * the public base is prepended.
+     */
+    public function toPublicStorageUrl(string $path): string
+    {
         $marker = '/storage/v1/object/public/';
         if (false !== ($pos = strpos($path, $marker))) {
             $path = substr($path, $pos + \strlen($marker));
+        } elseif (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            // Absolute URL outside marketplace storage (e.g. an externally hosted dist) — leave as-is.
+            return $path;
         }
 
         $base = '' !== $this->supabasePublicUrl ? $this->supabasePublicUrl : $this->supabaseBaseUrl;

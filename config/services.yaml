@@ -40,6 +40,11 @@ when@test:
             arguments:
                 $httpClient: '@App\Tests\Mock\SupabaseMockHttpClient'
 
+        App\Marketplace\PackageDownloadArchiveBuilder:
+            autowire: true
+            arguments:
+                $httpClient: '@App\Tests\Mock\SupabaseMockHttpClient'
+
         App\Tests\Mock\PackagistMockHttpClient:
             class: App\Tests\Mock\PackagistMockHttpClient
 

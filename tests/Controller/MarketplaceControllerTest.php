@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Auth0\Auth0User;
+use App\Tests\Mock\SupabaseMockHttpClient;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class MarketplaceControllerTest extends WebTestCase
@@ -32,6 +33,110 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Marketing Automation, Made Better.');
         self::assertPageTitleContains('Mautic Marketplace');
+    }
+
+    public function testPackageDownloadRedirectsToArchive(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/example-plugin/download');
+
+        self::assertResponseRedirects('https://storage.example.test/package-media/dist/mautic_example-plugin/1.0.0.zip');
+    }
+
+    public function testPackageDownloadRecordsHistoryForAuthenticatedUsers(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+        $client->request('GET', '/package/mautic/example-plugin/download');
+
+        self::assertResponseRedirects('https://storage.example.test/package-media/dist/mautic_example-plugin/1.0.0.zip');
+
+        $recorded = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedDownloads;
+        self::assertCount(1, $recorded);
+        self::assertSame('auth0|test123', $recorded[0]['auth0_user_id']);
+        self::assertSame('mautic/example-plugin', $recorded[0]['package_name']);
+        self::assertSame('1.0.0', $recorded[0]['package_version']);
+    }
+
+    public function testPackageDownloadRecordsHistoryForAnonymousUsers(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/example-plugin/download');
+
+        self::assertResponseRedirects('https://storage.example.test/package-media/dist/mautic_example-plugin/1.0.0.zip');
+
+        $recorded = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedDownloads;
+        self::assertCount(1, $recorded);
+        self::assertNull($recorded[0]['auth0_user_id']);
+        self::assertSame('mautic/example-plugin', $recorded[0]['package_name']);
+    }
+
+    public function testPackageDownloadBundlesBannerAndGalleryImages(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/welcome-campaign/download');
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('content-type', 'application/zip');
+        self::assertStringContainsString(
+            'Welcome Campaign 1.0.1.zip',
+            (string) $client->getResponse()->headers->get('content-disposition'),
+        );
+
+        $names = $this->zipEntryNames($client->getInternalResponse()->getContent());
+
+        // Images live under assets/ so the archive keeps the Mautic export layout
+        // and the import flow restores them into the media directory.
+        self::assertContains('entity_data.json', $names);
+        self::assertContains('composer.json', $names);
+        self::assertContains('assets/banner.png', $names);
+        self::assertContains('assets/gallery/image_1.png', $names);
+        self::assertContains('assets/gallery/image_1.alt.txt', $names);
+    }
+
+    public function testPackageDownloadServesTheNewestVersion(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/welcome-campaign/download');
+
+        self::assertResponseIsSuccessful();
+
+        // The mock lists 1.0.0 before 1.0.1; the newest version must win regardless.
+        $recorded = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedDownloads;
+        self::assertCount(1, $recorded);
+        self::assertSame('1.0.1', $recorded[0]['package_version']);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function zipEntryNames(string $zipContents): array
+    {
+        $tmpPath = (string) tempnam(sys_get_temp_dir(), 'test-download-');
+        file_put_contents($tmpPath, $zipContents);
+
+        $zip = new \ZipArchive();
+        self::assertTrue($zip->open($tmpPath), 'The downloaded response is not a readable ZIP archive.');
+
+        $names = [];
+        for ($i = 0; $i < $zip->numFiles; ++$i) {
+            $names[] = (string) $zip->getNameIndex($i);
+        }
+
+        $zip->close();
+        unlink($tmpPath);
+
+        return $names;
+    }
+
+    public function testDownloadButtonLinksToDownloadRoute(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/package/mautic/example-plugin');
+
+        self::assertResponseIsSuccessful();
+        $href = $client->getCrawler()->filter('#package-cta')->attr('href');
+        self::assertSame('/package/mautic/example-plugin/download', $href);
     }
 
     public function testPackageUploadPageRedirectsAnonymousUsers(): void
