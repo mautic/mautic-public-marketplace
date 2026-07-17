@@ -8,6 +8,7 @@ use App\Auth0\Auth0User;
 use App\Marketplace\Dto\SubmitRequest;
 use App\Marketplace\Exception\SubmitValidationException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class PackageSubmitService
 {
@@ -16,6 +17,7 @@ final class PackageSubmitService
         private readonly ComposerJsonReader $composerReader,
         private readonly PackageImageUploader $imageUploader,
         private readonly PackageZipUploader $zipUploader,
+        private readonly ValidatorInterface $validator,
     ) {
     }
 
@@ -76,6 +78,7 @@ final class PackageSubmitService
         }
 
         $request = $this->requestFromComposer($composerData);
+        $this->assertShareLimits($request);
         $zipUrl = $this->zipUploader->upload($request->name, $request->version, $zipPath);
 
         // Mautic packs the banner and gallery inside the shared ZIP, so extract them here
@@ -97,6 +100,27 @@ final class PackageSubmitService
     public function submitFromFile(string $zipPath, Auth0User $user): array
     {
         return $this->submitFromMauticShare($zipPath, $user);
+    }
+
+    /**
+     * Share uploads skip the form validation in SubmitApiController, so the
+     * size caps from SubmitRequest are enforced here.
+     *
+     * @throws SubmitValidationException
+     */
+    private function assertShareLimits(SubmitRequest $request): void
+    {
+        $violations = $this->validator->validate($request, groups: [SubmitRequest::SHARE_LIMITS_GROUP]);
+        if (0 === $violations->count()) {
+            return;
+        }
+
+        $messages = [];
+        foreach ($violations as $violation) {
+            $messages[] = (string) $violation->getMessage();
+        }
+
+        throw new SubmitValidationException(implode(' ', array_unique($messages)));
     }
 
     /**

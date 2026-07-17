@@ -102,6 +102,31 @@ final class MauticUploadApiControllerTest extends WebTestCase
         self::assertStringContainsString('missing a vendor name', $data['error']);
     }
 
+    public function testUploadWithOversizedMetadataIsRejected(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        $this->zipPath = PackageZipFactory::create([
+            'name' => 'testuser/test-campaign',
+            'description' => 'A test campaign for the marketplace.',
+            'type' => 'mautic-resource',
+            'version' => '1.0.0',
+            'extra' => ['mautic' => [
+                'minimum-version' => '5.0',
+                'headline' => str_repeat('x', 61),
+            ]],
+        ]);
+
+        $client->request('POST', '/api/package/mautic-upload', files: [
+            'package' => new UploadedFile($this->zipPath, 'campaign.zip', 'application/zip', test: true),
+        ]);
+
+        self::assertResponseStatusCodeSame(400);
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('Headline must be at most 60 characters', $data['error']);
+    }
+
     public function testUploadWithoutComposerJsonIsRejected(): void
     {
         $client = self::createClient();
