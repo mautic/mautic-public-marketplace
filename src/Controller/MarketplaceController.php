@@ -50,12 +50,16 @@ final class MarketplaceController extends AbstractController
 
     public function index(Request $request): Response
     {
-        $limit = $this->toInt($request->query->get('limit'), 10);
-        $offset = $this->toInt($request->query->get('offset'), 0);
+        // UI page sizes go up to 50; hand-crafted query strings get clamped to the same bounds.
+        $limit = min(max($this->toInt($request->query->get('limit'), 10), 1), 50);
+        $offset = max($this->toInt($request->query->get('offset'), 0), 0);
         $orderBy = (string) $request->query->get('orderby', 'downloads');
         $orderDir = (string) $request->query->get('orderdir', 'desc');
         $type = $request->query->get('type');
         $query = $request->query->get('query');
+        if (\is_string($query)) {
+            $query = mb_substr($query, 0, 100);
+        }
         $mauticVersions = $this->normalizeMauticVersions($request->query->all()['mautic'] ?? null);
         $languages = $this->normalizeLanguages($request->query->all()['language'] ?? null);
         $ratingFilter = $this->normalizeRatingFilter($request->query->get('rating'));
