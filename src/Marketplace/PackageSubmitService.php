@@ -18,6 +18,7 @@ final class PackageSubmitService
         private readonly PackageImageUploader $imageUploader,
         private readonly PackageZipUploader $zipUploader,
         private readonly ValidatorInterface $validator,
+        private readonly MetadataSanitizer $sanitizer,
     ) {
     }
 
@@ -221,19 +222,28 @@ final class PackageSubmitService
             $status = 'pending';
         }
 
-        $maintainerName = $user->getName() ?? $user->getEmail() ?? 'Anonymous';
+        $maintainerName = $this->sanitizer->text($user->getName() ?? $user->getEmail() ?? 'Anonymous');
+        if ('' === $maintainerName) {
+            $maintainerName = 'Anonymous';
+        }
+
+        $displayName = $composerData['extra']['mautic']['display-name'] ?? null;
+        $displayName = \is_string($displayName) ? $this->sanitizer->text($displayName) : '';
+        if ('' === $displayName) {
+            $displayName = $this->toDisplayName($packageName);
+        }
 
         $packageData = [
             'name' => $packageName,
-            'displayname' => $composerData['extra']['mautic']['display-name'] ?? $this->toDisplayName($packageName),
+            'displayname' => $displayName,
             'description' => $request->description,
             'type' => $request->category,
             'time' => (new \DateTimeImmutable())->format('c'),
             'maintainers' => [['name' => $maintainerName]],
             'auth0_user_id' => $user->getUserIdentifier(),
-            'headline' => $request->headline,
-            'languages' => $request->languages,
-            'works_with' => $request->works_with,
+            'headline' => $this->sanitizer->text($request->headline),
+            'languages' => $this->sanitizer->textList($request->languages),
+            'works_with' => $this->sanitizer->textList($request->works_with),
             'price' => $request->price,
             'license_type' => $request->license_type,
             'github_url' => $request->github_url,
@@ -256,7 +266,13 @@ final class PackageSubmitService
         }
 
         if ([] !== $gallery) {
-            $packageData['gallery'] = $gallery;
+            $packageData['gallery'] = array_map(
+                fn (array $image): array => [
+                    'url' => $image['url'],
+                    'alt' => $this->sanitizer->text($image['alt']),
+                ],
+                $gallery,
+            );
         }
 
         if ($created) {
@@ -277,12 +293,14 @@ final class PackageSubmitService
 
         $smv = $this->composerReader->extractMauticVersion($composerData);
 
+        $sanitizedVersion = $this->sanitizer->text($request->version);
+
         $versionData = [
             'package_name' => $packageName,
-            'version' => $request->version,
-            'version_normalized' => $this->composerReader->normalizeVersion($request->version),
+            'version' => $sanitizedVersion,
+            'version_normalized' => $this->composerReader->normalizeVersion($sanitizedVersion),
             'description' => $request->description,
-            'keywords' => $request->keywords,
+            'keywords' => $this->sanitizer->textList($request->keywords),
             'license' => $composerData['license'] ?? [$request->license_type],
             'authors' => $composerData['authors'] ?? null,
             'type' => $request->category,
@@ -297,7 +315,7 @@ final class PackageSubmitService
 
         return [
             'package_name' => $packageName,
-            'version' => $request->version,
+            'version' => $sanitizedVersion,
             'status' => $status,
             'created' => $created,
         ];
