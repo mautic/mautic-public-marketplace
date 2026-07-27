@@ -233,6 +233,13 @@ final class PackageSubmitService
             $displayName = $this->toDisplayName($packageName);
         }
 
+        // works_with may legitimately be empty in the share flow, but a non-empty
+        // submission must not be emptied by sanitization (markup-only entries).
+        $worksWith = $this->sanitizer->textList($request->works_with);
+        if ([] === $worksWith && [] !== $request->works_with) {
+            throw new SubmitValidationException('Supported Mautic versions must contain plain text, not just HTML markup.');
+        }
+
         $packageData = [
             'name' => $packageName,
             'displayname' => $displayName,
@@ -241,9 +248,9 @@ final class PackageSubmitService
             'time' => (new \DateTimeImmutable())->format('c'),
             'maintainers' => [['name' => $maintainerName]],
             'auth0_user_id' => $user->getUserIdentifier(),
-            'headline' => $this->sanitizer->text($request->headline),
+            'headline' => $this->requirePlainText($request->headline, 'Headline'),
             'languages' => $this->sanitizer->textList($request->languages),
-            'works_with' => $this->sanitizer->textList($request->works_with),
+            'works_with' => $worksWith,
             'price' => $request->price,
             'license_type' => $request->license_type,
             'github_url' => $request->github_url,
@@ -293,7 +300,7 @@ final class PackageSubmitService
 
         $smv = $this->composerReader->extractMauticVersion($composerData);
 
-        $sanitizedVersion = $this->sanitizer->text($request->version);
+        $sanitizedVersion = $this->requirePlainText($request->version, 'Version');
 
         $versionData = [
             'package_name' => $packageName,
@@ -319,6 +326,24 @@ final class PackageSubmitService
             'status' => $status,
             'created' => $created,
         ];
+    }
+
+    /**
+     * Sanitize a field whose NotBlank guarantee must survive sanitization:
+     * input that was non-blank but consisted only of markup is rejected
+     * instead of being silently stored as an empty string. Fields that are
+     * allowed to be empty (share flow) pass through untouched.
+     *
+     * @throws SubmitValidationException
+     */
+    private function requirePlainText(string $value, string $field): string
+    {
+        $clean = $this->sanitizer->text($value);
+        if ('' === $clean && '' !== trim($value)) {
+            throw new SubmitValidationException(\sprintf('%s must contain plain text, not just HTML markup.', $field));
+        }
+
+        return $clean;
     }
 
     private function toDisplayName(string $packageName): string
