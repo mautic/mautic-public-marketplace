@@ -3,7 +3,7 @@
 {% block title %}Publish to Marketplace{% endblock %}
 
 {% block body %}
-<section id="publish-upload-container">
+<section id="publish-upload-container" data-max-bytes="{{ constant('App\\Marketplace\\PackageZipUploader::MAX_BYTES') }}">
 
     <div class="publish-upload-hero" style="background: #4e5e9e; padding: 56px 0 48px;">
         <div class="container">

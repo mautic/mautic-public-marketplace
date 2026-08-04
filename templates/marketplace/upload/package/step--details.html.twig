@@ -89,7 +89,8 @@
                 label: 'mautic.marketplace.upload.package.field.banner_image.label'|trans,
                 helpText: 'mautic.marketplace.upload.package.field.banner_image.help'|trans,
                 attributes: {
-                    accept: 'image/png,image/jpeg,image/webp'
+                    accept: 'image/png,image/jpeg,image/webp',
+                    'data-max-bytes': constant('App\\Marketplace\\PackageImageUploader::MAX_BYTES')
                 },
                 validation: {
                     rules: ['fileTypes(png,jpg,jpeg,webp,image/png,image/jpeg,image/webp)'],
@@ -109,7 +110,8 @@
                     helpText: 'mautic.marketplace.upload.package.field.gallery_images.help'|trans,
                     attributes: {
                         accept: 'image/png,image/jpeg,image/webp',
-                        multiple: 'multiple'
+                        multiple: 'multiple',
+                        'data-max-bytes': constant('App\\Marketplace\\PackageImageUploader::MAX_BYTES')
                     },
                     validation: {
                         rules: ['fileTypes(png,jpg,jpeg,webp,image/png,image/jpeg,image/webp)', 'maxFiles(2)'],

@@ -41,7 +41,8 @@ final class PackageImageUploader
         'webp' => 'image/webp',
     ];
 
-    private const MAX_BYTES = 5 * 1024 * 1024;
+    // Public so the upload form can render it as the client-side limit and the two stay in step.
+    public const MAX_BYTES = 5 * 1024 * 1024;
 
     // Bytes alone don't bound an image: a decompression bomb sits well under 5MB and still
     // decodes to billions of pixels. We stream the bytes straight to storage without decoding

@@ -19,13 +19,21 @@ import { validateForm } from './validation.js';
 const GENERIC_ERROR = "Something went wrong while publishing. Please try again, or contact support if it keeps happening.";
 const SESSION_EXPIRED_ERROR = "Your session has expired. Please log in again in another tab, then come back and submit once more.";
 
-// Mirrors PackageZipUploader::MAX_BYTES and PackageImageUploader::MAX_BYTES. The server still
-// enforces both; this just saves pushing a file over the wire to be told it was too big.
-const MAX_ZIP_BYTES = 50 * 1024 * 1024;
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-
 function formatMegabytes(bytes) {
     return Math.round(bytes / 1024 / 1024) + 'MB';
+}
+
+/**
+ * The limit each input renders in data-max-bytes, straight from the PHP constant the server
+ * enforces. Absent or unparseable means no client-side check — the server still rejects.
+ *
+ * @param {HTMLInputElement|null} input
+ * @returns {number} Byte limit, or Infinity when the input declares none.
+ */
+function declaredMaxBytes(input) {
+    const limit = Number(input?.dataset.maxBytes);
+
+    return Number.isFinite(limit) && limit > 0 ? limit : Infinity;
 }
 
 /**
@@ -133,7 +141,7 @@ function initUploadWizard() {
         }
 
         const oversized = oversizedFileError([
-            { file: fileInput.files[0], limit: MAX_ZIP_BYTES, label: 'ZIP file' },
+            { file: fileInput.files[0], limit: declaredMaxBytes(fileInput), label: 'ZIP file' },
         ]);
         if (oversized) {
             showStatus(form, 'error', oversized);
@@ -205,11 +213,14 @@ function initUploadWizard() {
             return;
         }
 
+        const bannerInput  = document.getElementById('package-banner-image');
+        const galleryInput = document.getElementById('package-gallery-images');
+
         const oversized = oversizedFileError([
-            { file: fileInput.files[0], limit: MAX_ZIP_BYTES, label: 'ZIP file' },
-            { file: fileById('package-banner-image'), limit: MAX_IMAGE_BYTES, label: 'banner image' },
-            ...Array.from(document.getElementById('package-gallery-images')?.files || [])
-                .map((file) => ({ file, limit: MAX_IMAGE_BYTES, label: 'gallery image' })),
+            { file: fileInput.files[0], limit: declaredMaxBytes(fileInput), label: 'ZIP file' },
+            { file: fileById('package-banner-image'), limit: declaredMaxBytes(bannerInput), label: 'banner image' },
+            ...Array.from(galleryInput?.files || [])
+                .map((file) => ({ file, limit: declaredMaxBytes(galleryInput), label: 'gallery image' })),
         ]);
         if (oversized) {
             showStatus(form, 'error', oversized);

@@ -1,7 +1,3 @@
-// Mirrors PackageZipUploader::MAX_BYTES. The API rejects anything bigger anyway; this saves
-// the popup from streaming a huge archive across first.
-const MAX_ARCHIVE_BYTES = 50 * 1024 * 1024;
-
 function initPublishUpload() {
     const container = document.getElementById('publish-upload-container');
 
@@ -16,6 +12,10 @@ function initPublishUpload() {
     const sizeEl = document.getElementById('publish-upload-size');
     const errorEl = document.getElementById('publish-upload-error');
     const successEl = document.getElementById('publish-upload-success');
+
+    // Rendered from PackageZipUploader::MAX_BYTES, so the limit lives in one place. The API
+    // rejects anything bigger regardless; this saves streaming a huge archive across first.
+    const maxArchiveBytes = Number(container.dataset.maxBytes) || Infinity;
 
     // State held in the popup until the user confirms upload. We store the trusted
     // origin from the postMessage event (browser-set, can't be spoofed by page JS).
@@ -66,9 +66,9 @@ function initPublishUpload() {
             return;
         }
 
-        if (archive.size > MAX_ARCHIVE_BYTES) {
+        if (archive.size > maxArchiveBytes) {
             showError('This campaign archive is ' + formatBytes(archive.size) + ', which is over the '
-                + formatBytes(MAX_ARCHIVE_BYTES) + ' limit. Remove some assets in Mautic and share it again.');
+                + formatBytes(maxArchiveBytes) + ' limit. Remove some assets in Mautic and share it again.');
             return;
         }
 

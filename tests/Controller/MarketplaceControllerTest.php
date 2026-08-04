@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Auth0\Auth0User;
+use App\Marketplace\PackageImageUploader;
+use App\Marketplace\PackageZipUploader;
 use App\Tests\Mock\SupabaseMockHttpClient;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -158,6 +160,34 @@ final class MarketplaceControllerTest extends WebTestCase
         self::assertSelectorExists('form.needs-validation[novalidate]');
         self::assertSelectorExists('#package-zip[required][data-validation-field]');
         self::assertPageTitleContains('Upload package');
+    }
+
+    /**
+     * The wizard reads its client-side limits off these attributes, so they have to carry the
+     * same numbers the server enforces — otherwise the two drift apart silently.
+     */
+    public function testUploadInputsCarryTheServerSideSizeLimits(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        $client->request('GET', '/upload/package');
+        self::assertSame(
+            (string) PackageZipUploader::MAX_BYTES,
+            $client->getCrawler()->filter('#package-zip')->attr('data-max-bytes'),
+        );
+
+        $client->request('GET', '/upload/package?step=3');
+        $crawler = $client->getCrawler();
+
+        self::assertSame(
+            (string) PackageImageUploader::MAX_BYTES,
+            $crawler->filter('#package-banner-image')->attr('data-max-bytes'),
+        );
+        self::assertSame(
+            (string) PackageImageUploader::MAX_BYTES,
+            $crawler->filter('#package-gallery-images')->attr('data-max-bytes'),
+        );
     }
 
     public function testPackageUploadBasicsStepRendersValidationAttributes(): void
