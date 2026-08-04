@@ -136,25 +136,20 @@ final class PackageImageUploaderTest extends KernelTestCase
 
     /**
      * The uploader reads every image's header now, so placeholder strings no longer pass.
+     *
+     * These are 1x1 files kept as literals rather than generated, so the suite doesn't depend on
+     * ext-gd being installed.
      */
-    private function imageBytes(string $format = 'png', int $width = 4, int $height = 4): string
+    private function imageBytes(string $format = 'png'): string
     {
-        $image = imagecreatetruecolor($width, $height);
-        self::assertNotFalse($image);
-
-        ob_start();
-        match ($format) {
-            'jpg' => imagejpeg($image),
-            'gif' => imagegif($image),
-            'webp' => imagewebp($image),
-            default => imagepng($image),
+        $encoded = match ($format) {
+            'jpg' => '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIs'
+                .'IxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAA'
+                .'AAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+            default => 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
         };
-        $bytes = ob_get_clean();
 
-        imagedestroy($image);
-        self::assertIsString($bytes);
-
-        return $bytes;
+        return (string) base64_decode($encoded, true);
     }
 
     /**
