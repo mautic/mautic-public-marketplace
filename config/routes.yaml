@@ -85,3 +85,15 @@ marketplace_detail:
     controller: App\Controller\MarketplaceController::detail
     requirements:
         package: .+
+
+# Public read API for Mautic instances. Versioned because released Mautic versions pin
+# to it, and deliberately not under /api/package, which security.yaml gates behind ROLE_USER.
+api_registry_packages:
+    path: /api/registry/v1/packages
+    controller: App\Controller\Api\RegistryApiController::packages
+    methods: [GET]
+
+api_registry_package:
+    path: /api/registry/v1/packages/{vendor}/{package}
+    controller: App\Controller\Api\RegistryApiController::package
+    methods: [GET]
