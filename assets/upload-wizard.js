@@ -19,6 +19,30 @@ import { validateForm } from './validation.js';
 const GENERIC_ERROR = "Something went wrong while publishing. Please try again, or contact support if it keeps happening.";
 const SESSION_EXPIRED_ERROR = "Your session has expired. Please log in again in another tab, then come back and submit once more.";
 
+// Mirrors PackageZipUploader::MAX_BYTES and PackageImageUploader::MAX_BYTES. The server still
+// enforces both; this just saves pushing a file over the wire to be told it was too big.
+const MAX_ZIP_BYTES = 50 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+function formatMegabytes(bytes) {
+    return Math.round(bytes / 1024 / 1024) + 'MB';
+}
+
+/**
+ * @param {Array<{file: File, limit: number, label: string}>} candidates
+ * @returns {string|null} Message for the first file over its limit, or null if all fit.
+ */
+function oversizedFileError(candidates) {
+    const tooBig = candidates.find(({ file, limit }) => file && file.size > limit);
+
+    if (!tooBig) {
+        return null;
+    }
+
+    return 'The ' + tooBig.label + ' "' + tooBig.file.name + '" is ' + formatMegabytes(tooBig.file.size)
+        + '. The maximum is ' + formatMegabytes(tooBig.limit) + '.';
+}
+
 function initUploadWizard() {
     const forms = Array.from(document.querySelectorAll('form[data-wizard-step]'))
         .sort((a, b) => Number(a.dataset.wizardStep) - Number(b.dataset.wizardStep));
@@ -108,6 +132,14 @@ function initUploadWizard() {
             return;
         }
 
+        const oversized = oversizedFileError([
+            { file: fileInput.files[0], limit: MAX_ZIP_BYTES, label: 'ZIP file' },
+        ]);
+        if (oversized) {
+            showStatus(form, 'error', oversized);
+            return;
+        }
+
         const restore = busy(submitter, 'Checking package...');
         hideStatus(form);
 
@@ -170,6 +202,17 @@ function initUploadWizard() {
             // The ZIP lives in step 1; bounce back if it was never chosen.
             showStatus(form, 'error', 'Please choose a package ZIP in step 1 before submitting.');
             goTo(1);
+            return;
+        }
+
+        const oversized = oversizedFileError([
+            { file: fileInput.files[0], limit: MAX_ZIP_BYTES, label: 'ZIP file' },
+            { file: fileById('package-banner-image'), limit: MAX_IMAGE_BYTES, label: 'banner image' },
+            ...Array.from(document.getElementById('package-gallery-images')?.files || [])
+                .map((file) => ({ file, limit: MAX_IMAGE_BYTES, label: 'gallery image' })),
+        ]);
+        if (oversized) {
+            showStatus(form, 'error', oversized);
             return;
         }
 

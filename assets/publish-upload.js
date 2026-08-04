@@ -1,3 +1,7 @@
+// Mirrors PackageZipUploader::MAX_BYTES. The API rejects anything bigger anyway; this saves
+// the popup from streaming a huge archive across first.
+const MAX_ARCHIVE_BYTES = 50 * 1024 * 1024;
+
 function initPublishUpload() {
     const container = document.getElementById('publish-upload-container');
 
@@ -59,6 +63,12 @@ function initPublishUpload() {
         const { archive, filename } = event.data;
         if (!(archive instanceof Blob) || archive.size === 0) {
             showError("Mautic didn't send a valid campaign archive. Close this window and try again from Mautic.");
+            return;
+        }
+
+        if (archive.size > MAX_ARCHIVE_BYTES) {
+            showError('This campaign archive is ' + formatBytes(archive.size) + ', which is over the '
+                + formatBytes(MAX_ARCHIVE_BYTES) + ' limit. Remove some assets in Mautic and share it again.');
             return;
         }
 

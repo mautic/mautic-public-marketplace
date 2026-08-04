@@ -43,6 +43,11 @@ final class PackageImageUploader
 
     private const MAX_BYTES = 5 * 1024 * 1024;
 
+    // Bytes alone don't bound an image: a decompression bomb sits well under 5MB and still
+    // decodes to billions of pixels. We stream the bytes straight to storage without decoding
+    // them, but whoever renders them later does.
+    private const MAX_PIXELS = 25_000_000;
+
     public function __construct(
         private readonly SupabaseClient $supabaseClient,
     ) {
@@ -128,6 +133,11 @@ final class PackageImageUploader
                     continue;
                 }
 
+                if (!$this->hasSaneDimensions($contents)) {
+                    // Same as an oversized entry: skip the image, don't fail the import.
+                    continue;
+                }
+
                 $alt = $zip->getFromName(substr($entry, 0, -\strlen('.'.$matches[2])).'.alt.txt');
                 $images[(int) $matches[1]] = [
                     'extension' => $matches[2],
@@ -172,6 +182,10 @@ final class PackageImageUploader
             throw new SubmitValidationException('Failed to read uploaded image.');
         }
 
+        if (!$this->hasSaneDimensions($contents)) {
+            throw new SubmitValidationException(\sprintf('Image dimensions are too large. The maximum is %d megapixels (width × height).', self::MAX_PIXELS / 1_000_000));
+        }
+
         $extension = self::MIME_EXTENSIONS[$mime];
         $objectPath = $this->slugify($packageName).'/'.$prefix.'.'.$extension;
 
@@ -207,7 +221,7 @@ final class PackageImageUploader
                     }
 
                     $contents = $zip->getFromName($prefix.$extension);
-                    if (false !== $contents && '' !== $contents) {
+                    if (false !== $contents && '' !== $contents && $this->hasSaneDimensions($contents)) {
                         return [$extension, $contents];
                     }
                 }
@@ -217,6 +231,22 @@ final class PackageImageUploader
         } finally {
             $zip->close();
         }
+    }
+
+    /**
+     * Reads only the header, so this costs nothing. Unrecognised bytes are rejected too — an
+     * upload's declared MIME type comes from the client, so this doubles as a content sniff.
+     */
+    private function hasSaneDimensions(string $contents): bool
+    {
+        $size = @getimagesizefromstring($contents);
+        if (false === $size) {
+            return false;
+        }
+
+        [$width, $height] = $size;
+
+        return $width > 0 && $height > 0 && $width * $height <= self::MAX_PIXELS;
     }
 
     private function slugify(string $packageName): string

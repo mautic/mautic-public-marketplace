@@ -26,7 +26,11 @@ final class ReviewRequest
     public static function fromPayload(InputBag $payload): self
     {
         $rating = $payload->getInt('rating');
-        $review = trim($payload->getString('review'));
+
+        // Reviews are plain text, so strip tags on the way in — a consumer that trusts our API
+        // response shouldn't inherit a payload from us. Lone angle brackets stay ("1 < 2" is
+        // ordinary prose, and Twig escapes it anyway).
+        $review = trim(strip_tags($payload->getString('review')));
 
         if ($rating < 1 || $rating > 5) {
             throw new ReviewValidationException('Rating must be between 1 and 5.');

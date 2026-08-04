@@ -4,7 +4,7 @@
     {% endif %}
 
     {% if Header.children.HeaderMenuButton is defined %}
-    <button aria-expanded="false" aria-label="{{ Header.children.HeaderMenuButton.ariaLabel|trans }}" class="header__action header__menu-trigger header__menu-toggle header__menu-toggle__hidden {{ Header.children.HeaderMenuButton.className|default('') }}" title="{{ Header.children.HeaderMenuButton.ariaLabel|trans }}" type="button" onclick="{{ Header.children.HeaderMenuButton.onClick|default('') }}">
+    <button aria-expanded="false" aria-label="{{ Header.children.HeaderMenuButton.ariaLabel|trans }}" class="header__action header__menu-trigger header__menu-toggle header__menu-toggle__hidden {{ Header.children.HeaderMenuButton.className|default('') }}" title="{{ Header.children.HeaderMenuButton.ariaLabel|trans }}" type="button"{% if Header.children.HeaderMenuButton.onClick|default('') != '' %} onclick="{{ Header.children.HeaderMenuButton.onClick }}"{% endif %}>
         {% if Header.children.HeaderMenuButton.renderMenuIcon is defined %}
         <i class="{{ Header.children.HeaderMenuButton.renderMenuIcon }} fs-16"></i>
         {% endif %}
