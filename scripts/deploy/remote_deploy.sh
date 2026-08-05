@@ -80,6 +80,13 @@ if [[ -n "${PROD_DOMAIN}" || -n "${STAGING_DOMAIN}" ]]; then
     ${SUDO} apt-get install -y --no-install-recommends certbot python3-certbot-nginx
   fi
 
+  # At http level so it covers both server blocks and survives the site config being
+  # rewritten on each deploy. proxy_hide_header also covers pre-expose_php images.
+  printf '%s\n' \
+    'server_tokens off;' \
+    'proxy_hide_header X-Powered-By;' \
+    | ${SUDO} tee /etc/nginx/conf.d/security.conf >/dev/null
+
   {
     if [[ -n "${PROD_DOMAIN}" ]]; then
       cat <<NGINX_CONF

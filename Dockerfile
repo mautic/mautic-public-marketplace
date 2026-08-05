@@ -39,6 +39,11 @@ RUN printf '%s\n' \
   'post_max_size = 64M' \
   > /usr/local/etc/php/conf.d/upload-limits.ini
 
+# X-Powered-By passes straight through the proxy, so drop it at the source.
+RUN printf '%s\n' \
+  'expose_php = Off' \
+  > /usr/local/etc/php/conf.d/security.ini
+
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
 
@@ -63,12 +68,11 @@ RUN printf '%s\n' \
 # (rejected inside <Directory>), so it's appended directly to apache2.conf.
 RUN echo 'AllowEncodedSlashes NoDecode' >> /etc/apache2/apache2.conf
 
-# Allow campaign ZIP uploads up to the marketplace's 50MB cap (PackageZipUploader::MAX_BYTES).
-# A few MB of headroom on post_max_size covers multipart form overhead.
+# Must follow Debian's conf-enabled include, which defaults to ServerTokens OS.
 RUN printf '%s\n' \
-  'upload_max_filesize = 60M' \
-  'post_max_size = 64M' \
-  > /usr/local/etc/php/conf.d/upload-limits.ini
+  'ServerTokens Prod' \
+  'ServerSignature Off' \
+  >> /etc/apache2/apache2.conf
 
 RUN chown -R www-data:www-data /var/www/html/var
 
