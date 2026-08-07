@@ -10,6 +10,7 @@ use App\Marketplace\Exception\SubmitValidationException;
 use App\Stripe\Exception\StripeConnectException;
 use App\Stripe\StripeConnectClient;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class PackageSubmitService
 {
@@ -19,6 +20,8 @@ final class PackageSubmitService
         private readonly PackageImageUploader $imageUploader,
         private readonly PackageZipUploader $zipUploader,
         private readonly StripeConnectClient $stripe,
+        private readonly ValidatorInterface $validator,
+        private readonly MetadataSanitizer $sanitizer,
     ) {
     }
 
@@ -79,12 +82,15 @@ final class PackageSubmitService
         }
 
         $request = $this->requestFromComposer($composerData);
+        $this->assertShareLimits($request);
         $zipUrl = $this->zipUploader->upload($request->name, $request->version, $zipPath);
 
-        // Mautic packs the banner inside the shared ZIP, so extract it here instead of from a form field.
+        // Mautic packs the banner and gallery inside the shared ZIP, so extract them here
+        // instead of from form fields.
         $bannerUrl = $this->imageUploader->uploadBannerFromZip($request->name, $zipPath);
+        $gallery = $this->imageUploader->uploadGalleryFromZip($request->name, $zipPath);
 
-        return $this->upsertPackage($composerData, $request, $user, $zipUrl, $bannerUrl, []);
+        return $this->upsertPackage($composerData, $request, $user, $zipUrl, $bannerUrl, $gallery);
     }
 
     /**
@@ -98,6 +104,27 @@ final class PackageSubmitService
     public function submitFromFile(string $zipPath, Auth0User $user): array
     {
         return $this->submitFromMauticShare($zipPath, $user);
+    }
+
+    /**
+     * Share uploads skip the form validation in SubmitApiController, so the
+     * size caps from SubmitRequest are enforced here.
+     *
+     * @throws SubmitValidationException
+     */
+    private function assertShareLimits(SubmitRequest $request): void
+    {
+        $violations = $this->validator->validate($request, groups: [SubmitRequest::SHARE_LIMITS_GROUP]);
+        if (0 === $violations->count()) {
+            return;
+        }
+
+        $messages = [];
+        foreach ($violations as $violation) {
+            $messages[] = (string) $violation->getMessage();
+        }
+
+        throw new SubmitValidationException(implode(' ', array_unique($messages)));
     }
 
     /**
@@ -198,19 +225,35 @@ final class PackageSubmitService
             $status = 'pending';
         }
 
-        $maintainerName = $user->getName() ?? $user->getEmail() ?? 'Anonymous';
+        $maintainerName = $this->sanitizer->text($user->getName() ?? $user->getEmail() ?? 'Anonymous');
+        if ('' === $maintainerName) {
+            $maintainerName = 'Anonymous';
+        }
+
+        $displayName = $composerData['extra']['mautic']['display-name'] ?? null;
+        $displayName = \is_string($displayName) ? $this->sanitizer->text($displayName) : '';
+        if ('' === $displayName) {
+            $displayName = $this->toDisplayName($packageName);
+        }
+
+        // works_with may legitimately be empty in the share flow, but a non-empty
+        // submission must not be emptied by sanitization (markup-only entries).
+        $worksWith = $this->sanitizer->textList($request->works_with);
+        if ([] === $worksWith && [] !== $request->works_with) {
+            throw new SubmitValidationException('Supported Mautic versions must contain plain text, not just HTML markup.');
+        }
 
         $packageData = [
             'name' => $packageName,
-            'displayname' => $composerData['extra']['mautic']['display-name'] ?? $this->toDisplayName($packageName),
+            'displayname' => $displayName,
             'description' => $request->description,
             'type' => $request->category,
             'time' => (new \DateTimeImmutable())->format('c'),
             'maintainers' => [['name' => $maintainerName]],
             'auth0_user_id' => $user->getUserIdentifier(),
-            'headline' => $request->headline,
-            'languages' => $request->languages,
-            'works_with' => $request->works_with,
+            'headline' => $this->requirePlainText($request->headline, 'Headline'),
+            'languages' => $this->sanitizer->textList($request->languages),
+            'works_with' => $worksWith,
             'price' => $request->price,
             'pricing_model' => $request->pricing_model,
             'currency' => $request->currency,
@@ -235,7 +278,13 @@ final class PackageSubmitService
         }
 
         if ([] !== $gallery) {
-            $packageData['gallery'] = $gallery;
+            $packageData['gallery'] = array_map(
+                fn (array $image): array => [
+                    'url' => $image['url'],
+                    'alt' => $this->sanitizer->text($image['alt']),
+                ],
+                $gallery,
+            );
         }
 
         if ('paid' === $request->pricing_model) {
@@ -260,12 +309,14 @@ final class PackageSubmitService
 
         $smv = $this->composerReader->extractMauticVersion($composerData);
 
+        $sanitizedVersion = $this->requirePlainText($request->version, 'Version');
+
         $versionData = [
             'package_name' => $packageName,
-            'version' => $request->version,
-            'version_normalized' => $this->composerReader->normalizeVersion($request->version),
+            'version' => $sanitizedVersion,
+            'version_normalized' => $this->composerReader->normalizeVersion($sanitizedVersion),
             'description' => $request->description,
-            'keywords' => $request->keywords,
+            'keywords' => $this->sanitizer->textList($request->keywords),
             'license' => $composerData['license'] ?? [$request->license_type],
             'authors' => $composerData['authors'] ?? null,
             'type' => $request->category,
@@ -280,7 +331,7 @@ final class PackageSubmitService
 
         return [
             'package_name' => $packageName,
-            'version' => $request->version,
+            'version' => $sanitizedVersion,
             'status' => $status,
             'created' => $created,
         ];
@@ -327,6 +378,24 @@ final class PackageSubmitService
 
         $packageData['stripe_product_id'] = $references['product_id'];
         $packageData['stripe_price_id'] = $references['price_id'];
+    }
+
+    /**
+     * Sanitize a field whose NotBlank guarantee must survive sanitization:
+     * input that was non-blank but consisted only of markup is rejected
+     * instead of being silently stored as an empty string. Fields that are
+     * allowed to be empty (share flow) pass through untouched.
+     *
+     * @throws SubmitValidationException
+     */
+    private function requirePlainText(string $value, string $field): string
+    {
+        $clean = $this->sanitizer->text($value);
+        if ('' === $clean && '' !== trim($value)) {
+            throw new SubmitValidationException(\sprintf('%s must contain plain text, not just HTML markup.', $field));
+        }
+
+        return $clean;
     }
 
     private function toDisplayName(string $packageName): string

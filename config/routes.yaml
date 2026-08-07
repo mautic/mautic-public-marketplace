@@ -93,6 +93,13 @@ marketplace_stripe_webhook:
     methods: [POST]
 
 # Must precede marketplace_detail: its greedy {package} would otherwise swallow these.
+marketplace_package_download:
+    path: /package/{package}/download
+    controller: App\Controller\MarketplaceController::download
+    methods: [GET]
+    requirements:
+        package: .+
+
 marketplace_stripe_checkout_buy:
     path: /package/{package}/buy
     controller: App\Controller\StripeCheckoutController::buy

@@ -9,9 +9,28 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 final class SupabaseMockHttpClient extends MockHttpClient
 {
+    /**
+     * Bodies POSTed to /rest/v1/download_history, captured so tests can assert
+     * that a download was recorded (and for whom).
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $recordedDownloads = [];
+
     public function __construct()
     {
-        parent::__construct(static function (string $method, string $url, array $options = []): MockResponse {
+        parent::__construct(function (string $method, string $url, array $options = []): MockResponse {
+            if ('POST' === $method && str_contains($url, '/rest/v1/download_history')) {
+                $decoded = json_decode((string) ($options['body'] ?? ''), true);
+                $this->recordedDownloads[] = \is_array($decoded) ? $decoded : [];
+
+                return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
+            if ('GET' === $method && str_contains($url, '/storage/v1/object/public/')) {
+                return self::storageObjectResponse($url);
+            }
+
             if (str_contains($url, '/storage/v1/object/')) {
                 return new MockResponse(
                     json_encode(['Key' => 'package-media/mock-object']),
@@ -333,7 +352,12 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'currency' => $pkg['currency'] ?? null,
                 'versions' => [
                     '1.0.0' => [
+                        'version' => '1.0.0',
                         'smv' => $pkg['smv'],
+                        'dist' => [
+                            'type' => 'zip',
+                            'url' => 'https://storage.example.test/package-media/dist/'.str_replace('/', '_', (string) $pkg['name']).'/1.0.0.zip',
+                        ],
                     ],
                 ],
                 'reviews' => [],
@@ -341,10 +365,48 @@ final class SupabaseMockHttpClient extends MockHttpClient
             ],
         ];
 
+        if ('mautic/welcome-campaign' === $packageName) {
+            // Marketplace-hosted archive with presentation images and two versions;
+            // 1.0.0 deliberately listed first to prove the newest one is served.
+            $distBase = 'http://127.0.0.1:8000/storage/v1/object/public/package-media/dist/mautic_welcome-campaign/';
+            $data['package']['versions'] = [
+                '1.0.0' => ['version' => '1.0.0', 'smv' => $pkg['smv'], 'dist' => ['type' => 'zip', 'url' => $distBase.'1.0.0.zip']],
+                '1.0.1' => ['version' => '1.0.1', 'smv' => $pkg['smv'], 'dist' => ['type' => 'zip', 'url' => $distBase.'1.0.1.zip']],
+            ];
+            $data['package']['banner_url'] = 'package-media/banners/mautic_welcome-campaign/banner.png';
+            $data['package']['gallery'] = [
+                ['url' => 'package-media/gallery/mautic_welcome-campaign/image_1.png', 'alt' => 'Campaign canvas'],
+            ];
+        }
+
         return new MockResponse(
             json_encode($data),
             ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
         );
+    }
+
+    /**
+     * Serves public storage objects the download flow fetches server-side: a real
+     * ZIP archive for dist objects and raw bytes for banner/gallery images.
+     */
+    private static function storageObjectResponse(string $url): MockResponse
+    {
+        $path = (string) (parse_url($url, \PHP_URL_PATH) ?: '');
+
+        if (str_ends_with($path, '.zip')) {
+            $tmpPath = (string) tempnam(sys_get_temp_dir(), 'mock-dist-');
+            $zip = new \ZipArchive();
+            $zip->open($tmpPath, \ZipArchive::OVERWRITE);
+            $zip->addFromString('entity_data.json', '[{"campaigns": []}]');
+            $zip->addFromString('composer.json', (string) json_encode(['name' => 'mautic/welcome-campaign', 'version' => '1.0.1']));
+            $zip->close();
+            $contents = (string) file_get_contents($tmpPath);
+            @unlink($tmpPath);
+
+            return new MockResponse($contents, ['http_code' => 200, 'response_headers' => ['content-type' => 'application/zip']]);
+        }
+
+        return new MockResponse('mock-image-bytes', ['http_code' => 200, 'response_headers' => ['content-type' => 'image/png']]);
     }
 
     private static function userReviewsResponse(string $url): MockResponse

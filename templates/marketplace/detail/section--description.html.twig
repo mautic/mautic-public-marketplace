@@ -71,7 +71,7 @@
                     : (app.user ? 'ri-shopping-cart-line' : 'ri-login-box-line')
                 %}
                 {% set ctaHref = canDownload
-                    ? '#'
+                    ? path('marketplace_package_download', { package: package.name })
                     : (app.user
                         ? path('marketplace_stripe_checkout_buy', { package: package.name })
                         : path('auth_login', { returnTo: app.request.requestUri }))

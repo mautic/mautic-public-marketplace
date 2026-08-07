@@ -30,7 +30,7 @@
                     centered: true,
                     size: 'lg',
                     body_class: 'text-center',
-                    body: '<img src="' ~ image.src ~ '" alt="' ~ image.alt ~ '" class="img-fluid" style="max-height: 75vh;">'
+                    body: '<img src="' ~ image.src|e('html_attr') ~ '" alt="' ~ image.alt|e('html_attr') ~ '" class="img-fluid" style="max-height: 75vh;">'
                 } only %}
             {% endfor %}
         </div>

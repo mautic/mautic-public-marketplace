@@ -21,6 +21,25 @@ function initPublishUpload() {
 
     const GENERIC_ERROR = "Something went wrong while publishing. Please try again, or contact support if it keeps happening.";
 
+    function errorMessageForResponse(response, data) {
+        if (data && data.error) {
+            return data.error;
+        }
+        switch (response.status) {
+            case 413:
+                return 'The campaign archive is too large to upload. The maximum allowed size is 50 MB — try removing large images or assets from the campaign and publish again.';
+            case 401:
+            case 403:
+                return 'Your marketplace session has expired or you are not allowed to publish. Please log in again and retry.';
+            case 502:
+            case 503:
+            case 504:
+                return 'The marketplace server is temporarily unavailable. Please try again in a few minutes.';
+            default:
+                return GENERIC_ERROR + ' (HTTP ' + response.status + ')';
+        }
+    }
+
     // Notify the Mautic opener that this popup is ready to receive the archive.
     // We use '*' for the targetOrigin because we don't know which Mautic host the
     // user is publishing from — the popup is the trust boundary, not the message.
@@ -79,7 +98,7 @@ function initPublishUpload() {
             try { data = await response.json(); } catch (e) { /* non-JSON */ }
 
             if (!response.ok) {
-                throw new Error((data && data.error) ? data.error : GENERIC_ERROR);
+                throw new Error(errorMessageForResponse(response, data));
             }
 
             if (!data) {

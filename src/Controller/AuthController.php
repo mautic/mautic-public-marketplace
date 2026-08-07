@@ -119,19 +119,35 @@ final class AuthController extends AbstractController
     {
         $returnTo = $this->urlGenerator->generate('marketplace_homepage', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
+        // Drop the authenticated token and destroy the server-side session so the
+        // old session id can no longer be replayed.
         $this->tokenStorage->setToken(null);
 
+        $sessionName = null;
         if ($request->hasSession()) {
-            $request->getSession()->invalidate();
+            $session = $request->getSession();
+            $sessionName = $session->getName();
+            $session->invalidate();
         }
 
         try {
-            return new RedirectResponse($this->auth0Client->createLogoutUrl($returnTo));
+            // Redirect through Auth0 /v2/logout so the Auth0 SSO session is
+            // terminated too; otherwise the next login silently re-authenticates
+            // from the still-valid Auth0 session cookie.
+            $response = new RedirectResponse($this->auth0Client->createLogoutUrl($returnTo));
         } catch (Auth0AuthenticationException $exception) {
             $this->addFlash('error', $exception->getMessage());
 
-            return $this->redirectToRoute('marketplace_homepage');
+            $response = $this->redirectToRoute('marketplace_homepage');
         }
+
+        // Explicitly expire the session cookie so the browser drops it instead of
+        // keeping a stale one alongside the invalidated server session.
+        if (null !== $sessionName) {
+            $response->headers->clearCookie($sessionName);
+        }
+
+        return $response;
     }
 
     private function sanitizeReturnTo(mixed $returnTo): string

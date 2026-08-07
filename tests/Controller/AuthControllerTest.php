@@ -100,6 +100,18 @@ final class AuthControllerTest extends WebTestCase
         self::assertResponseRedirects();
         self::assertStringContainsString('https://test.auth0.com/v2/logout', (string) $client->getResponse()->headers->get('Location'));
 
+        // The session cookie must be actively expired on the logout response so the
+        // browser drops it rather than replaying the invalidated session.
+        $sessionName = self::getContainer()->get('session.factory')->createSession()->getName();
+        $cleared = null;
+        foreach ($client->getResponse()->headers->getCookies() as $cookie) {
+            if ($cookie->getName() === $sessionName) {
+                $cleared = $cookie;
+            }
+        }
+        self::assertNotNull($cleared, 'Logout response must set a cookie for the session name.');
+        self::assertTrue($cleared->isCleared(), 'Logout must expire the session cookie in the browser.');
+
         $client->request('GET', '/browse');
 
         self::assertResponseIsSuccessful();

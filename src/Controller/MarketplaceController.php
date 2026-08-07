@@ -12,10 +12,15 @@ use App\Marketplace\LanguageOptions;
 use App\Marketplace\MarketplaceApiClient;
 use App\Marketplace\MauticVersionsProvider;
 use App\Marketplace\PackageDetailPageContextBuilder;
+use App\Marketplace\PackageDownloadArchiveBuilder;
 use App\Supabase\Exception\SupabaseApiException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 final class MarketplaceController extends AbstractController
 {
@@ -32,6 +37,8 @@ final class MarketplaceController extends AbstractController
         private readonly MauticVersionConstraintFormatter $mauticVersionConstraintFormatter,
         private readonly LanguageOptions $languageOptions,
         private readonly MauticVersionsProvider $mauticVersionsProvider,
+        private readonly PackageDownloadArchiveBuilder $downloadArchiveBuilder,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -52,12 +59,16 @@ final class MarketplaceController extends AbstractController
 
     public function index(Request $request): Response
     {
-        $limit = $this->toInt($request->query->get('limit'), 10);
-        $offset = $this->toInt($request->query->get('offset'), 0);
+        // UI page sizes go up to 50; hand-crafted query strings get clamped to the same bounds.
+        $limit = min(max($this->toInt($request->query->get('limit'), 10), 1), 50);
+        $offset = max($this->toInt($request->query->get('offset'), 0), 0);
         $orderBy = (string) $request->query->get('orderby', 'downloads');
         $orderDir = (string) $request->query->get('orderdir', 'desc');
         $type = $request->query->get('type');
         $query = $request->query->get('query');
+        if (\is_string($query)) {
+            $query = mb_substr($query, 0, 100);
+        }
         $mauticVersions = $this->normalizeMauticVersions($request->query->all()['mautic'] ?? null);
         $languages = $this->normalizeLanguages($request->query->all()['language'] ?? null);
         $ratingFilter = $this->normalizeRatingFilter($request->query->get('rating'));
@@ -192,6 +203,148 @@ final class MarketplaceController extends AbstractController
         } catch (SupabaseApiException) {
             return false;
         }
+    }
+
+    public function download(string $package): Response
+    {
+        try {
+            $detail = $this->apiClient->getPackage($package);
+        } catch (SupabaseApiException $exception) {
+            // Surfaced to the visitor as a 404 below, so leave a trace that the
+            // real cause was an API failure and not a missing package.
+            $this->logger->error('Could not load the package for download.', [
+                'exception' => $exception,
+                'package' => $package,
+            ]);
+            $detail = null;
+        }
+
+        if (null === $detail) {
+            throw $this->createNotFoundException(\sprintf('Package "%s" not found.', $package));
+        }
+
+        // The detail-page CTA already routes paid packages to checkout, but this route is
+        // reachable directly, so the purchase has to be re-checked before serving the archive.
+        if ($detail->isPaid() && !$this->hasPurchasedPackage($detail->name, $detail)) {
+            if (!$this->getUser() instanceof Auth0User) {
+                return $this->redirectToRoute('auth_login', [
+                    'returnTo' => $this->generateUrl('marketplace_package_download', ['package' => $package]),
+                ]);
+            }
+
+            return $this->redirectToRoute('marketplace_stripe_checkout_buy', ['package' => $package]);
+        }
+
+        [$distUrl, $version] = $this->latestDist($detail->versions ?? []);
+
+        if (null === $distUrl) {
+            throw $this->createNotFoundException(\sprintf('Package "%s" has no downloadable archive.', $package));
+        }
+
+        $user = $this->getUser();
+        $downloadedBy = $user instanceof Auth0User ? $user->getUserIdentifier() : null;
+        try {
+            // Record every download, including anonymous ones (null user id), so the
+            // history reflects total pulls and not just those from signed-in users.
+            $this->apiClient->recordDownload($detail->name, $version, $downloadedBy);
+        } catch (SupabaseApiException $exception) {
+            // History is best-effort; never block the download on it.
+            $this->logger->warning('Could not record the package download in the download history.', [
+                'exception' => $exception,
+                'package' => $detail->name,
+                'version' => $version,
+            ]);
+        }
+
+        return $this->archiveResponse($detail, $distUrl, $version);
+    }
+
+    /**
+     * Serves the archive of a marketplace-hosted package with its banner and
+     * gallery images bundled in; falls back to redirecting to the stored (or
+     * externally hosted) archive when there are no images to add. On the
+     * redirect path the storage ?download parameter names the saved file after
+     * the package (e.g. "Open House Re-engagement 1.0.0.zip") instead of the
+     * bare version number.
+     */
+    private function archiveResponse(PackageDetail $detail, string $distUrl, ?string $version): Response
+    {
+        $url = $this->apiClient->toPublicStorageUrl($distUrl);
+
+        if (!str_contains($url, '/storage/v1/object/public/')) {
+            // Externally hosted dist — leave the URL untouched.
+            return new RedirectResponse($url);
+        }
+
+        $filename = $this->downloadFilename($detail, $version);
+
+        $archivePath = $this->downloadArchiveBuilder->build($detail, $url);
+        if (null !== $archivePath) {
+            $response = new BinaryFileResponse($archivePath);
+            $response->deleteFileAfterSend(true);
+            $response->headers->set('Content-Type', 'application/zip');
+            $response->setContentDisposition(
+                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+                $filename,
+                (string) preg_replace('/[^\x20-\x24\x26-\x7e]/', '_', $filename),
+            );
+
+            return $response;
+        }
+
+        return new RedirectResponse($url.'?download='.rawurlencode($filename));
+    }
+
+    private function downloadFilename(PackageDetail $detail, ?string $version): string
+    {
+        $name = trim($detail->displayName ?? '');
+        if ('' === $name) {
+            $name = str_contains($detail->name, '/') ? explode('/', $detail->name, 2)[1] : $detail->name;
+        }
+
+        // Strip characters that are unsafe in filenames across platforms.
+        $name = trim((string) preg_replace('#[/\\\\:*?"<>|]+#', ' ', $name));
+
+        return trim($name.' '.($version ?? '')).'.zip';
+    }
+
+    /**
+     * Resolves the archive URL of the latest downloadable version, preferring
+     * stable versions over dev ones — mirroring how Mautic picks a version
+     * when installing from the marketplace API.
+     *
+     * @param array<mixed> $versions
+     *
+     * @return array{0: ?string, 1: ?string} Dist URL and version string
+     */
+    private function latestDist(array $versions): array
+    {
+        $best = [null, null];
+        $fallback = [null, null];
+
+        foreach ($versions as $version) {
+            if (!\is_array($version) || !\is_string($version['dist']['url'] ?? null) || '' === $version['dist']['url']) {
+                continue;
+            }
+
+            $name = \is_string($version['version'] ?? null) ? $version['version'] : null;
+
+            if (null === $name || str_starts_with($name, 'dev-')) {
+                if ([null, null] === $fallback) {
+                    $fallback = [$version['dist']['url'], $name];
+                }
+
+                continue;
+            }
+
+            // The API does not guarantee any ordering of the versions array, so
+            // compare explicitly to serve the newest stable release.
+            if (null === $best[1] || version_compare(ltrim($name, 'vV'), ltrim($best[1], 'vV'), '>')) {
+                $best = [$version['dist']['url'], $name];
+            }
+        }
+
+        return null !== $best[0] ? $best : $fallback;
     }
 
     private function toInt(mixed $value, int $default): int
