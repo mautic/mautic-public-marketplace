@@ -164,6 +164,39 @@ final class SubmitApiControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
+    public function testSubmitRejectsAVersionThatIsNotAVersion(): void
+    {
+        // Versions are compared and prefix-matched downstream, so an arbitrary string has to be
+        // refused outright rather than sanitised into something meaningless.
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        $fields = $this->validFormFields();
+        $fields['version'] = '2.0.1<img src onerror=alert(1)>';
+
+        $client->request('POST', '/api/package/submit', $fields, ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(422);
+        $payload = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertContains('version', array_column($payload['violations'], 'field'));
+    }
+
+    public function testSubmitRejectsADescriptionShorterThanTheFormDemands(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        // Comfortably over the old 50-character rule, still under the 150 the form asks for.
+        $fields = $this->validFormFields();
+        $fields['description'] = str_repeat('Too short. ', 8);
+
+        $client->request('POST', '/api/package/submit', $fields, ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(422);
+        $payload = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertContains('description', array_column($payload['violations'], 'field'));
+    }
+
     public function testSubmitRejectsPublishingOverAnotherUsersPackage(): void
     {
         $client = self::createClient();
@@ -191,7 +224,7 @@ final class SubmitApiControllerTest extends WebTestCase
             'category' => 'mautic-resource',
             'headline' => 'A short headline',
             'keywords' => ['test', 'campaign'],
-            'description' => str_repeat('Detailed description for the package. ', 3),
+            'description' => str_repeat('Detailed description for the package. ', 5),
             'languages' => ['en'],
             'works_with' => ['5.2', '5.1'],
             'license_type' => 'MIT',

@@ -31,6 +31,13 @@ final class SubmitRequest
 
         #[Assert\NotBlank(message: 'Version is required.')]
         #[Assert\Length(max: 64, maxMessage: 'Version must be at most {{ limit }} characters.', groups: ['Default', self::SHARE_LIMITS_GROUP])]
+        // Compared with version_compare downstream, so an arbitrary string is both a correctness
+        // and an injection problem. In the share group too, where it comes from composer.json.
+        #[Assert\Regex(
+            pattern: '#^(dev-[A-Za-z0-9._/-]+|v?\d+(\.\d+){0,3}(-[A-Za-z0-9.-]+)?(\+[A-Za-z0-9.-]+)?)$#',
+            message: 'Version must look like 1.2.3, v1.2.3-beta.1 or dev-main.',
+            groups: ['Default', self::SHARE_LIMITS_GROUP],
+        )]
         public readonly string $version = '',
 
         #[Assert\NotBlank(message: 'Category is required.')]
@@ -46,7 +53,9 @@ final class SubmitRequest
         public readonly array $keywords = [],
 
         #[Assert\NotBlank(message: 'Description is required.')]
-        #[Assert\Length(min: 50, minMessage: 'Description must be at least {{ limit }} characters.')]
+        // Matches the 150 the upload form asks for and enforces client-side; the two used to
+        // disagree, so a submission bypassing the form was held to a laxer rule than the UI stated.
+        #[Assert\Length(min: 150, minMessage: 'Description must be at least {{ limit }} characters.')]
         #[Assert\Length(max: 5000, maxMessage: 'Description must be at most {{ limit }} characters.', groups: ['Default', self::SHARE_LIMITS_GROUP])]
         public readonly string $description = '',
 
