@@ -75,14 +75,18 @@ final class StripeConnectController extends AbstractController
                 $status['charges_enabled'],
                 $status['payouts_enabled'],
                 $status['details_submitted'],
+                $status['transfers_enabled'],
             );
 
-            $this->addFlash(
-                $status['details_submitted'] ? 'success' : 'info',
-                $status['details_submitted']
-                    ? 'Your Stripe account is connected. You can now publish paid packages.'
-                    : 'Stripe onboarding is not finished yet — you can resume it any time.',
-            );
+            // Stripe can still be reviewing the transfers capability after the form is
+            // submitted, and without it no payment can be split to this vendor.
+            if (!$status['details_submitted']) {
+                $this->addFlash('info', 'Stripe onboarding is not finished yet — you can resume it any time.');
+            } elseif (!$status['transfers_enabled']) {
+                $this->addFlash('info', 'Stripe is still reviewing your account. You can publish paid packages once it can receive payouts.');
+            } else {
+                $this->addFlash('success', 'Your Stripe account is connected. You can now publish paid packages.');
+            }
         } catch (StripeConnectException $exception) {
             $this->addFlash('error', $exception->getMessage());
         }

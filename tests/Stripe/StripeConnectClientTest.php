@@ -68,6 +68,19 @@ final class StripeConnectClientTest extends TestCase
         self::assertSame('eur', $http->requests[1]['params']['currency'] ?? null);
     }
 
+    public function testCreatePriceForProductReturnsPriceId(): void
+    {
+        $http = new StripeMockHttpClient();
+        $priceId = $this->client($http)->createPriceForProduct('prod_1', 1999, 'EUR');
+
+        self::assertSame('price_test_123', $priceId);
+        self::assertStringContainsString('/v1/prices', $http->requests[0]['url']);
+        // The new price hangs off the existing product; only the amount changes.
+        self::assertSame('prod_1', $http->requests[0]['params']['product'] ?? null);
+        self::assertSame(1999, $http->requests[0]['params']['unit_amount'] ?? null);
+        self::assertSame('eur', $http->requests[0]['params']['currency'] ?? null);
+    }
+
     public function testCreateCheckoutSessionUsesDestinationChargeWithApplicationFee(): void
     {
         $http = new StripeMockHttpClient();

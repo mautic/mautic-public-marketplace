@@ -53,6 +53,16 @@ final class StripeCheckoutController extends AbstractController
             return $this->redirectToRoute('marketplace_detail', ['package' => $package]);
         }
 
+        // A vendor's transfers capability can lapse after publishing (Stripe reviews
+        // accounts on an ongoing basis). Checking it here turns what would otherwise be
+        // an opaque Stripe error at session creation into something the buyer can read.
+        $vendor = $this->apiClient->getStripeConnectAccountByAccountId($checkout['vendor_stripe_account_id']);
+        if (null === $vendor || !$vendor['transfers_enabled']) {
+            $this->addFlash('error', 'This package cannot be bought right now because its author cannot receive payments.');
+
+            return $this->redirectToRoute('marketplace_detail', ['package' => $package]);
+        }
+
         $amountInCents = (int) round(($checkout['price'] ?? 0.0) * 100);
         $applicationFee = (int) round($amountInCents * $this->applicationFeePercent / 100);
 
@@ -100,11 +110,59 @@ final class StripeCheckoutController extends AbstractController
             return new Response('Invalid signature', Response::HTTP_BAD_REQUEST);
         }
 
-        if ('checkout.session.completed' === $event['type']) {
-            $this->recordCompletedPurchase($event['object']);
-        }
+        match ($event['type']) {
+            'checkout.session.completed' => $this->recordCompletedPurchase($event['object']),
+            // Money going back means the buyer must stop having the package.
+            'charge.refunded' => $this->revokePurchase($event['object'], 'refunded'),
+            'charge.dispute.created' => $this->revokePurchase($event['object'], 'disputed'),
+            'account.updated' => $this->refreshConnectAccount($event['object']),
+            default => null,
+        };
 
         return new Response('ok', Response::HTTP_OK);
+    }
+
+    /**
+     * A refund or dispute carries no metadata of ours, but it does carry the payment
+     * intent the purchase was recorded with.
+     *
+     * @param array<string, mixed> $object
+     */
+    private function revokePurchase(array $object, string $status): void
+    {
+        // On a partial refund the buyer keeps what they paid for, so only a fully
+        // refunded charge takes the package away.
+        if ('refunded' === $status && true !== ($object['refunded'] ?? null)) {
+            return;
+        }
+
+        $paymentIntent = $object['payment_intent'] ?? null;
+        if (!\is_string($paymentIntent) || '' === $paymentIntent) {
+            return;
+        }
+
+        $this->apiClient->revokePurchaseByPaymentIntent($paymentIntent, $status);
+    }
+
+    /**
+     * @param array<string, mixed> $account
+     */
+    private function refreshConnectAccount(array $account): void
+    {
+        $accountId = $account['id'] ?? null;
+        if (!\is_string($accountId) || '' === $accountId) {
+            return;
+        }
+
+        $status = StripeConnectClient::accountStatus($account, $accountId);
+
+        $this->apiClient->updateStripeConnectAccountStatus(
+            $accountId,
+            $status['charges_enabled'],
+            $status['payouts_enabled'],
+            $status['details_submitted'],
+            $status['transfers_enabled'],
+        );
     }
 
     /**
@@ -112,6 +170,13 @@ final class StripeCheckoutController extends AbstractController
      */
     private function recordCompletedPurchase(array $session): void
     {
+        // A session can complete before the money arrives — delayed-notification methods
+        // (SEPA debit, bank transfer) leave it unpaid or processing — so completion alone
+        // must not unlock the package.
+        if ('paid' !== ($session['payment_status'] ?? null)) {
+            return;
+        }
+
         $metadata = \is_array($session['metadata'] ?? null) ? $session['metadata'] : [];
         $packageName = (string) ($metadata['package_name'] ?? '');
         $userId = (string) ($metadata['auth0_user_id'] ?? '');

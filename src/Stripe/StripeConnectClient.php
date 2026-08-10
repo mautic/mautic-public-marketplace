@@ -84,7 +84,7 @@ final class StripeConnectClient
     /**
      * Reads the onboarding/capability status of a connected account.
      *
-     * @return array{id: string, charges_enabled: bool, payouts_enabled: bool, details_submitted: bool}
+     * @return array{id: string, charges_enabled: bool, payouts_enabled: bool, details_submitted: bool, transfers_enabled: bool}
      *
      * @throws StripeConnectException
      */
@@ -98,13 +98,28 @@ final class StripeConnectClient
             throw new StripeConnectException('Could not read the Stripe account.', previous: $exception);
         }
 
-        $data = $account->toArray();
+        return self::accountStatus($account->toArray(), $accountId);
+    }
+
+    /**
+     * Maps a Stripe account payload onto the flags we store. Shared with the webhook, which
+     * receives the same shape on account.updated instead of fetching it.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array{id: string, charges_enabled: bool, payouts_enabled: bool, details_submitted: bool, transfers_enabled: bool}
+     */
+    public static function accountStatus(array $data, string $fallbackAccountId = ''): array
+    {
+        $capabilities = \is_array($data['capabilities'] ?? null) ? $data['capabilities'] : [];
 
         return [
-            'id' => (string) ($data['id'] ?? $accountId),
+            'id' => (string) ($data['id'] ?? $fallbackAccountId),
             'charges_enabled' => (bool) ($data['charges_enabled'] ?? false),
             'payouts_enabled' => (bool) ($data['payouts_enabled'] ?? false),
             'details_submitted' => (bool) ($data['details_submitted'] ?? false),
+            // The only capability a destination charge needs on the vendor's side.
+            'transfers_enabled' => 'active' === ($capabilities['transfers'] ?? null),
         ];
     }
 
@@ -139,6 +154,30 @@ final class StripeConnectClient
             'product_id' => (string) $product->toArray()['id'],
             'price_id' => (string) $price->toArray()['id'],
         ];
+    }
+
+    /**
+     * Adds a price to an existing product. Stripe prices are immutable, so changing what
+     * a package costs means creating a new price and pointing the package at it; the old
+     * one stays behind for checkout sessions already in flight.
+     *
+     * @throws StripeConnectException
+     */
+    public function createPriceForProduct(string $productId, int $amountInCents, string $currency): string
+    {
+        try {
+            $price = $this->client()->prices->create([
+                'product' => $productId,
+                'unit_amount' => $amountInCents,
+                'currency' => strtolower($currency),
+            ]);
+        } catch (ApiErrorException $exception) {
+            $this->logger->error('Stripe price creation failed.', ['error' => $exception->getMessage()]);
+
+            throw new StripeConnectException('Could not update the Stripe price for this package.', previous: $exception);
+        }
+
+        return (string) $price->toArray()['id'];
     }
 
     /**

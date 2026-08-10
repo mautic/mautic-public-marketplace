@@ -288,7 +288,7 @@ final class PackageSubmitService
         }
 
         if ('paid' === $request->pricing_model) {
-            $this->attachStripePricing($packageData, $request, $user, $created);
+            $this->attachStripePricing($packageData, $request, $user, $existingPackage);
         }
 
         if ($created) {
@@ -338,46 +338,95 @@ final class PackageSubmitService
     }
 
     /**
-     * Requires the vendor to be onboarded onto Stripe and, on first publish, creates the
-     * Stripe product/price for the paid package. Stores the Stripe references and the
-     * vendor's connected-account id on the package so checkout can route the split.
+     * Requires the vendor to be onboarded onto Stripe and keeps the package's Stripe
+     * references in step with what it costs. Stores those references and the vendor's
+     * connected-account id on the package so checkout can route the split.
      *
-     * @param array<string, mixed> $packageData
+     * The product/price is created on the first paid publish, which is not necessarily
+     * the first publish: a package can start out free and turn paid later. Because the
+     * checkout charges the Stripe price while the detail page shows the stored one, a
+     * changed amount or currency has to reach Stripe too, or the buyer would be charged
+     * the old amount.
+     *
+     * @param array<string, mixed>      $packageData
+     * @param array<string, mixed>|null $existingPackage
      *
      * @throws SubmitValidationException
      */
-    private function attachStripePricing(array &$packageData, SubmitRequest $request, Auth0User $user, bool $created): void
+    private function attachStripePricing(array &$packageData, SubmitRequest $request, Auth0User $user, ?array $existingPackage): void
     {
         $account = $this->apiClient->getStripeConnectAccount($user->getUserIdentifier());
         if (null === $account || !$account['details_submitted']) {
             throw new SubmitValidationException('Connect your Stripe account before publishing a paid package.');
         }
 
+        // Stripe activates the transfers capability separately from the onboarding form,
+        // and a destination charge is refused without it. Publishing before then would
+        // put a package on sale that nobody can actually buy.
+        if (!$account['transfers_enabled']) {
+            throw new SubmitValidationException('Your Stripe account cannot receive payouts yet. Stripe is still reviewing it — try again once it is approved.');
+        }
+
         $packageData['vendor_stripe_account_id'] = $account['stripe_account_id'];
 
-        // Create the Stripe product/price once, on first publish. Re-publishing keeps the
-        // existing references (they are simply not re-sent, so the update leaves them intact).
-        if (!$created || !$this->stripe->isConfigured()) {
+        if (!$this->stripe->isConfigured()) {
             return;
         }
 
-        $displayName = \is_string($packageData['displayname'] ?? null) && '' !== $packageData['displayname']
-            ? (string) $packageData['displayname']
-            : $request->name;
+        $productId = $this->nonEmptyString($existingPackage['stripe_product_id'] ?? null);
+        $priceId = $this->nonEmptyString($existingPackage['stripe_price_id'] ?? null);
+        $amountInCents = (int) round($request->price * 100);
+        $currency = (string) $request->currency;
 
         try {
-            $references = $this->stripe->createProductWithPrice(
-                $displayName,
-                $request->description,
-                (int) round($request->price * 100),
-                (string) $request->currency,
-            );
+            if (null === $productId) {
+                $displayName = \is_string($packageData['displayname'] ?? null) && '' !== $packageData['displayname']
+                    ? (string) $packageData['displayname']
+                    : $request->name;
+
+                $references = $this->stripe->createProductWithPrice(
+                    $displayName,
+                    $request->description,
+                    $amountInCents,
+                    $currency,
+                );
+
+                $packageData['stripe_product_id'] = $references['product_id'];
+                $packageData['stripe_price_id'] = $references['price_id'];
+
+                return;
+            }
+
+            // Unchanged pricing keeps the existing price: the references are simply not
+            // re-sent, so the update leaves them intact.
+            if (null !== $priceId && !$this->pricingChanged($existingPackage, $amountInCents, $currency)) {
+                return;
+            }
+
+            $packageData['stripe_price_id'] = $this->stripe->createPriceForProduct($productId, $amountInCents, $currency);
         } catch (StripeConnectException $exception) {
             throw new SubmitValidationException($exception->getMessage());
         }
+    }
 
-        $packageData['stripe_product_id'] = $references['product_id'];
-        $packageData['stripe_price_id'] = $references['price_id'];
+    /**
+     * @param array<string, mixed>|null $existingPackage
+     */
+    private function pricingChanged(?array $existingPackage, int $amountInCents, string $currency): bool
+    {
+        $storedAmount = $existingPackage['price'] ?? null;
+        $storedCents = is_numeric($storedAmount) ? (int) round(((float) $storedAmount) * 100) : null;
+
+        if ($storedCents !== $amountInCents) {
+            return true;
+        }
+
+        return strtolower((string) ($existingPackage['currency'] ?? '')) !== strtolower($currency);
+    }
+
+    private function nonEmptyString(mixed $value): ?string
+    {
+        return \is_string($value) && '' !== $value ? $value : null;
     }
 
     /**

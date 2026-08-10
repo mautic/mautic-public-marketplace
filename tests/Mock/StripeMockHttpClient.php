@@ -43,6 +43,9 @@ final class StripeMockHttpClient implements ClientInterface
                 'charges_enabled' => true,
                 'payouts_enabled' => true,
                 'details_submitted' => true,
+                // Destination charges need this one specifically; a real account can have
+                // it active while charges_enabled is false, and vice versa.
+                'capabilities' => ['card_payments' => 'active', 'transfers' => 'active'],
             ],
             str_contains($url, '/v1/products') => [
                 'id' => 'prod_test_123',

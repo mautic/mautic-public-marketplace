@@ -6,11 +6,16 @@ namespace App\Tests\Controller\Api;
 
 use App\Auth0\Auth0User;
 use App\Tests\Mock\PackageZipFactory;
+use App\Tests\Mock\SupabaseMockHttpClient;
+use App\Tests\Support\ConfiguresStripe;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class SubmitApiControllerTest extends WebTestCase
 {
+    use ConfiguresStripe;
+
     private string $zipPath = '';
 
     protected function tearDown(): void
@@ -18,6 +23,9 @@ final class SubmitApiControllerTest extends WebTestCase
         if ('' !== $this->zipPath && file_exists($this->zipPath)) {
             unlink($this->zipPath);
         }
+
+        $this->restoreStripe();
+
         parent::tearDown();
     }
 
@@ -178,6 +186,114 @@ final class SubmitApiControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(400);
         $payload = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertStringContainsString('another user', $payload['error']);
+    }
+
+    public function testPaidPublishRequiresAConnectedStripeAccount(): void
+    {
+        $client = $this->stripeEnabledClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        $client->request('POST', '/api/package/submit', $this->paidFormFields('testuser/test-campaign', '19.99'), ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(400);
+        $payload = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('Connect your Stripe account', $payload['error']);
+    }
+
+    public function testPaidPublishIsRefusedWhileStripeStillReviewsTheVendor(): void
+    {
+        // The vendor submitted their details but Stripe has not activated transfers yet.
+        // Publishing now would list a package whose checkout is guaranteed to fail.
+        $client = $this->stripeEnabledClient();
+        $client->loginUser(new Auth0User('auth0|pending', 'Pending Vendor', 'pending@example.com', null), 'main');
+
+        $client->request('POST', '/api/package/submit', $this->paidFormFields('pending/new-package', '19.99'), ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(400);
+        $payload = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('cannot receive payouts yet', $payload['error']);
+        self::assertSame(0, $this->stripeRequestCount('/v1/products'));
+    }
+
+    public function testTurningAFreePackagePaidCreatesTheStripeProductAndPrice(): void
+    {
+        // The package already exists, so this is not a first publish — the product and
+        // price still have to be created, or the package could never be bought.
+        $client = $this->stripeEnabledClient();
+        $client->loginUser(new Auth0User('auth0|vendor', 'Vendor', 'vendor@example.com', null), 'main');
+
+        $client->request('POST', '/api/package/submit', $this->paidFormFields('vendor/free-plugin', '19.99'), ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(201);
+
+        $written = $this->lastPackageWrite();
+        self::assertSame('prod_test_123', $written['stripe_product_id'] ?? null);
+        self::assertSame('price_test_123', $written['stripe_price_id'] ?? null);
+        self::assertSame('acct_vendor', $written['vendor_stripe_account_id'] ?? null);
+    }
+
+    public function testChangingThePriceCreatesANewStripePriceOnTheSameProduct(): void
+    {
+        // Stripe prices are immutable, so the stored price id has to move to a new one;
+        // otherwise the detail page would show 19.99 while checkout charged 9.99.
+        $client = $this->stripeEnabledClient();
+        $client->loginUser(new Auth0User('auth0|vendor', 'Vendor', 'vendor@example.com', null), 'main');
+
+        $client->request('POST', '/api/package/submit', $this->paidFormFields('vendor/paid-plugin', '19.99'), ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(201);
+
+        // A new price id, not the stored price_existing one.
+        $written = $this->lastPackageWrite();
+        self::assertSame('price_test_123', $written['stripe_price_id'] ?? null);
+        // The product is reused, so it is not re-sent.
+        self::assertArrayNotHasKey('stripe_product_id', $written);
+    }
+
+    public function testRepublishingAtTheSamePriceKeepsTheExistingStripePrice(): void
+    {
+        $client = $this->stripeEnabledClient();
+        $client->loginUser(new Auth0User('auth0|vendor', 'Vendor', 'vendor@example.com', null), 'main');
+
+        $client->request('POST', '/api/package/submit', $this->paidFormFields('vendor/paid-plugin', '9.99'), ['zip' => $this->validZipUpload()]);
+
+        self::assertResponseStatusCodeSame(201);
+
+        // Neither reference is re-sent, so the stored ones survive the update untouched.
+        $written = $this->lastPackageWrite();
+        self::assertArrayNotHasKey('stripe_price_id', $written);
+        self::assertArrayNotHasKey('stripe_product_id', $written);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function paidFormFields(string $name, string $price): array
+    {
+        return array_merge($this->validFormFields(), [
+            'name' => $name,
+            'pricing_model' => 'paid',
+            'price' => $price,
+            'currency' => 'EUR',
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function lastPackageWrite(): array
+    {
+        $writes = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedPackageWrites;
+        self::assertNotSame([], $writes, 'The publish flow wrote nothing to the packages table.');
+
+        return $writes[array_key_last($writes)];
+    }
+
+    private function stripeEnabledClient(): KernelBrowser
+    {
+        $this->enableStripe();
+
+        return self::createClient();
     }
 
     /**
