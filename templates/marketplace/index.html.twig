@@ -87,6 +87,13 @@
                 <i class="ri-download-line" aria-hidden="true"></i>
                 {{ downloadsTotal }}
             </div>
+            <div class="d-flex align-items-center gap-2 ms-auto fw-semibold">
+                {% if item.isPaid %}
+                    {{ item.price|number_format(2) ~ ' ' ~ (item.currency ?: 'EUR')|upper }}
+                {% else %}
+                    {{ 'mautic.marketplace.card.free'|trans }}
+                {% endif %}
+            </div>
         </div>
         {% endset %}
         {% set card = {

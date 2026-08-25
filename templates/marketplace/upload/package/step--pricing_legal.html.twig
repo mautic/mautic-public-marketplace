@@ -16,6 +16,18 @@
             } only %}
         </div>
         <div class="col-12 col-md-6">
+            {% include 'components/select.html.twig' with {
+                name: 'pricing_model',
+                id: 'package-pricing-model',
+                label: 'mautic.marketplace.upload.package.field.pricing_model.label'|trans,
+                required: true,
+                options: [
+                    { value: 'free', label: 'mautic.marketplace.upload.package.field.pricing_model.free'|trans },
+                    { value: 'paid', label: 'mautic.marketplace.upload.package.field.pricing_model.paid'|trans }
+                ]
+            } only %}
+        </div>
+        <div class="col-12 col-md-6">
             {% include 'components/input-group.html.twig' with {
                 id: 'package-price',
                 label: 'mautic.marketplace.upload.package.field.price.label'|trans,
@@ -26,13 +38,26 @@
                     type: 'number',
                     required: false,
                     placeholder: '0.00',
-                    disabled: true,
                     attributes: {
                         min: '0',
                         step: '0.01',
                         inputmode: 'decimal'
                     }
                 }
+            } only %}
+        </div>
+        <div class="col-12 col-md-6">
+            {% include 'components/select.html.twig' with {
+                name: 'currency',
+                id: 'package-currency',
+                label: 'mautic.marketplace.upload.package.field.currency.label'|trans,
+                placeholder: '—',
+                required: false,
+                options: [
+                    { value: 'EUR', label: 'EUR' },
+                    { value: 'USD', label: 'USD' },
+                    { value: 'GBP', label: 'GBP' }
+                ]
             } only %}
         </div>
         <div class="col-12">

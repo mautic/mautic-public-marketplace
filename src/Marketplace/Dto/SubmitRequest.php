@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Marketplace\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * Size caps in the "mautic_share" group also run against share-flow uploads,
@@ -63,8 +64,14 @@ final class SubmitRequest
         #[Assert\Length(max: 64, maxMessage: 'License type must be at most {{ limit }} characters.', groups: ['Default', self::SHARE_LIMITS_GROUP])]
         public readonly string $license_type = '',
 
+        #[Assert\Choice(choices: ['free', 'paid'], message: 'Invalid pricing model.')]
+        public readonly string $pricing_model = 'free',
+
         #[Assert\PositiveOrZero(message: 'Price must be zero or greater.', groups: ['Default', self::SHARE_LIMITS_GROUP])]
         public readonly float $price = 0.0,
+
+        #[Assert\Length(max: 3, maxMessage: 'Currency must be a 3-letter ISO code.')]
+        public readonly ?string $currency = null,
 
         #[Assert\IsTrue(message: 'You must accept the ownership and Terms and Conditions.')]
         public readonly bool $ip_ownership_accepted = false,
@@ -85,5 +92,28 @@ final class SubmitRequest
         #[Assert\All([new Assert\Length(max: 255, maxMessage: 'Each gallery caption must be at most {{ limit }} characters.')])]
         public readonly array $gallery_alt = [],
     ) {
+    }
+
+    /**
+     * A paid package must carry a real price and currency; free packages leave both unset.
+     */
+    #[Assert\Callback]
+    public function validatePaidPricing(ExecutionContextInterface $context): void
+    {
+        if ('paid' !== $this->pricing_model) {
+            return;
+        }
+
+        if ($this->price <= 0) {
+            $context->buildViolation('A paid package must have a price greater than zero.')
+                ->atPath('price')
+                ->addViolation();
+        }
+
+        if (null === $this->currency || '' === trim($this->currency)) {
+            $context->buildViolation('A paid package must have a currency.')
+                ->atPath('currency')
+                ->addViolation();
+        }
     }
 }

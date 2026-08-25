@@ -41,20 +41,40 @@
         </div>
         <div class="col-xs-12 col-md-4">
             <div class="d-grid mb-12">
-                {% set isPaidPackage = package.pricing|default(0) > 0 %}
-                {% set ctaLabel = isPaidPackage
-                    ? (app.user
-                        ? 'mautic.marketplace.detail.buy'|trans({'%price%': package.pricing})
+                {% set isPaidPackage = package.isPaid %}
+                {% set isPurchased = purchased|default(false) %}
+                {% set canDownload = not isPaidPackage or isPurchased %}
+                {% set priceLabel = isPaidPackage
+                    ? (package.price|number_format(2) ~ ' ' ~ (package.currency ?: 'EUR')|upper)
+                    : ''
+                %}
+                <div class="type-heading-02 mb-8">
+                    {% if isPaidPackage and isPurchased %}
+                        <span class="text-success" id="package-purchased-badge">
+                            <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+                            {{ 'mautic.marketplace.detail.purchased'|trans }}
+                        </span>
+                    {% elseif isPaidPackage %}
+                        {{ priceLabel }}
+                    {% else %}
+                        {{ 'mautic.marketplace.detail.free'|trans }}
+                    {% endif %}
+                </div>
+                {% set ctaLabel = canDownload
+                    ? 'mautic.marketplace.detail.download'
+                    : (app.user
+                        ? 'mautic.marketplace.detail.buy'|trans({'%price%': priceLabel})
                         : 'mautic.marketplace.detail.login_to_buy')
-                    : 'mautic.marketplace.detail.download'
                 %}
-                {% set ctaIcon = isPaidPackage
-                    ? (app.user ? 'ri-shopping-cart-line' : 'ri-login-box-line')
-                    : 'ri-download-line'
+                {% set ctaIcon = canDownload
+                    ? 'ri-download-line'
+                    : (app.user ? 'ri-shopping-cart-line' : 'ri-login-box-line')
                 %}
-                {% set ctaHref = isPaidPackage and not app.user
-                    ? path('auth_login', { returnTo: app.request.requestUri })
-                    : path('marketplace_package_download', { package: package.name })
+                {% set ctaHref = canDownload
+                    ? path('marketplace_package_download', { package: package.name })
+                    : (app.user
+                        ? path('marketplace_stripe_checkout_buy', { package: package.name })
+                        : path('auth_login', { returnTo: app.request.requestUri }))
                 %}
                 {% include 'components/button.html.twig' with {
                     buttons: [{

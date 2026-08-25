@@ -23,6 +23,21 @@ profile_page:
     path: /profile
     controller: App\Controller\ProfileController::index
 
+marketplace_stripe_connect_onboard:
+    path: /stripe/connect/onboard
+    controller: App\Controller\StripeConnectController::onboard
+    methods: [GET]
+
+marketplace_stripe_connect_return:
+    path: /stripe/connect/return
+    controller: App\Controller\StripeConnectController::onboardingReturn
+    methods: [GET]
+
+marketplace_stripe_connect_refresh:
+    path: /stripe/connect/refresh
+    controller: App\Controller\StripeConnectController::refresh
+    methods: [GET]
+
 review_submit:
     path: /package/{package}/review
     controller: App\Controller\ReviewController::submit
@@ -72,10 +87,36 @@ publish_upload:
     controller: App\Controller\PublishController::upload
     methods: [GET]
 
-# Must precede marketplace_detail: its greedy {package} would otherwise swallow /download.
+marketplace_stripe_webhook:
+    path: /stripe/webhook
+    controller: App\Controller\StripeCheckoutController::webhook
+    methods: [POST]
+
+# Must precede marketplace_detail: its greedy {package} would otherwise swallow these.
 marketplace_package_download:
     path: /package/{package}/download
     controller: App\Controller\MarketplaceController::download
+    methods: [GET]
+    requirements:
+        package: .+
+
+marketplace_stripe_checkout_buy:
+    path: /package/{package}/buy
+    controller: App\Controller\StripeCheckoutController::buy
+    methods: [GET]
+    requirements:
+        package: .+
+
+marketplace_stripe_checkout_success:
+    path: /package/{package}/purchase/success
+    controller: App\Controller\StripeCheckoutController::success
+    methods: [GET]
+    requirements:
+        package: .+
+
+marketplace_stripe_checkout_cancel:
+    path: /package/{package}/purchase/cancel
+    controller: App\Controller\StripeCheckoutController::cancel
     methods: [GET]
     requirements:
         package: .+

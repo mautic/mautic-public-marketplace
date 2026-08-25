@@ -17,9 +17,62 @@ final class SupabaseMockHttpClient extends MockHttpClient
      */
     public array $recordedDownloads = [];
 
+    /**
+     * Bodies POSTed to /rest/v1/purchases, captured so tests can assert which
+     * Stripe sessions actually unlocked a package.
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $recordedPurchases = [];
+
+    /**
+     * Bodies written to /rest/v1/packages (create and update), captured so tests can
+     * assert what the publish flow stored — the Stripe references in particular.
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $recordedPackageWrites = [];
+
+    /**
+     * Bodies POSTed to /rest/v1/stripe_connect_accounts, captured so tests can assert
+     * what onboarding stored about a vendor's connected account.
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $recordedConnectAccounts = [];
+
+    /**
+     * PATCH bodies sent to /rest/v1/purchases and /rest/v1/stripe_connect_accounts,
+     * keyed by the filtered URL, so tests can assert refunds and capability refreshes.
+     *
+     * @var list<array{url: string, body: array<string, mixed>}>
+     */
+    public array $recordedStatusUpdates = [];
+
     public function __construct()
     {
         parent::__construct(function (string $method, string $url, array $options = []): MockResponse {
+            if ('PATCH' === $method && (str_contains($url, '/rest/v1/purchases') || str_contains($url, '/rest/v1/stripe_connect_accounts'))) {
+                $decoded = json_decode((string) ($options['body'] ?? ''), true);
+                $this->recordedStatusUpdates[] = ['url' => $url, 'body' => \is_array($decoded) ? $decoded : []];
+
+                return new MockResponse('[]', ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
+            if ('POST' === $method && str_contains($url, '/rest/v1/stripe_connect_accounts')) {
+                $decoded = json_decode((string) ($options['body'] ?? ''), true);
+                $this->recordedConnectAccounts[] = \is_array($decoded) ? $decoded : [];
+
+                return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
+            if ('POST' === $method && str_contains($url, '/rest/v1/purchases')) {
+                $decoded = json_decode((string) ($options['body'] ?? ''), true);
+                $this->recordedPurchases[] = \is_array($decoded) ? $decoded : [];
+
+                return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
+            }
+
             if ('POST' === $method && str_contains($url, '/rest/v1/download_history')) {
                 $decoded = json_decode((string) ($options['body'] ?? ''), true);
                 $this->recordedDownloads[] = \is_array($decoded) ? $decoded : [];
@@ -38,8 +91,11 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 );
             }
 
-            if ('PATCH' === $method && str_contains($url, '/rest/v1/packages')) {
-                return new MockResponse('[]', ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']]);
+            if (\in_array($method, ['POST', 'PATCH'], true) && str_contains($url, '/rest/v1/packages') && !str_contains($url, '/rpc/')) {
+                $decoded = json_decode((string) ($options['body'] ?? ''), true);
+                $this->recordedPackageWrites[] = \is_array($decoded) ? $decoded : [];
+
+                return new MockResponse('[]', ['http_code' => 'POST' === $method ? 201 : 200, 'response_headers' => ['content-type' => 'application/json']]);
             }
 
             if ('POST' === $method && !str_contains($url, '/rpc/')) {
@@ -60,6 +116,17 @@ final class SupabaseMockHttpClient extends MockHttpClient
 
             if ('GET' === $method && str_contains($url, '/rest/v1/download_history') && !str_contains($url, '/rpc/')) {
                 return self::downloadHistoryResponse($url);
+            }
+
+            if ('GET' === $method && str_contains($url, '/rest/v1/stripe_connect_accounts')) {
+                return self::connectAccountResponse($url);
+            }
+
+            if ('GET' === $method && str_contains($url, '/rest/v1/purchases')) {
+                // "auth0|buyer" owns their packages (exercises the purchased UI); everyone else owns nothing.
+                $owns = str_contains($url, 'auth0_user_id=eq.auth0%7Cbuyer') || str_contains($url, 'auth0_user_id=eq.auth0|buyer');
+
+                return new MockResponse($owns ? '[{"id": 1}]' : '[]', ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']]);
             }
 
             if ('GET' === $method && str_contains($url, '/rest/v1/packages') && !str_contains($url, '/rpc/')) {
@@ -138,6 +205,9 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'average_rating' => 4.0,
                 'total_review' => 1,
                 'auth0_user_id' => 'auth0|other',
+                'pricing_model' => 'paid',
+                'price' => 9.99,
+                'currency' => 'EUR',
             ],
             'mautic/welcome-campaign' => [
                 'name' => 'mautic/welcome-campaign',
@@ -332,6 +402,9 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'favers' => $pkg['favers'],
                 'time' => $pkg['time'],
                 'language' => $pkg['language'],
+                'pricing_model' => $pkg['pricing_model'] ?? 'free',
+                'price' => $pkg['price'] ?? null,
+                'currency' => $pkg['currency'] ?? null,
                 'versions' => [
                     '1.0.0' => [
                         'version' => '1.0.0',
@@ -446,6 +519,40 @@ final class SupabaseMockHttpClient extends MockHttpClient
         ];
     }
 
+    /**
+     * Connected accounts, looked up either by our user id or by the Stripe account id.
+     * "auth0|vendor" can be paid (transfers active); "auth0|pending" finished onboarding
+     * but is still under review, which is exactly the case that must not be able to sell.
+     * Everyone else has no account, so the profile shows the "Connect" CTA.
+     */
+    private static function connectAccountResponse(string $url): MockResponse
+    {
+        $matches = static fn (string $needle): bool => str_contains($url, $needle) || str_contains($url, str_replace('%7C', '|', $needle));
+
+        $account = match (true) {
+            $matches('auth0_user_id=eq.auth0%7Cvendor'), str_contains($url, 'stripe_account_id=eq.acct_vendor') => [
+                'stripe_account_id' => 'acct_vendor',
+                'charges_enabled' => true,
+                'payouts_enabled' => true,
+                'details_submitted' => true,
+                'transfers_enabled' => true,
+            ],
+            $matches('auth0_user_id=eq.auth0%7Cpending'), str_contains($url, 'stripe_account_id=eq.acct_pending') => [
+                'stripe_account_id' => 'acct_pending',
+                'charges_enabled' => false,
+                'payouts_enabled' => false,
+                'details_submitted' => true,
+                'transfers_enabled' => false,
+            ],
+            default => null,
+        };
+
+        return new MockResponse(
+            null === $account ? '[]' : (string) json_encode([$account]),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
+    }
+
     private static function packageByNameResponse(string $url): MockResponse
     {
         $params = self::parseParams($url, 'GET', []);
@@ -468,6 +575,55 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'auth0_user_id' => 'auth0|other',
                 'status' => 'published',
                 'time' => '2026-01-01T00:00:00+00:00',
+                'pricing_model' => 'paid',
+                'price' => 9.99,
+                'currency' => 'EUR',
+                'stripe_price_id' => null,
+                'vendor_stripe_account_id' => null,
+            ],
+            // Owned by the onboarded vendor: published free, so it carries no Stripe
+            // references yet. Turning it paid has to create them.
+            'vendor/free-plugin' => [
+                'name' => 'vendor/free-plugin',
+                'displayname' => 'Free Plugin',
+                'auth0_user_id' => 'auth0|vendor',
+                'status' => 'published',
+                'time' => '2026-01-01T00:00:00+00:00',
+                'pricing_model' => 'free',
+                'price' => 0,
+                'currency' => null,
+                'stripe_product_id' => null,
+                'stripe_price_id' => null,
+                'vendor_stripe_account_id' => null,
+            ],
+            // On sale, but its vendor is still awaiting Stripe approval, so checkout
+            // would be refused for want of the transfers capability.
+            'vendor/pending-plugin' => [
+                'name' => 'vendor/pending-plugin',
+                'displayname' => 'Pending Plugin',
+                'auth0_user_id' => 'auth0|pending',
+                'status' => 'published',
+                'time' => '2026-01-01T00:00:00+00:00',
+                'pricing_model' => 'paid',
+                'price' => 9.99,
+                'currency' => 'EUR',
+                'stripe_product_id' => 'prod_pending',
+                'stripe_price_id' => 'price_pending',
+                'vendor_stripe_account_id' => 'acct_pending',
+            ],
+            // Already sold at 9.99 EUR, so it has a product and a price to compare against.
+            'vendor/paid-plugin' => [
+                'name' => 'vendor/paid-plugin',
+                'displayname' => 'Paid Plugin',
+                'auth0_user_id' => 'auth0|vendor',
+                'status' => 'published',
+                'time' => '2026-01-01T00:00:00+00:00',
+                'pricing_model' => 'paid',
+                'price' => 9.99,
+                'currency' => 'EUR',
+                'stripe_product_id' => 'prod_existing',
+                'stripe_price_id' => 'price_existing',
+                'vendor_stripe_account_id' => 'acct_vendor',
             ],
         ];
 

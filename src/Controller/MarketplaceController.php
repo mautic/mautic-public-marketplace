@@ -181,7 +181,28 @@ final class MarketplaceController extends AbstractController
             throw $this->createNotFoundException((string) $page['context']['error']);
         }
 
-        return $this->render('marketplace/detail.html.twig', $page['context'], new Response('', $page['status_code']));
+        $context = $page['context'];
+        $context['purchased'] = $this->hasPurchasedPackage($package, $context['package'] ?? null);
+
+        return $this->render('marketplace/detail.html.twig', $context, new Response('', $page['status_code']));
+    }
+
+    private function hasPurchasedPackage(string $package, mixed $detail): bool
+    {
+        if (!$detail instanceof PackageDetail || !$detail->isPaid()) {
+            return false;
+        }
+
+        $user = $this->getUser();
+        if (!$user instanceof Auth0User) {
+            return false;
+        }
+
+        try {
+            return $this->apiClient->hasPurchased($user->getUserIdentifier(), $package);
+        } catch (SupabaseApiException) {
+            return false;
+        }
     }
 
     public function download(string $package): Response
@@ -200,6 +221,18 @@ final class MarketplaceController extends AbstractController
 
         if (null === $detail) {
             throw $this->createNotFoundException(\sprintf('Package "%s" not found.', $package));
+        }
+
+        // The detail-page CTA already routes paid packages to checkout, but this route is
+        // reachable directly, so the purchase has to be re-checked before serving the archive.
+        if ($detail->isPaid() && !$this->hasPurchasedPackage($detail->name, $detail)) {
+            if (!$this->getUser() instanceof Auth0User) {
+                return $this->redirectToRoute('auth_login', [
+                    'returnTo' => $this->generateUrl('marketplace_package_download', ['package' => $package]),
+                ]);
+            }
+
+            return $this->redirectToRoute('marketplace_stripe_checkout_buy', ['package' => $package]);
         }
 
         [$distUrl, $version] = $this->latestDist($detail->versions ?? []);

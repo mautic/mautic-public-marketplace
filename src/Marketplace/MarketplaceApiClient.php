@@ -124,6 +124,9 @@ final class MarketplaceApiClient
                 $this->toDateTime($row['time'] ?? null),
                 $this->toBannerUrl($row['banner_url'] ?? null),
                 isset($row['headline']) ? (string) $row['headline'] : null,
+                isset($row['pricing_model']) ? (string) $row['pricing_model'] : null,
+                $this->toFloat($row['price'] ?? null),
+                isset($row['currency']) ? (string) $row['currency'] : null,
             );
         }
 
@@ -288,6 +291,9 @@ final class MarketplaceApiClient
             $this->toGalleryImages($row['gallery'] ?? null),
             $this->toLanguageNames($row['languages'] ?? null),
             $this->toLicense($versions),
+            isset($row['pricing_model']) ? (string) $row['pricing_model'] : null,
+            $this->toFloat($row['price'] ?? null),
+            isset($row['currency']) ? (string) $row['currency'] : null,
         );
     }
 
@@ -371,11 +377,14 @@ final class MarketplaceApiClient
     }
 
     /**
+     * Publish-flow lookup, so it reads the full row — including the Stripe references,
+     * which anon is not granted. Hence queryPrivate rather than the public anon read.
+     *
      * @return array<string, mixed>|null
      */
     public function getPackageByName(string $name): ?array
     {
-        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+        $data = $this->supabaseClient->queryPrivate('GET', '/rest/v1/packages', [
             'name' => 'eq.'.$name,
             'select' => '*',
         ]);
@@ -392,7 +401,7 @@ final class MarketplaceApiClient
      */
     public function getPackageByCampaignUuid(string $campaignUuid): ?array
     {
-        $data = $this->supabaseClient->query('GET', '/rest/v1/packages', [
+        $data = $this->supabaseClient->queryPrivate('GET', '/rest/v1/packages', [
             'campaign_uuid' => 'eq.'.$campaignUuid,
             'select' => '*',
         ]);
@@ -513,6 +522,172 @@ final class MarketplaceApiClient
             'rating' => $reviewRequest->rating,
             'review' => $reviewRequest->review,
         ]);
+    }
+
+    /**
+     * @return array{stripe_account_id: string, charges_enabled: bool, payouts_enabled: bool, details_submitted: bool, transfers_enabled: bool}|null
+     */
+    public function getStripeConnectAccount(string $auth0UserId): ?array
+    {
+        return $this->findStripeConnectAccount(['auth0_user_id' => 'eq.'.$auth0UserId]);
+    }
+
+    /**
+     * Looks the vendor's account up by its Stripe id, for the paths that start from the
+     * package (checkout) rather than from the signed-in user.
+     *
+     * @return array{stripe_account_id: string, charges_enabled: bool, payouts_enabled: bool, details_submitted: bool, transfers_enabled: bool}|null
+     */
+    public function getStripeConnectAccountByAccountId(string $stripeAccountId): ?array
+    {
+        return $this->findStripeConnectAccount(['stripe_account_id' => 'eq.'.$stripeAccountId]);
+    }
+
+    /**
+     * @param array<string, string> $filter
+     *
+     * @return array{stripe_account_id: string, charges_enabled: bool, payouts_enabled: bool, details_submitted: bool, transfers_enabled: bool}|null
+     */
+    private function findStripeConnectAccount(array $filter): ?array
+    {
+        $data = $this->supabaseClient->queryPrivate('GET', '/rest/v1/stripe_connect_accounts', array_merge($filter, [
+            'select' => 'stripe_account_id,charges_enabled,payouts_enabled,details_submitted,transfers_enabled',
+            'limit' => '1',
+        ]));
+
+        if (!\is_array($data) || !isset($data[0]) || !\is_array($data[0]) || !isset($data[0]['stripe_account_id'])) {
+            return null;
+        }
+
+        $row = $data[0];
+
+        return [
+            'stripe_account_id' => (string) $row['stripe_account_id'],
+            'charges_enabled' => (bool) ($row['charges_enabled'] ?? false),
+            'payouts_enabled' => (bool) ($row['payouts_enabled'] ?? false),
+            'details_submitted' => (bool) ($row['details_submitted'] ?? false),
+            'transfers_enabled' => (bool) ($row['transfers_enabled'] ?? false),
+        ];
+    }
+
+    public function saveStripeConnectAccount(
+        string $auth0UserId,
+        string $stripeAccountId,
+        bool $chargesEnabled,
+        bool $payoutsEnabled,
+        bool $detailsSubmitted,
+        bool $transfersEnabled = false,
+    ): void {
+        // Upsert on the auth0_user_id primary key so re-running onboarding refreshes
+        // the same row rather than creating duplicates.
+        $this->supabaseClient->mutate('POST', '/rest/v1/stripe_connect_accounts', [
+            'auth0_user_id' => $auth0UserId,
+            'stripe_account_id' => $stripeAccountId,
+            'charges_enabled' => $chargesEnabled,
+            'payouts_enabled' => $payoutsEnabled,
+            'details_submitted' => $detailsSubmitted,
+            'transfers_enabled' => $transfersEnabled,
+            'updated_at' => (new \DateTimeImmutable())->format('c'),
+        ], ['Prefer' => 'resolution=merge-duplicates,return=representation']);
+    }
+
+    /**
+     * Refreshes the stored flags from an account.updated webhook, keyed by the Stripe id
+     * because the event carries no reference to our user.
+     */
+    public function updateStripeConnectAccountStatus(
+        string $stripeAccountId,
+        bool $chargesEnabled,
+        bool $payoutsEnabled,
+        bool $detailsSubmitted,
+        bool $transfersEnabled,
+    ): void {
+        $this->supabaseClient->mutate(
+            'PATCH',
+            '/rest/v1/stripe_connect_accounts?stripe_account_id=eq.'.urlencode($stripeAccountId),
+            [
+                'charges_enabled' => $chargesEnabled,
+                'payouts_enabled' => $payoutsEnabled,
+                'details_submitted' => $detailsSubmitted,
+                'transfers_enabled' => $transfersEnabled,
+                'updated_at' => (new \DateTimeImmutable())->format('c'),
+            ],
+        );
+    }
+
+    /**
+     * Marks a purchase as no longer granting access. hasPurchased() only counts
+     * "completed" rows, so this revokes the buyer's download on the next request.
+     */
+    public function revokePurchaseByPaymentIntent(string $paymentIntentId, string $status): void
+    {
+        $this->supabaseClient->mutate(
+            'PATCH',
+            '/rest/v1/purchases?stripe_payment_intent_id=eq.'.urlencode($paymentIntentId),
+            ['status' => $status],
+        );
+    }
+
+    public function recordPurchase(
+        string $auth0UserId,
+        string $packageName,
+        string $checkoutSessionId,
+        ?string $paymentIntentId,
+        ?float $amount,
+        ?string $currency,
+    ): void {
+        // Upsert on the checkout session so repeated webhook deliveries stay idempotent.
+        $this->supabaseClient->mutate('POST', '/rest/v1/purchases?on_conflict=stripe_checkout_session_id', [
+            'auth0_user_id' => $auth0UserId,
+            'package_name' => $packageName,
+            'stripe_checkout_session_id' => $checkoutSessionId,
+            'stripe_payment_intent_id' => $paymentIntentId,
+            'amount' => $amount,
+            'currency' => $currency,
+            'status' => 'completed',
+        ], ['Prefer' => 'resolution=merge-duplicates,return=representation']);
+    }
+
+    /**
+     * Reads the checkout-relevant pricing fields straight from the packages row. Kept
+     * out of the public get_pack payload so Stripe ids are never exposed to the browser.
+     *
+     * @return array{pricing_model: string, price: ?float, currency: ?string, stripe_price_id: ?string, vendor_stripe_account_id: ?string}|null
+     */
+    public function getPackageCheckoutData(string $packageName): ?array
+    {
+        $data = $this->supabaseClient->queryPrivate('GET', '/rest/v1/packages', [
+            'name' => 'eq.'.$packageName,
+            'select' => 'pricing_model,price,currency,stripe_price_id,vendor_stripe_account_id',
+            'limit' => '1',
+        ]);
+
+        if (!\is_array($data) || !isset($data[0]) || !\is_array($data[0])) {
+            return null;
+        }
+
+        $row = $data[0];
+
+        return [
+            'pricing_model' => (string) ($row['pricing_model'] ?? 'free'),
+            'price' => isset($row['price']) ? (float) $row['price'] : null,
+            'currency' => isset($row['currency']) ? (string) $row['currency'] : null,
+            'stripe_price_id' => isset($row['stripe_price_id']) ? (string) $row['stripe_price_id'] : null,
+            'vendor_stripe_account_id' => isset($row['vendor_stripe_account_id']) ? (string) $row['vendor_stripe_account_id'] : null,
+        ];
+    }
+
+    public function hasPurchased(string $auth0UserId, string $packageName): bool
+    {
+        $data = $this->supabaseClient->queryPrivate('GET', '/rest/v1/purchases', [
+            'auth0_user_id' => 'eq.'.$auth0UserId,
+            'package_name' => 'eq.'.$packageName,
+            'status' => 'eq.completed',
+            'select' => 'id',
+            'limit' => '1',
+        ]);
+
+        return \is_array($data) && isset($data[0]);
     }
 
     public function recordDownload(string $packageName, ?string $version, ?string $auth0UserId): void

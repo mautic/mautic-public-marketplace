@@ -90,6 +90,37 @@
     </div>
 </section>
 
+<section class="profile-stripe row g-4 mt-24" aria-labelledby="profile-stripe-heading">
+    <div class="col-12">
+        <div class="tile">
+            <h2 class="type-heading-02 mb-8" id="profile-stripe-heading">{{ 'mautic.marketplace.profile.stripe.heading'|trans }}</h2>
+            {% if stripe_account and stripe_account.details_submitted %}
+                <p class="text-success mb-8" id="profile-stripe-connected">
+                    <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+                    {{ 'mautic.marketplace.profile.stripe.connected'|trans }}
+                </p>
+                {% if not stripe_account.payouts_enabled %}
+                    <p class="text-helper mb-0">{{ 'mautic.marketplace.profile.stripe.payouts_pending'|trans }}</p>
+                {% endif %}
+            {% else %}
+                <p class="text-helper mb-16">{{ 'mautic.marketplace.profile.stripe.description'|trans }}</p>
+                {% include 'components/button.html.twig' with {
+                    buttons: [{
+                        label: stripe_account ? 'mautic.marketplace.profile.stripe.resume' : 'mautic.marketplace.profile.stripe.connect',
+                        variant: 'primary',
+                        icon: 'ri-bank-card-line',
+                        href: path('marketplace_stripe_connect_onboard'),
+                        attributes: {
+                            id: 'profile-stripe-connect',
+                            'data-turbo': 'false'
+                        }
+                    }]
+                } only %}
+            {% endif %}
+        </div>
+    </div>
+</section>
+
 {% if reviews is not empty %}
     {% set profileReviewsModalBody %}
         <div class="row justify-content-center gap-32 my-24">

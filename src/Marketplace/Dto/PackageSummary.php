@@ -25,6 +25,14 @@ final class PackageSummary
         public readonly ?\DateTimeImmutable $updatedAt,
         public readonly ?string $bannerURL = null,
         public readonly ?string $headline = null,
+        public readonly ?string $pricingModel = null,
+        public readonly ?float $price = null,
+        public readonly ?string $currency = null,
     ) {
+    }
+
+    public function isPaid(): bool
+    {
+        return 'paid' === $this->pricingModel && null !== $this->price && $this->price > 0;
     }
 }
