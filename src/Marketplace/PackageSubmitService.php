@@ -198,8 +198,10 @@ final class PackageSubmitService
         // Dedupe shared campaigns by their stable UUID first so re-shares update the same
         // package even if the user renamed it; fall back to lookup by package name.
         $existingPackage = null;
+        $matchedByCampaignUuid = false;
         if (\is_string($campaignUuid) && '' !== $campaignUuid) {
             $existingPackage = $this->apiClient->getPackageByCampaignUuid($campaignUuid);
+            $matchedByCampaignUuid = null !== $existingPackage;
         }
         if (null === $existingPackage) {
             $existingPackage = $this->apiClient->getPackageByName($packageName);
@@ -213,7 +215,17 @@ final class PackageSubmitService
         if (!$created) {
             $existingOwner = $existingPackage['auth0_user_id'] ?? null;
             if (\is_string($existingOwner) && '' !== $existingOwner && $existingOwner !== $user->getUserIdentifier()) {
-                throw new SubmitValidationException('A package with this name already exists and belongs to another user. You can only publish updates to packages you submitted.');
+                // Name the package and say which lookup matched: a UUID match can fire on a
+                // package whose name is nothing like this one, and "this name already exists"
+                // then sends people hunting for a name collision that isn't there.
+                $existingName = $existingPackage['name'] ?? null;
+                $existingName = \is_string($existingName) && '' !== $existingName ? $existingName : $packageName;
+
+                $message = $matchedByCampaignUuid
+                    ? 'This campaign has already been published to the marketplace as "%s" by another account. You can only publish updates to campaigns you submitted yourself — if that account is also yours, sign in with it and publish again.'
+                    : 'A package named "%s" already exists and belongs to another account. You can only publish updates to packages you submitted yourself.';
+
+                throw new SubmitValidationException(\sprintf($message, $existingName));
             }
         }
 

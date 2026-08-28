@@ -210,7 +210,9 @@ final class SubmitApiControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(400);
         $payload = json_decode((string) $client->getResponse()->getContent(), true);
-        self::assertStringContainsString('another user', $payload['error']);
+        self::assertStringContainsString('another account', $payload['error']);
+        // The package has to be named, otherwise the submitter cannot tell what they collided with.
+        self::assertStringContainsString('mautic/zebra-theme', $payload['error']);
     }
 
     /**

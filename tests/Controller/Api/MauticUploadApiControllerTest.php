@@ -63,6 +63,36 @@ final class MauticUploadApiControllerTest extends WebTestCase
         self::assertTrue($data['created']);
     }
 
+    public function testUploadOfACampaignSharedByAnotherUserNamesTheOwningPackage(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', null), 'main');
+
+        // Same campaign UUID as otheruser/shared-campaign, but a different package name: the
+        // guard has to fire on the UUID and must not report a name collision that isn't there.
+        $this->zipPath = PackageZipFactory::create([
+            'name' => 'testuser/my-own-name',
+            'description' => 'A campaign re-shared from someone else.',
+            'type' => 'mautic-resource',
+            'version' => '1.0.0',
+            'require' => ['mautic/core-lib' => '^5.0'],
+            'extra' => ['mautic' => [
+                'minimum-version' => '5.0',
+                'campaign-uuid' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+            ]],
+        ]);
+
+        $client->request('POST', '/api/package/mautic-upload', files: [
+            'package' => new UploadedFile($this->zipPath, 'campaign.zip', 'application/zip', test: true),
+        ]);
+
+        self::assertResponseStatusCodeSame(400);
+        $data = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertStringContainsString('otheruser/shared-campaign', $data['error']);
+        self::assertStringContainsString('already been published', $data['error']);
+        self::assertStringNotContainsString('A package named', $data['error']);
+    }
+
     public function testUploadWithNonZipBytesReturnsError(): void
     {
         $client = self::createClient();

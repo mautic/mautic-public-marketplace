@@ -148,6 +148,8 @@ function initPublishUpload() {
         errorEl.textContent = msg;
         errorEl.style.display = 'block';
         successEl.style.display = 'none';
+        // The popup may be scrolled past the button by the time the request comes back.
+        errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function showSuccess(msg) {
