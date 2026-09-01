@@ -86,7 +86,7 @@
                 <span aria-hidden="true">
                     {{ truncated_label }}
                 </span>
-                <button type="button" class="label-close" onclick="{{ dismissible_onclick|default('') }}" aria-label="{{ 'mautic.core.dismiss'|trans }}" title="{{ 'mautic.core.dismiss'|trans }}" data-bs-toggle="tooltip" data-bs-placement="top">
+                <button type="button" class="label-close"{% if dismissible_onclick|default('') != '' %} onclick="{{ dismissible_onclick|e('html_attr') }}"{% endif %} aria-label="{{ 'mautic.core.dismiss'|trans }}" title="{{ 'mautic.core.dismiss'|trans }}" data-bs-toggle="tooltip" data-bs-placement="top">
                     <i class="ri-close-line" aria-hidden="true" focusable="false"></i>
                 </button>
 

@@ -67,7 +67,9 @@
         </a>
     {% else %}
         {% set button_type = button.attributes.type is defined ? button.attributes.type : (button.onclick is defined and button.onclick != '' ? 'button' : 'submit') %}
-        <button type="{{ button_type }}" aria-label="{{ button.label|trans }}" class="{{ button_classes|join(' ') }}" onclick="{{ button.onclick is defined ? button.onclick|e('html_attr') : '' }}"{{ custom_attributes|raw }}>
+        {# Only emit onclick when a caller supplies one — an empty handler still counts as an
+           inline script under the CSP. #}
+        <button type="{{ button_type }}" aria-label="{{ button.label|trans }}" class="{{ button_classes|join(' ') }}"{% if button.onclick is defined and button.onclick != '' %} onclick="{{ button.onclick|e('html_attr') }}"{% endif %}{{ custom_attributes|raw }}>
             {% if button.icon is defined %}
                 <i class="{{ button.icon }}" aria-hidden="true" focusable="false" {{ icon_attributes|raw }}></i>
             {% endif %}

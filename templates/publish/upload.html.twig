@@ -3,7 +3,7 @@
 {% block title %}Publish to Marketplace{% endblock %}
 
 {% block body %}
-<section id="publish-upload-container">
+<section id="publish-upload-container" data-max-bytes="{{ constant('App\\Marketplace\\PackageZipUploader::MAX_BYTES') }}">
 
     <div class="publish-upload-hero" style="background: #4e5e9e; padding: 56px 0 48px;">
         <div class="container">
@@ -69,6 +69,11 @@
                                 attributes: { type: 'button', id: 'publish-upload-confirm-btn' },
                             }]} %}
                         </div>
+
+                        {# Directly under the button: the outcome has to be visible without
+                           scrolling past the sidebar. role="alert" announces it to screen readers. #}
+                        <div id="publish-upload-error" class="alert alert--error mt-24" style="display:none" role="alert"></div>
+                        <div id="publish-upload-success" class="alert alert--success mt-24" style="display:none" role="alert"></div>
                     {% endset %}
                     {% include 'components/content-block.html.twig' with {
                         heading: 'Campaign details',
@@ -134,9 +139,6 @@
                     </div>
                 </div>
             </div>
-
-        <div id="publish-upload-error" class="alert alert--error mt-24" style="display:none"></div>
-        <div id="publish-upload-success" class="alert alert--success mt-24" style="display:none"></div>
     </div>
 </section>
 {% endblock %}

@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mautic Marketplace{% endblock %}</title>
     <script src="{{ asset('assets/marketplace.js') }}" defer data-turbo-track="reload"></script>
-    {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {# Linked here rather than imported from app.js — see the note at the top of app.js. #}
+    <link rel="stylesheet" href="{{ asset('styles/app.scss') }}">
+    {# Inline scripts, so they need the nonce from SecurityHeadersSubscriber's CSP header. #}
+    {% block importmap %}{{ importmap('app', { nonce: csp_nonce() }) }}{% endblock %}
 </head>
 <body>
       {% include 'components/uishell.html.twig' with {

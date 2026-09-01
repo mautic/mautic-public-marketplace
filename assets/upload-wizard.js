@@ -19,6 +19,38 @@ import { validateForm } from './validation.js';
 const GENERIC_ERROR = "Something went wrong while publishing. Please try again, or contact support if it keeps happening.";
 const SESSION_EXPIRED_ERROR = "Your session has expired. Please log in again in another tab, then come back and submit once more.";
 
+function formatMegabytes(bytes) {
+    return Math.round(bytes / 1024 / 1024) + 'MB';
+}
+
+/**
+ * The limit each input renders in data-max-bytes, straight from the PHP constant the server
+ * enforces. Absent or unparseable means no client-side check — the server still rejects.
+ *
+ * @param {HTMLInputElement|null} input
+ * @returns {number} Byte limit, or Infinity when the input declares none.
+ */
+function declaredMaxBytes(input) {
+    const limit = Number(input?.dataset.maxBytes);
+
+    return Number.isFinite(limit) && limit > 0 ? limit : Infinity;
+}
+
+/**
+ * @param {Array<{file: File, limit: number, label: string}>} candidates
+ * @returns {string|null} Message for the first file over its limit, or null if all fit.
+ */
+function oversizedFileError(candidates) {
+    const tooBig = candidates.find(({ file, limit }) => file && file.size > limit);
+
+    if (!tooBig) {
+        return null;
+    }
+
+    return 'The ' + tooBig.label + ' "' + tooBig.file.name + '" is ' + formatMegabytes(tooBig.file.size)
+        + '. The maximum is ' + formatMegabytes(tooBig.limit) + '.';
+}
+
 function initUploadWizard() {
     const forms = Array.from(document.querySelectorAll('form[data-wizard-step]'))
         .sort((a, b) => Number(a.dataset.wizardStep) - Number(b.dataset.wizardStep));
@@ -108,6 +140,14 @@ function initUploadWizard() {
             return;
         }
 
+        const oversized = oversizedFileError([
+            { file: fileInput.files[0], limit: declaredMaxBytes(fileInput), label: 'ZIP file' },
+        ]);
+        if (oversized) {
+            showStatus(form, 'error', oversized);
+            return;
+        }
+
         const restore = busy(submitter, 'Checking package...');
         hideStatus(form);
 
@@ -170,6 +210,20 @@ function initUploadWizard() {
             // The ZIP lives in step 1; bounce back if it was never chosen.
             showStatus(form, 'error', 'Please choose a package ZIP in step 1 before submitting.');
             goTo(1);
+            return;
+        }
+
+        const bannerInput  = document.getElementById('package-banner-image');
+        const galleryInput = document.getElementById('package-gallery-images');
+
+        const oversized = oversizedFileError([
+            { file: fileInput.files[0], limit: declaredMaxBytes(fileInput), label: 'ZIP file' },
+            { file: fileById('package-banner-image'), limit: declaredMaxBytes(bannerInput), label: 'banner image' },
+            ...Array.from(galleryInput?.files || [])
+                .map((file) => ({ file, limit: declaredMaxBytes(galleryInput), label: 'gallery image' })),
+        ]);
+        if (oversized) {
+            showStatus(form, 'error', oversized);
             return;
         }
 

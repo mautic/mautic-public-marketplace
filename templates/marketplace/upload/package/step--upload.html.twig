@@ -14,7 +14,8 @@
         wrapperClass: 'd-flex flex-column',
         helpText: 'mautic.marketplace.upload.package.field.package_zip.help'|trans,
         attributes: {
-            accept: '.zip,application/zip'
+            accept: '.zip,application/zip',
+            'data-max-bytes': constant('App\\Marketplace\\PackageZipUploader::MAX_BYTES')
         },
         validation: {
             rules: ['fileTypes(zip,application/zip,application/x-zip-compressed)'],

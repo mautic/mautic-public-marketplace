@@ -50,6 +50,11 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 return new MockResponse('[]', ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']]);
             }
 
+            // GET /rest/v1/packages?campaign_uuid=eq.xxx — shared-campaign dedupe lookup
+            if (str_contains($url, '/rest/v1/packages') && str_contains($url, 'campaign_uuid=eq.')) {
+                return self::packageByCampaignUuidResponse($url);
+            }
+
             // GET /rest/v1/packages?name=eq.xxx — package lookup by name
             if (str_contains($url, '/rest/v1/packages') && str_contains($url, 'name=eq.')) {
                 return self::packageByNameResponse($url);
@@ -444,6 +449,32 @@ final class SupabaseMockHttpClient extends MockHttpClient
                 'created_at' => (new \DateTimeImmutable('-1 day'))->format('c'),
             ],
         ];
+    }
+
+    /**
+     * A campaign already shared by someone else: the package name is deliberately unlike
+     * anything a caller would submit, so a test can tell a UUID match from a name match.
+     */
+    private static function packageByCampaignUuidResponse(string $url): MockResponse
+    {
+        $params = self::parseParams($url, 'GET', []);
+        $uuid = str_replace('eq.', '', (string) ($params['campaign_uuid'] ?? ''));
+
+        $existing = [
+            'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' => [
+                'name' => 'otheruser/shared-campaign',
+                'displayname' => 'Shared Campaign',
+                'campaign_uuid' => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+                'auth0_user_id' => 'auth0|other',
+                'status' => 'published',
+                'time' => '2026-01-01T00:00:00+00:00',
+            ],
+        ];
+
+        return new MockResponse(
+            json_encode(isset($existing[$uuid]) ? [$existing[$uuid]] : []),
+            ['http_code' => 200, 'response_headers' => ['content-type' => 'application/json']],
+        );
     }
 
     private static function packageByNameResponse(string $url): MockResponse

@@ -5,8 +5,9 @@
 // languages means ctrl-clicking through a giant list. TomSelect adds type-ahead
 // search, removable tags and a sensible placeholder.
 import TomSelect from 'tom-select';
-// TomSelect's base stylesheet is imported in app.js (before app.scss) so our theme
-// override in styles/components/_tom-select.scss reliably wins the cascade.
+// TomSelect's base stylesheet is vendored into styles/vendor/_tom-select.default.scss and
+// imported from app.scss just before our theme override in styles/components/_tom-select.scss,
+// so the override reliably wins the cascade.
 
 function enhanceSelects() {
     document.querySelectorAll('select[data-tom-select]').forEach((el) => {

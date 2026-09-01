@@ -13,6 +13,10 @@ function initPublishUpload() {
     const errorEl = document.getElementById('publish-upload-error');
     const successEl = document.getElementById('publish-upload-success');
 
+    // Rendered from PackageZipUploader::MAX_BYTES, so the limit lives in one place. The API
+    // rejects anything bigger regardless; this saves streaming a huge archive across first.
+    const maxArchiveBytes = Number(container.dataset.maxBytes) || Infinity;
+
     // State held in the popup until the user confirms upload. We store the trusted
     // origin from the postMessage event (browser-set, can't be spoofed by page JS).
     let pendingArchive = null;
@@ -59,6 +63,12 @@ function initPublishUpload() {
         const { archive, filename } = event.data;
         if (!(archive instanceof Blob) || archive.size === 0) {
             showError("Mautic didn't send a valid campaign archive. Close this window and try again from Mautic.");
+            return;
+        }
+
+        if (archive.size > maxArchiveBytes) {
+            showError('This campaign archive is ' + formatBytes(archive.size) + ', which is over the '
+                + formatBytes(maxArchiveBytes) + ' limit. Remove some assets in Mautic and share it again.');
             return;
         }
 
@@ -138,6 +148,8 @@ function initPublishUpload() {
         errorEl.textContent = msg;
         errorEl.style.display = 'block';
         successEl.style.display = 'none';
+        // The popup may be scrolled past the button by the time the request comes back.
+        errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function showSuccess(msg) {

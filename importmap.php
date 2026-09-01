@@ -31,8 +31,4 @@ return [
     '@orchidjs/unicode-variants' => [
         'version' => '1.1.2',
     ],
-    'tom-select/dist/css/tom-select.default.min.css' => [
-        'version' => '2.6.1',
-        'type' => 'css',
-    ],
 ];
