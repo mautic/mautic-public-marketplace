@@ -41,6 +41,16 @@ final class SupabaseClientTest extends TestCase
         $client->query('GET', '/rest/v1/packages', []);
     }
 
+    public function testBareJsonNullBodyDecodesToNull(): void
+    {
+        // PostgREST answers an RPC that returned SQL NULL with a literal `null` body — what
+        // get_pack sends for an unknown package name. That is a "no row" answer, not the
+        // non-JSON body that used to surface as an error on the package detail page.
+        $client = $this->client(new MockResponse('null', ['http_code' => 200]));
+
+        self::assertNull($client->query('GET', '/rest/v1/rpc/get_pack', ['packag_name' => 'unicorn']));
+    }
+
     public function testEmptySuccessBodyDecodesToEmptyArray(): void
     {
         $client = $this->client(new MockResponse('', ['http_code' => 204]));

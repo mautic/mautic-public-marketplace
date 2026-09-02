@@ -162,6 +162,14 @@ final class SupabaseClient
             return [];
         }
 
+        // A bare `null` is valid JSON: it is what PostgREST sends when an RPC returns SQL NULL,
+        // e.g. get_pack for a package name that does not exist. safeDecode() cannot tell that
+        // apart from an undecodable body, so it is handled here — callers read null as "no row"
+        // and render a 404 instead of an API failure.
+        if ('null' === trim($content)) {
+            return null;
+        }
+
         $payload = $this->safeDecode($content);
         if (null === $payload) {
             throw new SupabaseApiException('Supabase returned a non-JSON response.');

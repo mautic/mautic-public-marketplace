@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'mautic.marketplace.error.404.title'|trans }}{% endblock %}
+
+{% block body %}
+<div class="container mt-48">
+
+    {# Same lead space the homepage and the browse page open with, so a dead link still
+       lands the visitor on a page that looks like the rest of the marketplace. #}
+    {% include 'components/lead-space.html.twig' with {
+        variant: 'medium',
+        heading: 'mautic.marketplace.error.404.heading',
+        description: 'mautic.marketplace.error.404.copy',
+        gradientStyleScheme: 'with-gradient',
+        gradientStyleSchemeColor: '#3c5395',
+        media: {
+            src: 'assets/images/mautinaut.jpeg',
+            alt: 'mautic.marketplace.browse.leadspace.image_alt'
+        },
+        buttons: [
+            {
+                label: 'mautic.marketplace.error.404.action.browse',
+                icon: 'ri-compass-3-line',
+                href: path('marketplace_index')
+            },
+            {
+                label: 'mautic.marketplace.error.404.action.home',
+                icon: 'ri-home-4-line',
+                href: path('marketplace_homepage')
+            }
+        ]
+    } %}
+
+</div>
+{% endblock %}
