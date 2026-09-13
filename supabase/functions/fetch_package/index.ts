@@ -100,8 +100,9 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     return;
   }
 
-  // Now insert into versions table with per-version validation
-  for (const [versionKey, version] of validVersions) {
+  // Build all version rows with per-version validation, then write them in
+  // a single batched upsert instead of one round-trip per version.
+  const versionRows = validVersions.map(([versionKey, version]) => {
     const smv = version.require['mautic/core-lib'];
 
     let storedversions: string[] = [];
@@ -124,35 +125,37 @@ async function storeInSupabase(supabaseClient: any, packageData: any) {
     // Validate this specific version
     const validationErrors = validateVersion(version);
 
-    const { data: versionDataResponse, error: versionError } = await supabaseClient
-      .from('versions')
-      .upsert([{
-        package_name: name,
-        description,
-        keywords,
-        homepage,
-        version: ver,
-        version_normalized,
-        license,
-        authors,
-        source,
-        dist,
-        type,
-        support,
-        funding,
-        time,
-        extra,
-        require: version.require,
-        smv,
-        storedversions,
-        validation_errors: validationErrors,
-      }], { onConflict: ['package_name', 'version'] });
+    return {
+      package_name: name,
+      description,
+      keywords,
+      homepage,
+      version: ver,
+      version_normalized,
+      license,
+      authors,
+      source,
+      dist,
+      type,
+      support,
+      funding,
+      time,
+      extra,
+      require: version.require,
+      smv,
+      storedversions,
+      validation_errors: validationErrors,
+    };
+  });
 
-    if (versionError) {
-      console.error('Error inserting version data:', versionError);
-    } else {
-      console.log('Version data inserted successfully:', versionDataResponse);
-    }
+  const { data: versionDataResponse, error: versionError } = await supabaseClient
+    .from('versions')
+    .upsert(versionRows, { onConflict: ['package_name', 'version'] });
+
+  if (versionError) {
+    console.error('Error inserting version data for package:', name, versionError);
+  } else {
+    console.log(`Inserted ${versionRows.length} version(s) for package:`, name, versionDataResponse);
   }
 }
 
