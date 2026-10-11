@@ -64,3 +64,6 @@ export SUPABASE_API_BASE="http://127.0.0.1:18000"
 export SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsLWRldiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzcwMzIxMzM5LCJleHAiOjIwODU2ODEzMzl9.wSJj3yVYt9N7NkN5GRV-ImVZiTwG2frnPobGsDkMdD0"
 
 vendor/bin/phpunit
+
+# Exercise the public registry route against real Supabase, not the test HTTP mock.
+REGISTRY_API_INTEGRATION_URL="${SUPABASE_API_BASE}" vendor/bin/phpunit tests/Controller/Api/RegistryApiControllerTest.php

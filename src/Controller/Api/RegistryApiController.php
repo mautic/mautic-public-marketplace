@@ -46,6 +46,11 @@ final class RegistryApiController extends AbstractController
             $params['_query'] = $query;
         }
 
+        $type = trim($request->query->getString('type'));
+        if ('' !== $type) {
+            $params['_type'] = $type;
+        }
+
         try {
             $data = $this->supabaseClient->rpc('/rest/v1/rpc/get_view', $params);
         } catch (SupabaseApiException $e) {

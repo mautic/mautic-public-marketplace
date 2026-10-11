@@ -18,6 +18,18 @@ The Supabase CLI scripts are still available for cloud projects:
 - `composer supabase:db:push`
 - `composer supabase:functions:deploy`
 
+## Registry API
+- Registry API: `GET /api/registry/v1/packages?type=mautic-theme` filters by
+  `mautic-plugin`, `mautic-theme`, or `mautic-resource`. Omit `type` (or leave it
+  blank) for all types. It combines with `query`, `page`, and `limit`; `total`
+  counts matching packages before pagination. The server forwards `type` as
+  `_type` to Supabase's `get_view` RPC.
+- `bin/ci-test` also runs registry filter tests against the real local Supabase
+  API. To run these separately against a seeded local stack, set
+  `REGISTRY_API_INTEGRATION_URL` to its API base URL and run
+  `vendor/bin/phpunit tests/Controller/Api/RegistryApiControllerTest.php`
+  with the corresponding `SUPABASE_ANON_KEY`.
+
 ## Tooling
 - PHP CS Fixer: `composer cs:check` / `composer cs:fix`
 - PHPStan: `composer phpstan`
