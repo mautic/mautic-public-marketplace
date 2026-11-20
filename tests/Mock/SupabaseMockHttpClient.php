@@ -17,6 +17,13 @@ final class SupabaseMockHttpClient extends MockHttpClient
      */
     public array $recordedDownloads = [];
 
+    /**
+     * Bodies POSTed to /rest/v1/packages, captured so tests can assert what a new package is stored with.
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $recordedPackages = [];
+
     public function __construct()
     {
         parent::__construct(function (string $method, string $url, array $options = []): MockResponse {
@@ -43,6 +50,11 @@ final class SupabaseMockHttpClient extends MockHttpClient
             }
 
             if ('POST' === $method && !str_contains($url, '/rpc/')) {
+                if (str_contains($url, '/rest/v1/packages')) {
+                    $decoded = json_decode((string) ($options['body'] ?? ''), true);
+                    $this->recordedPackages[] = \is_array($decoded) ? $decoded : [];
+                }
+
                 return new MockResponse('[]', ['http_code' => 201, 'response_headers' => ['content-type' => 'application/json']]);
             }
 

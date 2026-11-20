@@ -258,7 +258,7 @@ final class PackageSubmitService
             'description' => $request->description,
             'type' => $request->category,
             'time' => (new \DateTimeImmutable())->format('c'),
-            'maintainers' => [['name' => $maintainerName]],
+            'maintainers' => [$this->maintainer($maintainerName, $user)],
             'auth0_user_id' => $user->getUserIdentifier(),
             'headline' => $this->requirePlainText($request->headline, 'Headline'),
             'languages' => $this->sanitizer->textList($request->languages),
@@ -295,7 +295,13 @@ final class PackageSubmitService
         }
 
         if ($created) {
-            $packageData['downloads'] = ['total' => 0];
+            // Mautic reads the download and GitHub stats of every package, also when there is no repository
+            $packageData['downloads'] = ['total' => 0, 'monthly' => 0, 'daily' => 0];
+            $packageData['favers'] = 0;
+            $packageData['github_stars'] = 0;
+            $packageData['github_watchers'] = 0;
+            $packageData['github_forks'] = 0;
+            $packageData['github_open_issues'] = 0;
             $packageData['status'] = 'pending';
             $this->apiClient->createPackage($packageData);
             $status = 'pending';
@@ -348,6 +354,23 @@ final class PackageSubmitService
      *
      * @throws SubmitValidationException
      */
+    /**
+     * Mautic shows the maintainer avatar, the same Auth0 picture the reviews show.
+     *
+     * @return array{name: string, avatar_url?: string}
+     */
+    private function maintainer(string $name, Auth0User $user): array
+    {
+        $maintainer = ['name' => $name];
+        $picture = $user->getPicture();
+
+        if (\is_string($picture) && str_starts_with($picture, 'https://') && false !== filter_var($picture, \FILTER_VALIDATE_URL)) {
+            $maintainer['avatar_url'] = $picture;
+        }
+
+        return $maintainer;
+    }
+
     private function requirePlainText(string $value, string $field): string
     {
         $clean = $this->sanitizer->text($value);

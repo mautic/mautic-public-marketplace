@@ -6,6 +6,7 @@ namespace App\Tests\Controller\Api;
 
 use App\Auth0\Auth0User;
 use App\Tests\Mock\PackageZipFactory;
+use App\Tests\Mock\SupabaseMockHttpClient;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -61,6 +62,36 @@ final class MauticUploadApiControllerTest extends WebTestCase
         self::assertSame('testuser/test-campaign', $data['package_name']);
         self::assertSame('1.0.0', $data['version']);
         self::assertTrue($data['created']);
+    }
+
+    public function testNewPackageHasWhatMauticReadsFromEveryPackage(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', 'https://example.com/avatar.png'), 'main');
+        $client->request('POST', '/api/package/mautic-upload', files: [
+            'package' => $this->validZipUpload(),
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
+        $packages = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedPackages;
+        self::assertCount(1, $packages);
+        self::assertSame([['name' => 'Test User', 'avatar_url' => 'https://example.com/avatar.png']], $packages[0]['maintainers']);
+        self::assertSame(['total' => 0, 'monthly' => 0, 'daily' => 0], $packages[0]['downloads']);
+        self::assertSame(0, $packages[0]['favers']);
+        self::assertSame([0, 0, 0, 0], [$packages[0]['github_stars'], $packages[0]['github_watchers'], $packages[0]['github_forks'], $packages[0]['github_open_issues']]);
+    }
+
+    public function testMaintainerHasNoAvatarWithoutASecurePicture(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(new Auth0User('auth0|test123', 'Test User', 'test@example.com', 'http://example.com/avatar.png'), 'main');
+        $client->request('POST', '/api/package/mautic-upload', files: [
+            'package' => $this->validZipUpload(),
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
+        $packages = self::getContainer()->get(SupabaseMockHttpClient::class)->recordedPackages;
+        self::assertSame([['name' => 'Test User']], $packages[0]['maintainers']);
     }
 
     public function testUploadOfACampaignSharedByAnotherUserNamesTheOwningPackage(): void
